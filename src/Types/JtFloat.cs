@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -13,9 +14,9 @@ namespace Aadev.JTF.Types
         public override JtTokenType Type => JtTokenType.Float;
 
 
-        public float Min { get; set; }
-        public float Max { get; set; }
-        public float Default { get; set; }
+        [DefaultValue(minValue)] public float Min { get; set; }
+        [DefaultValue(maxValue)] public float Max { get; set; }
+        [DefaultValue(0)] public float Default { get; set; }
         public JtFloat(JTemplate template) : base(template)
         {
             Min = minValue;

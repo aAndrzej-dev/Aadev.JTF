@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -14,9 +15,9 @@ namespace Aadev.JTF.Types
         public override JtTokenType Type => JtTokenType.Byte;
 
 
-        public byte Min { get; set; }
-        public byte Max { get; set; }
-        public byte Default { get; set; }
+        [DefaultValue(minValue)] public byte Min { get; set; }
+        [DefaultValue(maxValue)] public byte Max { get; set; }
+        [DefaultValue(0)] public byte Default { get; set; }
 
         public JtByte(JTemplate template) : base(template)
         {

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -8,7 +9,7 @@ namespace Aadev.JTF.Types
         private TokensCollection? children;
         public override JTokenType JsonType => JTokenType.Object;
         public override JtTokenType Type => JtTokenType.Block;
-
+        [Browsable(false)]
         public TokensCollection Children
         {
             get

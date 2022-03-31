@@ -9,7 +9,7 @@ namespace Aadev.JTF
     public class JtCondition : IEquatable<JtCondition>
     {
         public string? VariableId { get; set; }
-        public ConditionType? Type { get; set; }
+        public ConditionType Type { get; set; }
         public string? Value { get; set; }
 
         public JtCondition(JObject obj)
@@ -28,15 +28,21 @@ namespace Aadev.JTF
 
         }
 
-        public override string ToString() => VariableId + (Type == ConditionType.Equal ? " = " : (Type == ConditionType.Less ? " < " : " > ")) + Value;
-        public string GetString() => $"{{ \"id\": \"{VariableId}\", \"type\": \"{Type?.ToString()?.ToLower()}\", \"value\": \"{Value}\" }}";
+        public JtCondition()
+        {
+            Type = ConditionType.Equal;
+        }
+
+
+        public override string ToString() => VariableId + (Type == ConditionType.Equal ? " = " : (Type == ConditionType.NotEqual ? " != " : (Type == ConditionType.Less ? " < " : " > "))) + Value;
+        public string GetString() => $"{{ \"id\": \"{VariableId}\", \"type\": \"{Type.ToString().ToLower()}\", \"value\": \"{Value}\" }}";
 
 
         public JObject ToJObject() => new JObject()
         {
             ["id"] = VariableId,
             ["value"] = Value,
-            ["type"] = Type?.ToString()?.ToLower()
+            ["type"] = Type.ToString().ToLower()
         };
 
         public bool Check(string? value) => Type switch
@@ -56,8 +62,7 @@ namespace Aadev.JTF
         public static bool operator ==(JtCondition left, JtCondition right) => left.Equals(right);
         public static bool operator !=(JtCondition left, JtCondition right) => !(left == right);
     }
-    [Serializable]
-    public class JtConditionCollection : IList<JtCondition>, IList
+    public class JtConditionCollection : ICollection<JtCondition>, IEnumerable<JtCondition>, IEnumerable, IList<JtCondition>, IReadOnlyCollection<JtCondition>, IReadOnlyList<JtCondition>, ICollection, IList
     {
         private readonly List<JtCondition> jtConditions = new List<JtCondition>();
 

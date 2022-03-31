@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -8,9 +9,9 @@ namespace Aadev.JTF.Types
         public override JTokenType JsonType => MakeAsObject ? JTokenType.Object : JTokenType.Array;
         public override JtTokenType Type => JtTokenType.Array;
 
-
+        [Browsable(false)]
         public TokensCollection Prefabs { get; }
-        public bool MakeAsObject { get; set; }
+        [DefaultValue(false)] public bool MakeAsObject { get; set; }
 
         TokensCollection IJtParentType.Children => Prefabs;
 

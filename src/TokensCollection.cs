@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace Aadev.JTF
 {
     [Serializable]
-    public class TokensCollection : IList<JtToken>
+    public class TokensCollection : IList<JtToken>, IReadOnlyList<JtToken>
     {
         private readonly List<JtToken> tokens;
         private readonly IJtParentType owner;
@@ -39,6 +39,12 @@ namespace Aadev.JTF
         public int IndexOf(JtToken item) => tokens.IndexOf(item);
         public void Insert(int index, JtToken item)
         {
+
+
+            if (ContainsToken(item))
+                return;
+
+
             item.Parent = owner;
             tokens.Insert(index, item);
         }
@@ -47,6 +53,9 @@ namespace Aadev.JTF
         {
             if (item is null)
                 return;
+
+
+
 
             tokens.Add(item);
             item.Parent = owner;
@@ -75,5 +84,16 @@ namespace Aadev.JTF
         }
         public IEnumerator<JtToken> GetEnumerator() => tokens.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+
+        private bool ContainsToken(JtToken token)
+        {
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                if (tokens[i].Name == token.Name && tokens[i].Type == token.Type && tokens[i].Conditions == token.Conditions)
+                    return true;
+            }
+            return false;
+        }
     }
 }

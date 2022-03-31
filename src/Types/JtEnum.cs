@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -11,7 +12,7 @@ namespace Aadev.JTF.Types
 
         public string Default { get; set; }
         public List<string?> Values { get; }
-        public bool CanUseCustomValue { get; set; }
+        [DefaultValue(false)] public bool CanUseCustomValue { get; set; }
 
         public JtEnum(JTemplate template) : base(template)
         {

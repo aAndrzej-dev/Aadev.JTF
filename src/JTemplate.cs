@@ -1,4 +1,11 @@
-﻿namespace Aadev.JTF
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+
+namespace Aadev.JTF
 {
     public class JTemplate : IJtParentType
     {
@@ -14,7 +21,7 @@
         [Browsable(false)] public JtTokenType Type => JtTokenType.Unknown;
         [Browsable(false)] public bool IsExternal => false;
 
-        private CustomType[]? CustomTypes { get; }
+        [Browsable(false)] private CustomType[]? CustomTypes { get; }
 
 
         public static JTemplate CreateTemplate(string filename, int version, string? name = null, string? description = null, string? customTypeFilename = null)
@@ -48,7 +55,6 @@
         {
             Filename = filename ?? throw new ArgumentNullException(nameof(filename));
             Children = new TokensCollection(this);
-
 
 
             JObject? root;
@@ -88,9 +94,9 @@
                 {
                     JObject typesRoot = JObject.Parse(File.ReadAllText(absoluteTypeFile!));
 
-                    if (typesRoot?["type"]?.ToString() != "Types")
+                    if ((string?)typesRoot["type"] != "Types")
                     {
-                        throw new InvalidJtfFileTypeException(absoluteTypeFile!, "Types", typesRoot?["type"]?.ToString());
+                        throw new InvalidJtfFileTypeException(absoluteTypeFile!, "Types", (string?)typesRoot["type"]);
                     }
                     List<CustomType> types = new List<CustomType>();
                     foreach (JToken item in typesRoot["types"]!)
@@ -122,9 +128,9 @@
                     }
                     CustomTypes = types.ToArray();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    throw new Exception("STOP CODE: JTF_TEMPLATE_CUSTOMTYPES_PARSE_EXCEPTION", ex);
+                    throw;
                 }
 
 

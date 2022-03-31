@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -8,7 +9,7 @@ namespace Aadev.JTF.Types
         public override JTokenType JsonType => JTokenType.Boolean;
         public override JtTokenType Type => JtTokenType.Bool;
 
-        public bool Default { get; set; }
+        [DefaultValue(false)] public bool Default { get; set; }
 
         public JtBool(JTemplate template) : base(template)
         {

@@ -13,15 +13,15 @@ namespace Aadev.JTF
         private IJtParentType? parent;
         private JTemplate template;
 
-        public abstract JTokenType JsonType { get; }
-        public abstract JtTokenType Type { get; }
+        [Browsable(false)] public abstract JTokenType JsonType { get; }
+        [Browsable(false)] public abstract JtTokenType Type { get; }
         public string? Name { get; set; }
         public string? Description { get; set; }
-        public bool Required { get; set; }
+        [DefaultValue(false)] public bool Required { get; set; }
         public string? DisplayName { get; set; }
         [Browsable(false)] public IJtParentType? Parent { get => parent; set { parent = value; if (!(parent is null)) template = parent.Template; } }
         public string Id { get; }
-        public CustomType? CustomType { get; }
+        [Browsable(false)] public CustomType? CustomType { get; }
 
         [Browsable(false)] public JTemplate Template => template;
         [Browsable(false)] public bool IsArrayPrefab => Parent?.Type == JtTokenType.Array;
@@ -89,9 +89,9 @@ namespace Aadev.JTF
 
 
             if (typeString.StartsWith("#"))
-                throw new NotImplementedException("Types whih start with '#' are currently not suported!\nSTOP CODE: JTF_TYPE_DYNAMIC_TYPES_NOT_IMPLEMENTED_EXCEPTION");
+                throw new NotImplementedException("Types whih start with '#' are currently not suported!");
 
-            JtTokenType? type;
+
             if (typeString.StartsWith("@"))
             {
                 CustomType? ctype = template.GetCustomType(typeString.AsSpan()[1..].ToString());
@@ -99,14 +99,11 @@ namespace Aadev.JTF
                 if (ctype is null)
                     return new JtUnknown(item, template);
 
-                type = ctype!.BaseType;
-            }
-            else
-            {
-                type = JtTokenType.GetByName(typeString) ?? throw new Exception($"Invalid type: '{typeString}'\nSTOP CODE: JTF_TYPE_INVALID_TYPE_EXCEPTION");
+                return ctype.BaseType.InstanceFactory(item, template);
             }
 
-            return type.InstanceFactory(item, template);
+            return JtTokenType.GetByName(typeString).InstanceFactory(item, template);
+
         }
     }
 }

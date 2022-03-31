@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -14,9 +15,9 @@ namespace Aadev.JTF.Types
         public override JtTokenType Type => JtTokenType.Short;
 
 
-        public short Min { get; set; }
-        public short Max { get; set; }
-        public short Default { get; set; }
+        [DefaultValue(minValue)] public short Min { get; set; }
+        [DefaultValue(maxValue)] public short Max { get; set; }
+        [DefaultValue(0)] public short Default { get; set; }
         public JtShort(JTemplate template) : base(template)
         {
             Min = minValue;

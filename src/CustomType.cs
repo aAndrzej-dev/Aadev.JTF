@@ -22,15 +22,15 @@ namespace Aadev.JTF
             {
                 Object = JObject.Parse(File.ReadAllText(Filename));
             }
-            catch (IOException ex)
+            catch (IOException)
             {
-                throw new Exception("STOP CODE: JTF_CUSTOMTYPE_FILE_OPEN_EXCEPTION", ex);
+                throw;
             }
 
 
-            if (Object?["type"]?.ToString() != "Type")
+            if ((string?)Object["type"] != "Type")
             {
-                throw new InvalidJtfFileTypeException(filename, "Type", (string?)Object?["type"]);
+                throw new InvalidJtfFileTypeException(filename, "Type", (string?)Object["type"]);
             }
 
             BaseType = JtTokenType.GetByName((string?)Object["baseType"]);

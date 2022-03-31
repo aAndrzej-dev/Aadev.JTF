@@ -6,12 +6,14 @@ namespace Aadev.JTF
 {
     public class JtTokenType : IEquatable<JtTokenType?>
     {
-        private JtTokenType(int id, string name, Func<JObject, JTemplate, JtToken> instanceFactory, string displayName)
+        private JtTokenType(int id, string name, Func<JObject, JTemplate, JtToken> instanceFactory, string displayName, bool isContainerType = false, bool isNumericType = false)
         {
             Id = id;
             Name = name;
             InstanceFactory = instanceFactory;
             DisplayName = displayName;
+            IsContainerType = isContainerType;
+            IsNumericType = isNumericType;
         }
 
         public int Id { get; }
@@ -19,34 +21,38 @@ namespace Aadev.JTF
         public Func<JObject, JTemplate, JtToken> InstanceFactory { get; }
         public string DisplayName { get; }
 
+        public bool IsContainerType { get; }
+        public bool IsNumericType { get; }
+
+
         public static readonly JtTokenType Unknown = new JtTokenType(0, "unknown", (o, t) => new JtUnknown(o, t), nameof(Unknown));
         public static readonly JtTokenType Bool = new JtTokenType(1, "bool", (o, t) => new JtBool(o, t), nameof(Bool));
-        public static readonly JtTokenType Byte = new JtTokenType(2, "byte", (o, t) => new JtByte(o, t), nameof(Byte));
-        public static readonly JtTokenType Short = new JtTokenType(3, "short", (o, t) => new JtShort(o, t), nameof(Short));
-        public static readonly JtTokenType Int = new JtTokenType(4, "int", (o, t) => new JtInt(o, t), nameof(Int));
-        public static readonly JtTokenType Long = new JtTokenType(5, "long", (o, t) => new JtLong(o, t), nameof(Long));
-        public static readonly JtTokenType Float = new JtTokenType(6, "float", (o, t) => new JtFloat(o, t), nameof(Float));
-        public static readonly JtTokenType Double = new JtTokenType(7, "double", (o, t) => new JtDouble(o, t), nameof(Double));
+        public static readonly JtTokenType Byte = new JtTokenType(2, "byte", (o, t) => new JtByte(o, t), nameof(Byte), false, true);
+        public static readonly JtTokenType Short = new JtTokenType(3, "short", (o, t) => new JtShort(o, t), nameof(Short), false, true);
+        public static readonly JtTokenType Int = new JtTokenType(4, "int", (o, t) => new JtInt(o, t), nameof(Int), false, true);
+        public static readonly JtTokenType Long = new JtTokenType(5, "long", (o, t) => new JtLong(o, t), nameof(Long), false, true);
+        public static readonly JtTokenType Float = new JtTokenType(6, "float", (o, t) => new JtFloat(o, t), nameof(Float), false, true);
+        public static readonly JtTokenType Double = new JtTokenType(7, "double", (o, t) => new JtDouble(o, t), nameof(Double), false, true);
         public static readonly JtTokenType String = new JtTokenType(8, "string", (o, t) => new JtString(o, t), nameof(String));
-        public static readonly JtTokenType Block = new JtTokenType(9, "block", (o, t) => new JtBlock(o, t), nameof(Block));
-        public static readonly JtTokenType Array = new JtTokenType(10, "array", (o, t) => new JtArray(o, t), nameof(Array));
+        public static readonly JtTokenType Block = new JtTokenType(9, "block", (o, t) => new JtBlock(o, t), nameof(Block), true);
+        public static readonly JtTokenType Array = new JtTokenType(10, "array", (o, t) => new JtArray(o, t), nameof(Array), true);
         public static readonly JtTokenType Enum = new JtTokenType(11, "enum", (o, t) => new JtEnum(o, t), nameof(Enum));
 
 
         public static readonly JtTokenType[] Items = new JtTokenType[]
         {
              JtTokenType.Bool,
-                JtTokenType.Byte,
-                JtTokenType.Short,
-                JtTokenType.Int,
-                JtTokenType.Long,
-                 JtTokenType.Float,
-                 JtTokenType.Double,
-                 JtTokenType.String,
-                JtTokenType.Block,
-                 JtTokenType.Array,
-                 JtTokenType.Enum,
-                JtTokenType.Unknown,
+             JtTokenType.Byte,
+             JtTokenType.Short,
+             JtTokenType.Int,
+             JtTokenType.Long,
+             JtTokenType.Float,
+             JtTokenType.Double,
+             JtTokenType.String,
+             JtTokenType.Block,
+             JtTokenType.Array,
+             JtTokenType.Enum,
+             JtTokenType.Unknown,
 
         };
 

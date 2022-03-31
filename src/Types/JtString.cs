@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -8,18 +9,18 @@ namespace Aadev.JTF.Types
         public override JTokenType JsonType => JTokenType.String;
         public override JtTokenType Type => JtTokenType.String;
 
-        public int MinLength { get; set; }
-        public int MaxLength { get; set; }
+        [DefaultValue(0)] public uint MinLength { get; set; }
+        [DefaultValue(int.MaxValue)] public int MaxLength { get; set; }
         public string Default { get; set; }
         public JtString(JTemplate template) : base(template)
         {
-            MinLength = int.MinValue;
+            MinLength = 0;
             MaxLength = int.MaxValue;
             Default = string.Empty;
         }
         public JtString(JObject obj, JTemplate template) : base(obj, template)
         {
-            MinLength = (int)(obj["minLength"] ?? int.MinValue);
+            MinLength = (uint)(obj["minLength"] ?? 0);
             MaxLength = (int)(obj["maxLength"] ?? int.MaxValue);
             Default = (string?)obj["default"] ?? string.Empty;
         }
@@ -34,7 +35,7 @@ namespace Aadev.JTF.Types
             if (DisplayName != Name)
                 sb.Append($"\"displayName\": \"{DisplayName}\",");
 
-            if (MinLength != int.MinValue)
+            if (MinLength != 0)
                 sb.Append($"\"minLength\": {MinLength},");
             if (MaxLength != int.MaxValue)
                 sb.Append($"\"maxLength\": {MaxLength},");
