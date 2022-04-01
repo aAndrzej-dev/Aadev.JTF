@@ -24,7 +24,6 @@ namespace Aadev.JTF.Types
         {
             Prefabs = new TokensCollection(this);
 
-
             MakeAsObject = (bool)(obj["makeObject"] ?? false);
 
 
@@ -34,12 +33,12 @@ namespace Aadev.JTF.Types
                 {
                     if (item is null)
                         continue;
-                    Prefabs.Add(JtTokenType.GetByName((string?)item?["type"]).InstanceFactory(item!, template));
+                    Prefabs.Add(Create(item, template));
                 }
             }
             else if (obj["prefab"] is JObject pref)
             {
-                Prefabs.Add(JtTokenType.GetByName((string?)pref["type"]).InstanceFactory(pref, template));
+                Prefabs.Add(Create(pref, template));
             }
         }
 

@@ -27,7 +27,7 @@ namespace Aadev.JTF
             }
         }
 
-        public TokensCollection(IJtParentType owner)
+        internal TokensCollection(IJtParentType owner)
         {
             tokens = new List<JtToken>();
             this.owner = owner;

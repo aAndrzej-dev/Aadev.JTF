@@ -9,11 +9,11 @@ namespace Aadev.JTF
 {
     public class JTemplate : IJtParentType
     {
-        public string Name { get; set; }
-        public string Filename { get; }
-        public int Version { get; set; }
-        public string? CustomTypesFile { get; set; }
-        public string? Description { get; set; }
+        [Category("General")] public string Name { get; set; }
+        [Category("General")] public string Filename { get; }
+        [Category("General")] public int Version { get; set; }
+        [Category("General")] public string? CustomTypesFile { get; set; }
+        [Category("General")] public string? Description { get; set; }
 
         [Browsable(false)] public TokensCollection Children { get; }
         [Browsable(false)] public JTemplate Template => this;
@@ -22,7 +22,6 @@ namespace Aadev.JTF
         [Browsable(false)] public bool IsExternal => false;
 
         [Browsable(false)] private CustomType[]? CustomTypes { get; }
-
 
         public static JTemplate CreateTemplate(string filename, int version, string? name = null, string? description = null, string? customTypeFilename = null)
         {
@@ -56,7 +55,6 @@ namespace Aadev.JTF
             Filename = filename ?? throw new ArgumentNullException(nameof(filename));
             Children = new TokensCollection(this);
 
-
             JObject? root;
             try
             {
@@ -68,9 +66,9 @@ namespace Aadev.JTF
                 throw new Exception($"Cannot convert file `{filename}` to json", ex);
             }
 
-            if ((string?)root["type"] != "Main")
+            if (((string?)root["type"])?.ToLower() != "main")
             {
-                throw new InvalidJtfFileTypeException(Filename, "Main", (string?)root["type"]);
+                throw new InvalidJtfFileTypeException(Filename, "main", (string?)root["type"]);
             }
 
 
@@ -89,14 +87,18 @@ namespace Aadev.JTF
 
             if (!string.IsNullOrEmpty(CustomTypesFile))
             {
-                string? absoluteTypeFile = Path.GetFullPath(CustomTypesFile.Replace('/', '\\'), Path.GetDirectoryName(Filename)!);
+                string? absoluteTypeFile = Path.GetFullPath(CustomTypesFile, Path.GetDirectoryName(Filename)!);
+
+                if (!File.Exists(absoluteTypeFile))
+                    throw new FileNotFoundException(absoluteTypeFile);
+
                 try
                 {
                     JObject typesRoot = JObject.Parse(File.ReadAllText(absoluteTypeFile!));
 
-                    if ((string?)typesRoot["type"] != "Types")
+                    if (((string?)typesRoot["type"])?.ToLower() != "types")
                     {
-                        throw new InvalidJtfFileTypeException(absoluteTypeFile!, "Types", (string?)typesRoot["type"]);
+                        throw new InvalidJtfFileTypeException(absoluteTypeFile!, "types", (string?)typesRoot["type"]);
                     }
                     List<CustomType> types = new List<CustomType>();
                     foreach (JToken item in typesRoot["types"]!)

@@ -5,12 +5,16 @@ namespace Aadev.JTF.Types
 {
     public class JtUnknown : JtToken
     {
+        /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.None;
+        /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.Unknown;
 
+        /// <inheritdoc/>
         public JtUnknown(JObject obj, JTemplate template) : base(obj, template)
         {
         }
+        /// <inheritdoc/>
         public JtUnknown(JTemplate template) : base(template)
         {
 

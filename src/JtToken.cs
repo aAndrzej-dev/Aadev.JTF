@@ -13,26 +13,78 @@ namespace Aadev.JTF
         private IJtParentType? parent;
         private JTemplate template;
 
+        /// <summary>
+        /// Type of json node
+        /// </summary>
         [Browsable(false)] public abstract JTokenType JsonType { get; }
+        /// <summary>
+        /// Type of <see cref="JtToken"/>
+        /// </summary>
         [Browsable(false)] public abstract JtTokenType Type { get; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
-        [DefaultValue(false)] public bool Required { get; set; }
-        public string? DisplayName { get; set; }
+        /// <summary>
+        /// Name of current token used as key in json file; <see langword="null"/> when <see cref="IsArrayPrefab"/> is <see langword="true"/>
+        /// </summary>
+        [Category("General")] public string? Name { get; set; }
+        /// <summary>
+        /// Description of current <see cref="JtToken"/>
+        /// </summary>
+        [Category("General")] public string? Description { get; set; }
+        /// <summary>
+        /// Specify whether create json node event value is <see langword="null"/>
+        /// </summary>
+        [DefaultValue(false), Category("General")] public bool Required { get; set; }
+        /// <summary>
+        /// Name displayed in editor
+        /// </summary>
+        [Category("General")] public string? DisplayName { get; set; }
+        /// <summary>
+        /// Parent element
+        /// </summary>
         [Browsable(false)] public IJtParentType? Parent { get => parent; set { parent = value; if (!(parent is null)) template = parent.Template; } }
-        public string Id { get; }
+        /// <summary>
+        /// Unique id; used in conditions
+        /// </summary>
+        [Category("General")] public string Id { get; }
+        /// <summary>
+        /// Custom source of properties
+        /// </summary>
         [Browsable(false)] public CustomType? CustomType { get; }
 
+        /// <summary>
+        /// Root template
+        /// </summary>
         [Browsable(false)] public JTemplate Template => template;
+        /// <summary>
+        /// <see langword="true"/> if parent is <see cref="JtArray"/>
+        /// </summary>
         [Browsable(false)] public bool IsArrayPrefab => Parent?.Type == JtTokenType.Array;
+        /// <summary>
+        /// <see langword="true"/> if one of parents is <see cref="JtArray"/>
+        /// </summary>
         [Browsable(false)] public bool IsInArrayPrefab => IsArrayPrefab || Parent?.IsInArrayPrefab is true;
+        /// <summary>
+        /// <see langword="true"/> if parent is <see cref="JtArray"/> and MakeAsObject is true
+        /// </summary>
         [Browsable(false)] public bool IsDynamicName => IsArrayPrefab && ((JtArray)Parent!).MakeAsObject;
+        /// <summary>
+        /// <see langword="true"/> if current element is unisg custom type
+        /// </summary>
         [Browsable(false)] public bool IsUsingCustomType => !(CustomType is null);
 
-        public JtConditionCollection Conditions { get => _conditions ??= new JtConditionCollection(); set => _conditions = value; }
+        /// <summary>
+        /// Conditions of current element
+        /// </summary>
+        [Category("General")] public JtConditionCollection Conditions { get => _conditions ??= new JtConditionCollection(); set => _conditions = value; }
+        /// <summary>
+        /// <see langword="true"/> if current tag is using custom type or when one of parent is using custom type
+        /// </summary>
         [Browsable(false)] public bool IsExternal => IsUsingCustomType || Parent?.IsExternal is true;
 
 
+        /// <summary>
+        /// Create empty instace of current element
+        /// </summary>
+        /// <param name="template">Root template</param>
         protected JtToken(JTemplate template)
         {
             this.template = template;
@@ -42,7 +94,11 @@ namespace Aadev.JTF
 
 
 
-
+        /// <summary>
+        /// Create new instance with properties loaded form obj
+        /// </summary>
+        /// <param name="template">Root template</param>
+        /// <param name="obj">Object to load proerties from</param>
         protected JtToken(JObject obj, JTemplate template)
         {
             string? typeString = (string?)obj["type"];
@@ -66,10 +122,18 @@ namespace Aadev.JTF
             }
         }
 
+        /// <summary>
+        /// Get all elements witch has this same name ant diffrent type in this same parent
+        /// </summary>
+        /// <returns></returns>
         public JtToken[] GetTwinFamily() => Parent is null ? (new JtToken[] { this }) : Parent.Children.Where(x => x.Name == Name && x.Conditions == Conditions).ToArray();
 
         internal abstract void BulidJson(StringBuilder sb);
 
+        /// <summary>
+        /// Convert current tag to json 
+        /// </summary>
+        /// <returns></returns>
         public string GetJson()
         {
             StringBuilder sb = new StringBuilder();
@@ -77,6 +141,15 @@ namespace Aadev.JTF
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Create new instace of <see cref="JtToken"/>
+        /// </summary>
+        /// <param name="item">Object to load <see cref="JtToken"/> from</param>
+        /// <param name="template">Root template</param>
+        /// <returns>New instace of JtToken</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="Exception"></exception>
+        /// <exception cref="NotImplementedException"></exception>
         public static JtToken Create(JObject item, JTemplate template)
         {
             if (item is null) throw new ArgumentNullException(nameof(item));
@@ -96,10 +169,9 @@ namespace Aadev.JTF
             {
                 CustomType? ctype = template.GetCustomType(typeString.AsSpan()[1..].ToString());
 
-                if (ctype is null)
-                    return new JtUnknown(item, template);
 
-                return ctype.BaseType.InstanceFactory(item, template);
+
+                return ctype?.BaseType?.InstanceFactory(item, template) ?? new JtUnknown(item, template);
             }
 
             return JtTokenType.GetByName(typeString).InstanceFactory(item, template);

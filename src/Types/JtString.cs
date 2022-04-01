@@ -6,7 +6,9 @@ namespace Aadev.JTF.Types
 {
     public class JtString : JtToken
     {
+        /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.String;
+        /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.String;
 
         [DefaultValue(0)] public uint MinLength { get; set; }

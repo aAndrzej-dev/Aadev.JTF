@@ -9,8 +9,9 @@ namespace Aadev.JTF.Types
         private const long minValue = long.MinValue;
         private const long maxValue = long.MaxValue;
 
-
+        /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Integer;
+        /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.Long;
 
 
