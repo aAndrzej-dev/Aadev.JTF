@@ -35,7 +35,7 @@ namespace Aadev.JTF.Types
 
             if (Conditions.Count > 0)
             {
-                sb.Append("\"if\": [");
+                sb.Append("\"conditions\": [");
 
                 for (int i = 0; i < Conditions.Count; i++)
                 {
@@ -48,8 +48,11 @@ namespace Aadev.JTF.Types
                 sb.Append("],");
             }
 
-            sb.Append($"\"id\": \"{Id}\"");
-            sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"id\": \"{Id}\",");
+            if (IsUsingCustomType)
+                sb.Append($"\"type\": \"{CustomType}\"");
+            else
+                sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
     }

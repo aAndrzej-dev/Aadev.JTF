@@ -8,6 +8,9 @@ namespace Aadev.JTF.Types
     {
         private const short minValue = short.MinValue;
         private const short maxValue = short.MaxValue;
+        private short @default;
+        private short min;
+        private short max;
 
 
         /// <inheritdoc/>
@@ -16,9 +19,9 @@ namespace Aadev.JTF.Types
         public override JtTokenType Type => JtTokenType.Short;
 
 
-        [DefaultValue(minValue)] public short Min { get; set; }
-        [DefaultValue(maxValue)] public short Max { get; set; }
-        [DefaultValue(0)] public short Default { get; set; }
+        [DefaultValue(minValue)] public short Min { get => min; set { min = value.Min(Max); @default = value.Clamp(Min, Max); } }
+        [DefaultValue(maxValue)] public short Max { get => max; set { max = value.Max(Min); @default = value.Clamp(Min, Max); } }
+        [DefaultValue(0)] public short Default { get => @default; set => @default = value.Clamp(Min, Max); }
         public JtShort(JTemplate template) : base(template)
         {
             Min = minValue;
@@ -51,7 +54,7 @@ namespace Aadev.JTF.Types
 
             if (Conditions.Count > 0)
             {
-                sb.Append("\"if\": [");
+                sb.Append("\"conditions\": [");
 
                 for (int i = 0; i < Conditions.Count; i++)
                 {
@@ -64,8 +67,11 @@ namespace Aadev.JTF.Types
                 sb.Append("],");
             }
 
-            sb.Append($"\"id\": \"{Id}\"");
-            sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"id\": \"{Id}\",");
+            if (IsUsingCustomType)
+                sb.Append($"\"type\": \"{CustomType}\"");
+            else
+                sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
     }

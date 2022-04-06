@@ -62,21 +62,25 @@ namespace Aadev.JTF.Types
             if (DisplayName != Name)
                 sb.Append($"\"displayName\": \"{DisplayName}\",");
 
-            sb.Append("\"children\": [");
-
-            for (int i = 0; i < Children.Count; i++)
+            if (!IsUsingCustomType)
             {
-                if (i != 0)
-                    sb.Append(',');
+                sb.Append("\"children\": [");
 
-                Children[i].BulidJson(sb);
+                for (int i = 0; i < Children.Count; i++)
+                {
+                    if (i != 0)
+                        sb.Append(',');
+
+                    Children[i].BulidJson(sb);
+                }
+
+                sb.Append("],");
             }
 
-            sb.Append("],");
 
             if (Conditions.Count > 0)
             {
-                sb.Append("\"if\": [");
+                sb.Append("\"conditions\": [");
 
                 for (int i = 0; i < Conditions.Count; i++)
                 {
@@ -89,8 +93,11 @@ namespace Aadev.JTF.Types
                 sb.Append("],");
             }
 
-            sb.Append($"\"id\": \"{Id}\"");
-            sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"id\": \"{Id}\",");
+            if (IsUsingCustomType)
+                sb.Append($"\"type\": \"{CustomType}\"");
+            else
+                sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
 

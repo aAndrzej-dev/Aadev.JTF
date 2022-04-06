@@ -14,10 +14,13 @@
     <PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.JTF</PackageProjectUrl>
     <Description>Json Template Format</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>Fixed bug when array prefab has custom type
-Some bug fixes
-Documentation has been updated</PackageReleaseNotes>
-    <Version>1.0.0-beta3</Version>
+    <PackageReleaseNotes>Fixed critical bug when converting to json
+Some minor bug fixes
+Changed "if" to "conditions" in JTF
+Added possibility to fix size of array
+Added default prefab in array
+Max, Min, Default values are now clamped</PackageReleaseNotes>
+    <Version>1.0.0-beta4</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
 	<Deterministic>true</Deterministic>
@@ -25,7 +28,7 @@ Documentation has been updated</PackageReleaseNotes>
   </PropertyGroup>
 	
 
-
+	
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>

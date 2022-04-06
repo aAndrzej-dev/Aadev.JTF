@@ -8,16 +8,17 @@ namespace Aadev.JTF.Types
     {
         private const byte minValue = byte.MinValue;
         private const byte maxValue = byte.MaxValue;
-
-
+        private byte @default;
+        private byte min;
+        private byte max;
 
         public override JTokenType JsonType => JTokenType.Integer;
         public override JtTokenType Type => JtTokenType.Byte;
 
 
-        [DefaultValue(minValue)] public byte Min { get; set; }
-        [DefaultValue(maxValue)] public byte Max { get; set; }
-        [DefaultValue(0)] public byte Default { get; set; }
+        [DefaultValue(minValue)] public byte Min { get => min; set { min = value.Min(Max); @default = value.Clamp(Min, Max); } }
+        [DefaultValue(maxValue)] public byte Max { get => max; set { max = value.Max(Min); @default = value.Clamp(Min, Max); } }
+        [DefaultValue(0)] public byte Default { get => @default; set => @default = value.Clamp(Min, Max); }
 
         public JtByte(JTemplate template) : base(template)
         {
@@ -51,7 +52,7 @@ namespace Aadev.JTF.Types
 
             if (Conditions.Count > 0)
             {
-                sb.Append("\"if\": [");
+                sb.Append("\"conditions\": [");
 
                 for (int i = 0; i < Conditions.Count; i++)
                 {
@@ -64,8 +65,11 @@ namespace Aadev.JTF.Types
                 sb.Append("],");
             }
 
-            sb.Append($"\"id\": \"{Id}\"");
-            sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"id\": \"{Id}\",");
+            if (IsUsingCustomType)
+                sb.Append($"\"type\": \"{CustomType}\"");
+            else
+                sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
     }

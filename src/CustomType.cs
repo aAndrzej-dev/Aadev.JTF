@@ -10,7 +10,7 @@ namespace Aadev.JTF
         public JtTokenType BaseType { get; }
         public string Id { get; }
 
-        public JObject Object { get; set; }
+        public JObject Object { get; }
 
         public CustomType(string id, string filename)
         {

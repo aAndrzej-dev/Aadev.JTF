@@ -66,7 +66,7 @@ namespace Aadev.JTF
                 throw new Exception($"Cannot convert file `{filename}` to json", ex);
             }
 
-            if (((string?)root["type"])?.ToLower() != "main")
+            if (!((string?)root["type"]).Compare("main", true))
             {
                 throw new InvalidJtfFileTypeException(Filename, "main", (string?)root["type"]);
             }
@@ -96,7 +96,7 @@ namespace Aadev.JTF
                 {
                     JObject typesRoot = JObject.Parse(File.ReadAllText(absoluteTypeFile!));
 
-                    if (((string?)typesRoot["type"])?.ToLower() != "types")
+                    if (!((string?)typesRoot["type"]).Compare("types", true))
                     {
                         throw new InvalidJtfFileTypeException(absoluteTypeFile!, "types", (string?)typesRoot["type"]);
                     }

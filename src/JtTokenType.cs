@@ -6,11 +6,12 @@ namespace Aadev.JTF
 {
     public class JtTokenType : IEquatable<JtTokenType?>
     {
+        private readonly Func<JObject, JTemplate, JtToken> instanceFactory;
         private JtTokenType(int id, string name, Func<JObject, JTemplate, JtToken> instanceFactory, string displayName, bool isContainerType = false, bool isNumericType = false)
         {
             Id = id;
             Name = name;
-            InstanceFactory = instanceFactory;
+            this.instanceFactory = instanceFactory;
             DisplayName = displayName;
             IsContainerType = isContainerType;
             IsNumericType = isNumericType;
@@ -18,7 +19,6 @@ namespace Aadev.JTF
 
         public int Id { get; }
         public string Name { get; }
-        public Func<JObject, JTemplate, JtToken> InstanceFactory { get; }
         public string DisplayName { get; }
 
         public bool IsContainerType { get; }
@@ -94,6 +94,7 @@ namespace Aadev.JTF
                 _ => JtTokenType.Unknown,
             };
         }
+        public JtToken CreateInstance(JObject obj, JTemplate template) => instanceFactory(obj, template);
 
         public override bool Equals(object? obj) => Equals(obj as JtTokenType);
         public bool Equals(JtTokenType? other) => other != null && Id == other.Id;

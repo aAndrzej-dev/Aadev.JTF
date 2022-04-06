@@ -8,16 +8,17 @@ namespace Aadev.JTF.Types
     {
         private const double minValue = double.MinValue;
         private const double maxValue = double.MaxValue;
-
-
+        private double @default;
+        private double min;
+        private double max;
 
         public override JTokenType JsonType => JTokenType.Float;
         public override JtTokenType Type => JtTokenType.Double;
 
 
-        [DefaultValue(minValue)] public double Min { get; set; }
-        [DefaultValue(maxValue)] public double Max { get; set; }
-        [DefaultValue(0)] public double Default { get; set; }
+        [DefaultValue(minValue)] public double Min { get => min; set { min = value.Min(Max); @default = value.Clamp(Min, Max); } }
+        [DefaultValue(maxValue)] public double Max { get => max; set { max = value.Max(Min); @default = value.Clamp(Min, Max); } }
+        [DefaultValue(0)] public double Default { get => @default; set => @default = value.Clamp(Min, Max); }
         public JtDouble(JTemplate template) : base(template)
         {
             Min = minValue;
@@ -50,7 +51,7 @@ namespace Aadev.JTF.Types
 
             if (Conditions.Count > 0)
             {
-                sb.Append("\"if\": [");
+                sb.Append("\"conditions\": [");
 
                 for (int i = 0; i < Conditions.Count; i++)
                 {
@@ -63,8 +64,11 @@ namespace Aadev.JTF.Types
                 sb.Append("],");
             }
 
-            sb.Append($"\"id\": \"{Id}\"");
-            sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"id\": \"{Id}\",");
+            if (IsUsingCustomType)
+                sb.Append($"\"type\": \"{CustomType}\"");
+            else
+                sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
     }

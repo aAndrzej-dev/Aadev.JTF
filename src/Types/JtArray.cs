@@ -6,12 +6,21 @@ namespace Aadev.JTF.Types
 {
     public class JtArray : JtToken, IJtParentType
     {
+        private int fixedSize;
+        private bool isFixedSize;
+        private int defaultPrefabIndex;
+
         public override JTokenType JsonType => MakeAsObject ? JTokenType.Object : JTokenType.Array;
         public override JtTokenType Type => JtTokenType.Array;
 
         [Browsable(false)]
         public TokensCollection Prefabs { get; }
         [DefaultValue(false)] public bool MakeAsObject { get; set; }
+
+        [DefaultValue(false)] public bool IsFixedSize { get => isFixedSize; set { isFixedSize = value; fixedSize = isFixedSize ? 0 : -1; } }
+        [DefaultValue(-1)] public int FixedSize { get => fixedSize; set { fixedSize = value; isFixedSize = fixedSize >= 0; if (fixedSize < 0) fixedSize = -1; } }
+        [DefaultValue(0)] public int DefaultPrefabIndex { get => defaultPrefabIndex; set { if (Prefabs.Count <= value) return; defaultPrefabIndex = value; } }
+
 
         TokensCollection IJtParentType.Children => Prefabs;
 
@@ -25,9 +34,9 @@ namespace Aadev.JTF.Types
             Prefabs = new TokensCollection(this);
 
             MakeAsObject = (bool)(obj["makeObject"] ?? false);
+            FixedSize = (int)(obj["fixedSize"] ?? -1);
 
-
-            if (obj["prefab"] is JArray arr)
+            if (obj["prefabs"] is JArray arr)
             {
                 foreach (JObject? item in arr)
                 {
@@ -70,7 +79,7 @@ namespace Aadev.JTF.Types
 
             if (Conditions.Count > 0)
             {
-                sb.Append("\"if\": [");
+                sb.Append("\"conditions\": [");
 
                 for (int i = 0; i < Conditions.Count; i++)
                 {
@@ -83,8 +92,11 @@ namespace Aadev.JTF.Types
                 sb.Append("],");
             }
 
-            sb.Append($"\"id\": \"{Id}\"");
-            sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"id\": \"{Id}\",");
+            if (IsUsingCustomType)
+                sb.Append($"\"type\": \"{CustomType}\"");
+            else
+                sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
 

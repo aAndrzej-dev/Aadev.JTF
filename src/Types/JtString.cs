@@ -6,13 +6,16 @@ namespace Aadev.JTF.Types
 {
     public class JtString : JtToken
     {
+        private int maxLength;
+        private int minLength;
+
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.String;
         /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.String;
 
-        [DefaultValue(0)] public uint MinLength { get; set; }
-        [DefaultValue(int.MaxValue)] public int MaxLength { get; set; }
+        [DefaultValue(0)] public int MinLength { get => minLength; set => minLength = value.Max(0); }
+        [DefaultValue(-1)] public int MaxLength { get => maxLength; set => maxLength = value.Max(-1); }
         public string Default { get; set; }
         public JtString(JTemplate template) : base(template)
         {
@@ -22,8 +25,8 @@ namespace Aadev.JTF.Types
         }
         public JtString(JObject obj, JTemplate template) : base(obj, template)
         {
-            MinLength = (uint)(obj["minLength"] ?? 0);
-            MaxLength = (int)(obj["maxLength"] ?? int.MaxValue);
+            MinLength = (int)(obj["minLength"] ?? 0);
+            MaxLength = (int)(obj["maxLength"] ?? -1);
             Default = (string?)obj["default"] ?? string.Empty;
         }
 
@@ -46,7 +49,7 @@ namespace Aadev.JTF.Types
 
             if (Conditions.Count > 0)
             {
-                sb.Append("\"if\": [");
+                sb.Append("\"conditions\": [");
 
                 for (int i = 0; i < Conditions.Count; i++)
                 {
@@ -59,8 +62,11 @@ namespace Aadev.JTF.Types
                 sb.Append("],");
             }
 
-            sb.Append($"\"id\": \"{Id}\"");
-            sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"id\": \"{Id}\",");
+            if (IsUsingCustomType)
+                sb.Append($"\"type\": \"{CustomType}\"");
+            else
+                sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
     }

@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
@@ -40,7 +41,7 @@ namespace Aadev.JTF
         /// <summary>
         /// Parent element
         /// </summary>
-        [Browsable(false)] public IJtParentType? Parent { get => parent; set { parent = value; if (!(parent is null)) template = parent.Template; } }
+        [Browsable(false)] public IJtParentType? Parent { get => parent; set { parent = value; if (parent is null) return; template = parent.Template; } }
         /// <summary>
         /// Unique id; used in conditions
         /// </summary>
@@ -57,18 +58,30 @@ namespace Aadev.JTF
         /// <summary>
         /// <see langword="true"/> if parent is <see cref="JtArray"/>
         /// </summary>
+#if NET5_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Parent))]
+#endif
         [Browsable(false)] public bool IsArrayPrefab => Parent?.Type == JtTokenType.Array;
         /// <summary>
         /// <see langword="true"/> if one of parents is <see cref="JtArray"/>
         /// </summary>
+#if NET5_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Parent))]
+#endif
         [Browsable(false)] public bool IsInArrayPrefab => IsArrayPrefab || Parent?.IsInArrayPrefab is true;
         /// <summary>
         /// <see langword="true"/> if parent is <see cref="JtArray"/> and MakeAsObject is true
         /// </summary>
+#if NET5_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Parent))]
+#endif
         [Browsable(false)] public bool IsDynamicName => IsArrayPrefab && ((JtArray)Parent!).MakeAsObject;
         /// <summary>
         /// <see langword="true"/> if current element is unisg custom type
         /// </summary>
+#if NET5_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(CustomType))]
+#endif
         [Browsable(false)] public bool IsUsingCustomType => !(CustomType is null);
 
         /// <summary>
@@ -79,6 +92,7 @@ namespace Aadev.JTF
         /// <see langword="true"/> if current tag is using custom type or when one of parent is using custom type
         /// </summary>
         [Browsable(false)] public bool IsExternal => IsUsingCustomType || Parent?.IsExternal is true;
+
 
 
         /// <summary>
@@ -120,6 +134,13 @@ namespace Aadev.JTF
                     Conditions.Add(new JtCondition(item));
                 }
             }
+            else if (obj["conditions"] is JArray conditions2)
+            {
+                foreach (JObject item in conditions2)
+                {
+                    Conditions.Add(new JtCondition(item));
+                }
+            }
         }
 
         /// <summary>
@@ -154,6 +175,13 @@ namespace Aadev.JTF
         {
             if (item is null) throw new ArgumentNullException(nameof(item));
 
+
+            if (((JValue?)item["type"])?.Value is int typeId)
+            {
+                return JtTokenType.GetById(typeId).CreateInstance(item, template);
+            }
+
+
             string typeString = (string?)item["type"] ?? throw new Exception("item dont have type");
 
             if (typeString.Contains('|'))
@@ -171,10 +199,10 @@ namespace Aadev.JTF
 
 
 
-                return ctype?.BaseType?.InstanceFactory(item, template) ?? new JtUnknown(item, template);
+                return ctype?.BaseType?.CreateInstance(item, template) ?? new JtUnknown(item, template);
             }
 
-            return JtTokenType.GetByName(typeString).InstanceFactory(item, template);
+            return JtTokenType.GetByName(typeString).CreateInstance(item, template);
 
         }
     }

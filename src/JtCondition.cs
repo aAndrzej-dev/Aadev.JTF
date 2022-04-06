@@ -11,6 +11,7 @@ namespace Aadev.JTF
         public string? VariableId { get; set; }
         public ConditionType Type { get; set; }
         public string? Value { get; set; }
+        public bool IgnoreCase { get; set; }
 
         public JtCondition(JObject obj)
         {
@@ -47,8 +48,8 @@ namespace Aadev.JTF
 
         public bool Check(string? value) => Type switch
         {
-            ConditionType.Equal => value == Value,
-            ConditionType.NotEqual => value != Value,
+            ConditionType.Equal => value.Compare(Value, IgnoreCase),
+            ConditionType.NotEqual => !value.Compare(Value, IgnoreCase),
             ConditionType.Less => double.TryParse(value, out double tmp1) && double.TryParse(Value, out double tmp2) && tmp1 < tmp2,
             ConditionType.Bigger => double.TryParse(value, out double tmp1) && double.TryParse(Value, out double tmp2) && tmp1 > tmp2,
             _ => false

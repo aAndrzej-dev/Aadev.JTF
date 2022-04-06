@@ -23,11 +23,11 @@ namespace Aadev.JTF.Types
         {
             Values = new List<string?>();
 
+            CanUseCustomValue = (bool)(obj["canCustom"] ?? false);
+            Default = (string?)obj["default"] ?? string.Empty;
             if (IsUsingCustomType) obj = CustomType?.Object!;
 
 
-            CanUseCustomValue = (bool)(obj["canCustom"] ?? false);
-            Default = (string?)obj["default"] ?? string.Empty;
 
             JArray? values = obj["values"] as JArray;
 
@@ -57,24 +57,27 @@ namespace Aadev.JTF.Types
                 sb.Append($"\"default\": \"{Default}\",");
             if (CanUseCustomValue)
                 sb.Append($"\"canCustom\": true,");
-
-            sb.Append("\"values\": [");
-
-            for (int i = 0; i < Values.Count; i++)
+            if (!IsUsingCustomType)
             {
-                if (i != 0)
-                    sb.Append(',');
+                sb.Append("\"values\": [");
 
-                sb.Append($"\"name\": \"{Values}\"");
+                for (int i = 0; i < Values.Count; i++)
+                {
+                    if (i != 0)
+                        sb.Append(',');
+
+                    sb.Append($"{{\"name\": \"{Values[i]}\"}}");
+                }
+
+                sb.Append("],");
             }
 
-            sb.Append("],");
 
 
 
             if (Conditions.Count > 0)
             {
-                sb.Append("\"if\": [");
+                sb.Append("\"conditions\": [");
 
                 for (int i = 0; i < Conditions.Count; i++)
                 {
@@ -87,8 +90,11 @@ namespace Aadev.JTF.Types
                 sb.Append("],");
             }
 
-            sb.Append($"\"id\": \"{Id}\"");
-            sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"id\": \"{Id}\",");
+            if (IsUsingCustomType)
+                sb.Append($"\"type\": \"{CustomType}\"");
+            else
+                sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
     }
