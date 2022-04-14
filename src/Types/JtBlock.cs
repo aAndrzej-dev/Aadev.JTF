@@ -1,13 +1,18 @@
 ﻿using Newtonsoft.Json.Linq;
+using System;
 using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public class JtBlock : JtToken, IJtParentType
+    public sealed class JtBlock : JtToken, IJtParentType
     {
         private TokensCollection? children;
+        private string? customValueId;
+
+        /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Object;
+        /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.Block;
         [Browsable(false)]
         public TokensCollection Children
@@ -17,36 +22,36 @@ namespace Aadev.JTF.Types
                 if (children is null)
                 {
                     children = new TokensCollection(this);
-                    if (CustomType?.Object["children"] is JArray arr)
-                    {
-                        foreach (JObject item in arr)
-                        {
-                            children.Add(Create(item, Template));
-                        }
-                    }
+                    children.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value);
+
                 }
 
                 return children;
             }
         }
+
+        public string? CustomValueId { get => customValueId; set { if (customValueId == value) return; customValueId = value; children ??= new TokensCollection(this); children.Clear(); children.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value); } }
+
         public JtBlock(JTemplate template) : base(template) { }
-        public JtBlock(JObject obj, JTemplate template) : base(obj, template)
+        internal JtBlock(JObject obj, JTemplate template) : base(obj, template)
         {
-
-
-            if (IsUsingCustomType) return;
-
-            children = new TokensCollection(this);
-
-
-
-
             if (obj["children"] is JArray arr)
             {
+                children = new TokensCollection(this);
                 foreach (JObject item in arr)
                 {
                     children.Add(Create(item, Template));
                 }
+            }
+            else if (((JValue?)obj["children"])?.Value is string str)
+            {
+                if (!str.StartsWith("@"))
+                    throw new System.Exception();
+
+                customValueId = str.AsSpan(1).ToString();
+
+
+
             }
 
 
@@ -62,7 +67,7 @@ namespace Aadev.JTF.Types
             if (DisplayName != Name)
                 sb.Append($"\"displayName\": \"{DisplayName}\",");
 
-            if (!IsUsingCustomType)
+            if (customValueId is null)
             {
                 sb.Append("\"children\": [");
 
@@ -75,6 +80,10 @@ namespace Aadev.JTF.Types
                 }
 
                 sb.Append("],");
+            }
+            else
+            {
+                sb.Append($"\"children\": \"{customValueId}\"");
             }
 
 
@@ -94,13 +103,10 @@ namespace Aadev.JTF.Types
             }
 
             sb.Append($"\"id\": \"{Id}\",");
-            if (IsUsingCustomType)
-                sb.Append($"\"type\": \"{CustomType}\"");
-            else
-                sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
-
-
+        /// <inheritdoc/>
+        public override JToken CreateDefaultToken() => new JObject();
     }
 }

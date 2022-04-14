@@ -4,9 +4,11 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public class JtBool : JtToken
+    public sealed class JtBool : JtToken
     {
+        /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Boolean;
+        /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.Bool;
 
         [DefaultValue(false)] public bool Default { get; set; }
@@ -15,7 +17,7 @@ namespace Aadev.JTF.Types
         {
             Default = false;
         }
-        public JtBool(JObject obj, JTemplate template) : base(obj, template)
+        internal JtBool(JObject obj, JTemplate template) : base(obj, template)
         {
             Default = (bool)(obj["default"] ?? false);
         }
@@ -49,11 +51,11 @@ namespace Aadev.JTF.Types
             }
 
             sb.Append($"\"id\": \"{Id}\",");
-            if (IsUsingCustomType)
-                sb.Append($"\"type\": \"{CustomType}\"");
-            else
-                sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
+
+        /// <inheritdoc/>
+        public override JToken CreateDefaultToken() => new JValue(Default);
     }
 }

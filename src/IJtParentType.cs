@@ -2,9 +2,17 @@
 {
     public interface IJtParentType
     {
+        /// <summary>
+        /// Root template
+        /// </summary>
         JTemplate Template { get; }
+        /// <summary>
+        /// <see langword="true"/> if one of parents is <see cref="Types.JtArray"/>
+        /// </summary>
         bool IsInArrayPrefab { get; }
-        bool IsExternal { get; }
+        /// <summary>
+        /// Type of <see cref="JtToken"/>
+        /// </summary>
         JtTokenType Type { get; }
 
         TokensCollection Children { get; }

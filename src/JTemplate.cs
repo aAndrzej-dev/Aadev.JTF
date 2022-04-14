@@ -7,21 +7,35 @@ using System.Linq;
 
 namespace Aadev.JTF
 {
-    public class JTemplate : IJtParentType
+    public sealed class JTemplate
     {
+        /// <summary>
+        /// Name of template. Default is file name
+        /// </summary>
         [Category("General")] public string Name { get; set; }
+        /// <summary>
+        /// Absolute path to jtf file
+        /// </summary>
         [Category("General")] public string Filename { get; }
+        /// <summary>
+        /// Version of tempalte
+        /// </summary>
         [Category("General")] public int Version { get; set; }
-        [Category("General")] public string? CustomTypesFile { get; set; }
+        /// <summary>
+        /// Relative path to types dictionary file
+        /// </summary>
+
+        [Category("General")] public string? CustomValuesDictionaryFile { get; set; }
+        /// <summary>
+        /// Description of template
+        /// </summary>
         [Category("General")] public string? Description { get; set; }
+        /// <summary>
+        /// Root elemnts in template
+        /// </summary>
+        [Browsable(false)] public JtToken Root { get; }
 
-        [Browsable(false)] public TokensCollection Children { get; }
-        [Browsable(false)] public JTemplate Template => this;
-        [Browsable(false)] public bool IsInArrayPrefab => false;
-        [Browsable(false)] public JtTokenType Type => JtTokenType.Unknown;
-        [Browsable(false)] public bool IsExternal => false;
-
-        [Browsable(false)] private CustomType[]? CustomTypes { get; }
+        [Browsable(false)] private CustomValue[] CustomValues { get; }
 
         public static JTemplate CreateTemplate(string filename, int version, string? name = null, string? description = null, string? customTypeFilename = null)
         {
@@ -50,15 +64,24 @@ namespace Aadev.JTF
 
         }
 
+        /// <summary>
+        /// Load template form file
+        /// </summary>
+        /// <param name="filename">File to load form</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="Exception"></exception>
+        /// <exception cref="InvalidJtfFileTypeException"></exception>
+        /// <exception cref="FileNotFoundException"></exception>
         public JTemplate(string filename)
         {
             Filename = filename ?? throw new ArgumentNullException(nameof(filename));
-            Children = new TokensCollection(this);
+
+            if (!File.Exists(filename))
+                throw new FileNotFoundException(filename);
 
             JObject? root;
             try
             {
-
                 root = JObject.Parse(File.ReadAllText(Filename));
             }
             catch (Exception ex)
@@ -73,7 +96,7 @@ namespace Aadev.JTF
 
 
             Name = (string?)root["name"] ?? Path.GetFileNameWithoutExtension(Filename);
-            CustomTypesFile = (string?)root["typesFile"];
+            CustomValuesDictionaryFile = (string?)root["valuesDictionaryFile"];
             Description = (string?)root["description"];
 
 
@@ -85,73 +108,63 @@ namespace Aadev.JTF
 
             Version = ver;
 
-            if (!string.IsNullOrEmpty(CustomTypesFile))
+            if (!string.IsNullOrEmpty(CustomValuesDictionaryFile))
             {
-                string? absoluteTypeFile = Path.GetFullPath(CustomTypesFile, Path.GetDirectoryName(Filename)!);
+                string? absoluteTypeFile = Path.GetFullPath(CustomValuesDictionaryFile, Path.GetDirectoryName(Filename)!);
 
                 if (!File.Exists(absoluteTypeFile))
                     throw new FileNotFoundException(absoluteTypeFile);
 
-                try
+                JObject valuesDictionaryRoot = JObject.Parse(File.ReadAllText(absoluteTypeFile!));
+
+                if (!((string?)valuesDictionaryRoot["type"]).Compare("valuesdictionary", true))
                 {
-                    JObject typesRoot = JObject.Parse(File.ReadAllText(absoluteTypeFile!));
-
-                    if (!((string?)typesRoot["type"]).Compare("types", true))
-                    {
-                        throw new InvalidJtfFileTypeException(absoluteTypeFile!, "types", (string?)typesRoot["type"]);
-                    }
-                    List<CustomType> types = new List<CustomType>();
-                    foreach (JToken item in typesRoot["types"]!)
-                    {
-                        try
-                        {
-                            string? id = (string?)item["id"];
-                            string? source = (string?)item["source"];
-
-                            if (id is null)
-                                continue;
-                            if (source is null)
-                                continue;
-
-                            source = Path.GetFullPath(source, Path.GetDirectoryName(absoluteTypeFile)!);
-
-
-
-                            types.Add(new CustomType(id, source));
-                        }
-                        catch (Exception)
-                        {
-                            CustomTypes = types.ToArray();
-                            throw;
-                        }
-
-
-
-                    }
-                    CustomTypes = types.ToArray();
+                    throw new InvalidJtfFileTypeException(absoluteTypeFile!, "valuesdictionary", (string?)valuesDictionaryRoot["type"]);
                 }
-                catch (Exception)
+                List<CustomValue> types = new List<CustomValue>();
+                foreach (JValue item in valuesDictionaryRoot["values"]!)
                 {
-                    throw;
+                    string? source = (string?)item.Value;
+
+                    if (source is null)
+                        return;
+
+                    source = Path.GetFullPath(source.ToString(), Path.GetDirectoryName(absoluteTypeFile)!);
+
+                    if (!File.Exists(source))
+                        throw new FileNotFoundException(source);
+
+                    types.Add(CustomValue.LoadFormFile(source.ToString(), this));
                 }
+                CustomValues = types.ToArray();
+
 
 
             }
+            CustomValues ??= Array.Empty<CustomValue>();
+            if (root["root"] is null)
+                return;
 
-
-
-            foreach (JObject item in root["content"]!)
-            {
-                Children.Add(JtToken.Create(item, this));
-            }
+            Root = JtToken.Create((JObject)root["root"], this);
 
 
 
 
         }
 
-        public CustomType? GetCustomType(string id) => CustomTypes?.FirstOrDefault(x => x.Id == id);
-        public CustomType[]? GetCustomTypes() => CustomTypes;
+
+        /// <summary>
+        /// Gets custom type in <see cref="JTemplate"/> with specific id
+        /// </summary>
+        /// <param name="id">Id of custom type</param>
+        /// <returns>Custom type with specific id</returns>
+        public CustomValue? GetCustomValue(string id) => CustomValues?.FirstOrDefault(x => x.Id == id);
+
+        /// <summary>
+        /// Gets all custom types in <see cref="JTemplate"/>
+        /// </summary>
+        /// <returns>Custom types registered in template</returns>
+        public CustomValue[] GetCustomValues() => CustomValues;
 
     }
 }

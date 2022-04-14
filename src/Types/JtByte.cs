@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public class JtByte : JtToken
+    public sealed class JtByte : JtToken
     {
         private const byte minValue = byte.MinValue;
         private const byte maxValue = byte.MaxValue;
@@ -12,7 +12,9 @@ namespace Aadev.JTF.Types
         private byte min;
         private byte max;
 
+        /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Integer;
+        /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.Byte;
 
 
@@ -26,7 +28,7 @@ namespace Aadev.JTF.Types
             Max = maxValue;
             Default = 0;
         }
-        public JtByte(JObject obj, JTemplate template) : base(obj, template)
+        internal JtByte(JObject obj, JTemplate template) : base(obj, template)
         {
             Min = (byte)(obj["min"] ?? minValue);
             Max = (byte)(obj["max"] ?? maxValue);
@@ -66,11 +68,11 @@ namespace Aadev.JTF.Types
             }
 
             sb.Append($"\"id\": \"{Id}\",");
-            if (IsUsingCustomType)
-                sb.Append($"\"type\": \"{CustomType}\"");
-            else
-                sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
+
+        /// <inheritdoc/>
+        public override JToken CreateDefaultToken() => new JValue(Default);
     }
 }

@@ -4,15 +4,16 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public class JtInt : JtToken
+    public sealed class JtInt : JtToken
     {
         private const int minValue = int.MinValue;
         private const int maxValue = int.MaxValue;
         private int @default;
         private int min;
         private int max;
-
+        /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Integer;
+        /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.Int;
 
 
@@ -25,7 +26,7 @@ namespace Aadev.JTF.Types
             Max = maxValue;
             Default = 0;
         }
-        public JtInt(JObject obj, JTemplate template) : base(obj, template)
+        internal JtInt(JObject obj, JTemplate template) : base(obj, template)
         {
             Min = (int)(obj["min"] ?? minValue);
             Max = (int)(obj["max"] ?? maxValue);
@@ -65,11 +66,11 @@ namespace Aadev.JTF.Types
             }
 
             sb.Append($"\"id\": \"{Id}\",");
-            if (IsUsingCustomType)
-                sb.Append($"\"type\": \"{CustomType}\"");
-            else
-                sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
+
+        /// <inheritdoc/>
+        public override JToken CreateDefaultToken() => new JValue(Default);
     }
 }

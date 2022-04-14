@@ -10,7 +10,7 @@ namespace Aadev.JTF
 {
     public abstract class JtToken
     {
-        private JtConditionCollection? _conditions;
+        private JtConditionCollection? conditions;
         private IJtParentType? parent;
         private JTemplate template;
 
@@ -46,10 +46,7 @@ namespace Aadev.JTF
         /// Unique id; used in conditions
         /// </summary>
         [Category("General")] public string Id { get; }
-        /// <summary>
-        /// Custom source of properties
-        /// </summary>
-        [Browsable(false)] public CustomType? CustomType { get; }
+
 
         /// <summary>
         /// Root template
@@ -76,22 +73,13 @@ namespace Aadev.JTF
         [MemberNotNullWhen(true, nameof(Parent))]
 #endif
         [Browsable(false)] public bool IsDynamicName => IsArrayPrefab && ((JtArray)Parent!).MakeAsObject;
-        /// <summary>
-        /// <see langword="true"/> if current element is unisg custom type
-        /// </summary>
-#if NET5_0_OR_GREATER
-        [MemberNotNullWhen(true, nameof(CustomType))]
-#endif
-        [Browsable(false)] public bool IsUsingCustomType => !(CustomType is null);
+
 
         /// <summary>
         /// Conditions of current element
         /// </summary>
-        [Category("General")] public JtConditionCollection Conditions { get => _conditions ??= new JtConditionCollection(); set => _conditions = value; }
-        /// <summary>
-        /// <see langword="true"/> if current tag is using custom type or when one of parent is using custom type
-        /// </summary>
-        [Browsable(false)] public bool IsExternal => IsUsingCustomType || Parent?.IsExternal is true;
+        [Category("General")] public JtConditionCollection Conditions => conditions ??= new JtConditionCollection();
+
 
 
 
@@ -99,7 +87,7 @@ namespace Aadev.JTF
         /// Create empty instace of current element
         /// </summary>
         /// <param name="template">Root template</param>
-        protected JtToken(JTemplate template)
+        protected internal JtToken(JTemplate template)
         {
             this.template = template;
             Id = Guid.NewGuid().ToString();
@@ -113,13 +101,8 @@ namespace Aadev.JTF
         /// </summary>
         /// <param name="template">Root template</param>
         /// <param name="obj">Object to load proerties from</param>
-        protected JtToken(JObject obj, JTemplate template)
+        protected internal JtToken(JObject obj, JTemplate template)
         {
-            string? typeString = (string?)obj["type"];
-            if (typeString?.StartsWith("@") is true)
-            {
-                CustomType = template.GetCustomType(typeString.AsSpan()[1..].ToString());
-            }
             this.template = template;
             Name = (string?)obj["name"];
             Description = (string?)obj["description"];
@@ -181,29 +164,20 @@ namespace Aadev.JTF
                 return JtTokenType.GetById(typeId).CreateInstance(item, template);
             }
 
-
-            string typeString = (string?)item["type"] ?? throw new Exception("item dont have type");
-
-            if (typeString.Contains('|'))
-                typeString = typeString.Split('|')[0];
-
+            string typeString = (string?)item["type"] ?? throw new Exception($"Item '{item["name"]}' dont have type");
 
 
             if (typeString.StartsWith("#"))
                 throw new NotImplementedException("Types whih start with '#' are currently not suported!");
 
-
-            if (typeString.StartsWith("@"))
-            {
-                CustomType? ctype = template.GetCustomType(typeString.AsSpan()[1..].ToString());
-
-
-
-                return ctype?.BaseType?.CreateInstance(item, template) ?? new JtUnknown(item, template);
-            }
-
             return JtTokenType.GetByName(typeString).CreateInstance(item, template);
 
         }
+
+        /// <summary>
+        /// Creates <see cref="JToken"/> with default value of <see cref="JtToken"/>
+        /// </summary>
+        /// <returns>New <see cref="JToken"/> with default value </returns>
+        public abstract JToken CreateDefaultToken();
     }
 }

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public class JtString : JtToken
+    public sealed class JtString : JtToken
     {
         private int maxLength;
         private int minLength;
@@ -23,7 +23,7 @@ namespace Aadev.JTF.Types
             MaxLength = int.MaxValue;
             Default = string.Empty;
         }
-        public JtString(JObject obj, JTemplate template) : base(obj, template)
+        internal JtString(JObject obj, JTemplate template) : base(obj, template)
         {
             MinLength = (int)(obj["minLength"] ?? 0);
             MaxLength = (int)(obj["maxLength"] ?? -1);
@@ -40,7 +40,7 @@ namespace Aadev.JTF.Types
             if (DisplayName != Name)
                 sb.Append($"\"displayName\": \"{DisplayName}\",");
 
-            if (MinLength != 0)
+            if (MinLength != -1)
                 sb.Append($"\"minLength\": {MinLength},");
             if (MaxLength != int.MaxValue)
                 sb.Append($"\"maxLength\": {MaxLength},");
@@ -63,11 +63,12 @@ namespace Aadev.JTF.Types
             }
 
             sb.Append($"\"id\": \"{Id}\",");
-            if (IsUsingCustomType)
-                sb.Append($"\"type\": \"{CustomType}\"");
-            else
-                sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
+
+
+        /// <inheritdoc/>
+        public override JToken CreateDefaultToken() => new JValue(Default);
     }
 }

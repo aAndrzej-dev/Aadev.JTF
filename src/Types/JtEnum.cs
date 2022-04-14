@@ -1,45 +1,68 @@
 ﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public class JtEnum : JtToken
+    public sealed class JtEnum : JtToken
     {
+        private string @default;
+        private bool allowCustomValues;
+        private string? customValueId;
+
+        /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.String;
+        /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.Enum;
 
-        public string Default { get; set; }
-        public List<string?> Values { get; }
-        [DefaultValue(false)] public bool CanUseCustomValue { get; set; }
+        public string Default
+        {
+            get => @default;
+            set
+            {
+                if (!Values.Contains(value) && !AllowCustomValues)
+                    @default = Values.Count > 0 ? (Values[0] ?? string.Empty) : string.Empty;
+                else @default = value;
+            }
+        }
+        public IList<string?> Values { get; private set; }
+        [DefaultValue(false)] public bool AllowCustomValues { get => allowCustomValues; set => allowCustomValues = value; }
+
+        public string? CustomValueId { get => customValueId; set { if (customValueId == value) return; customValueId = value; Values = new List<string?>((string[])(Template.GetCustomValue(customValueId!))!.Value); } }
 
         public JtEnum(JTemplate template) : base(template)
         {
             Values = new List<string?>();
-            Default = string.Empty;
+            @default = string.Empty;
         }
-        public JtEnum(JObject obj, JTemplate template) : base(obj, template)
+        internal JtEnum(JObject obj, JTemplate template) : base(obj, template)
         {
-            Values = new List<string?>();
-
-            CanUseCustomValue = (bool)(obj["canCustom"] ?? false);
-            Default = (string?)obj["default"] ?? string.Empty;
-            if (IsUsingCustomType) obj = CustomType?.Object!;
+            allowCustomValues = (bool)(obj["allowCustom"] ?? obj["canCustom"] ?? false);
+            @default = (string?)obj["default"] ?? string.Empty;
 
 
+            List<string?> vallist = new List<string?>();
 
-            JArray? values = obj["values"] as JArray;
 
-            if (values is null)
+            if (obj["values"] is JArray values)
             {
-                return;
+                foreach (JObject item in values)
+                {
+                    vallist.Add((string?)item["name"]);
+                }
+                Values = new List<string?>(vallist);
             }
-            foreach (JObject item in values)
+            else if (((JValue?)obj["values"])?.Value is string str)
             {
-                Values.Add((string?)item["name"]);
-            }
+                if (!str.StartsWith("@"))
+                    throw new System.Exception();
 
+                customValueId = str.AsSpan(1).ToString();
+
+                Values = new List<string?>((string[])(Template.GetCustomValue(customValueId!))!.Value);
+            }
 
         }
 
@@ -55,9 +78,9 @@ namespace Aadev.JTF.Types
 
             if (!string.IsNullOrEmpty(Default))
                 sb.Append($"\"default\": \"{Default}\",");
-            if (CanUseCustomValue)
-                sb.Append($"\"canCustom\": true,");
-            if (!IsUsingCustomType)
+            if (AllowCustomValues)
+                sb.Append($"\"allowCustom\": true,");
+            if (customValueId is null)
             {
                 sb.Append("\"values\": [");
 
@@ -70,6 +93,11 @@ namespace Aadev.JTF.Types
                 }
 
                 sb.Append("],");
+            }
+            else
+            {
+                sb.Append($"\"values\": \"{customValueId}\"");
+
             }
 
 
@@ -91,11 +119,12 @@ namespace Aadev.JTF.Types
             }
 
             sb.Append($"\"id\": \"{Id}\",");
-            if (IsUsingCustomType)
-                sb.Append($"\"type\": \"{CustomType}\"");
-            else
-                sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
+
+        /// <inheritdoc/>
+        public override JToken CreateDefaultToken() => new JValue(Default);
     }
+
 }

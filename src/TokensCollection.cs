@@ -10,7 +10,7 @@ namespace Aadev.JTF
         private readonly List<JtToken> tokens;
         private readonly IJtParentType owner;
 
-        public List<JtToken> Tokens => tokens;
+        public event EventHandler? OnTokenAdded;
 
         public int Count => tokens.Count;
 
@@ -33,6 +33,13 @@ namespace Aadev.JTF
             this.owner = owner;
         }
 
+        public void AddRange(JtToken[] items)
+        {
+            for (int i = 0; i < items.Length; i++)
+            {
+                Add(items[i]);
+            }
+        }
 
 
 
@@ -54,8 +61,10 @@ namespace Aadev.JTF
             if (item is null)
                 return;
 
+            if (ContainsToken(item))
+                throw new Exception($"Cannot add multiple tokens with the same name, type and conditions.\nName: {item.Name}\nType: {item.Type.DisplayName}");
 
-
+            OnTokenAdded?.Invoke(this, EventArgs.Empty);
 
             tokens.Add(item);
             item.Parent = owner;
@@ -96,4 +105,5 @@ namespace Aadev.JTF
             return false;
         }
     }
+
 }

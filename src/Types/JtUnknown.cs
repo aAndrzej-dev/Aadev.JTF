@@ -3,22 +3,16 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public class JtUnknown : JtToken
+    public sealed class JtUnknown : JtToken
     {
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.None;
         /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.Unknown;
 
-        /// <inheritdoc/>
-        public JtUnknown(JObject obj, JTemplate template) : base(obj, template)
-        {
-        }
-        /// <inheritdoc/>
-        public JtUnknown(JTemplate template) : base(template)
-        {
 
-        }
+        public JtUnknown(JTemplate template) : base(template) { }
+        internal JtUnknown(JObject obj, JTemplate template) : base(obj, template) { }
         internal override void BulidJson(StringBuilder sb)
         {
             sb.Append('{');
@@ -45,11 +39,11 @@ namespace Aadev.JTF.Types
             }
 
             sb.Append($"\"id\": \"{Id}\",");
-            if (IsUsingCustomType)
-                sb.Append($"\"type\": \"{CustomType}\"");
-            else
-                sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
+
+        /// <inheritdoc/>
+        public override JToken CreateDefaultToken() => JValue.CreateUndefined();
     }
 }

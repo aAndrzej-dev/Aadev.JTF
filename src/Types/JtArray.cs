@@ -1,16 +1,20 @@
 ﻿using Newtonsoft.Json.Linq;
+using System;
 using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public class JtArray : JtToken, IJtParentType
+    public sealed class JtArray : JtToken, IJtParentType
     {
         private int fixedSize;
         private bool isFixedSize;
         private int defaultPrefabIndex;
+        private string? customValueId;
 
+        /// <inheritdoc/>
         public override JTokenType JsonType => MakeAsObject ? JTokenType.Object : JTokenType.Array;
+        /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.Array;
 
         [Browsable(false)]
@@ -23,13 +27,13 @@ namespace Aadev.JTF.Types
 
 
         TokensCollection IJtParentType.Children => Prefabs;
-
+        public string? CustomValueId { get => customValueId; set { if (customValueId == value) return; customValueId = value; Prefabs.Clear(); Prefabs.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value); } }
         public JtArray(JTemplate template) : base(template)
         {
             Prefabs = new TokensCollection(this);
         }
 
-        public JtArray(JObject obj, JTemplate template) : base(obj, template)
+        internal JtArray(JObject obj, JTemplate template) : base(obj, template)
         {
             Prefabs = new TokensCollection(this);
 
@@ -49,6 +53,16 @@ namespace Aadev.JTF.Types
             {
                 Prefabs.Add(Create(pref, template));
             }
+            else if (((JValue?)obj["prefabs"])?.Value is string str)
+            {
+                if (!str.StartsWith("@"))
+                    throw new System.Exception();
+
+                customValueId = str.AsSpan(1).ToString();
+
+                Prefabs.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value);
+
+            }
         }
 
         internal override void BulidJson(StringBuilder sb)
@@ -64,18 +78,25 @@ namespace Aadev.JTF.Types
             if (MakeAsObject)
                 sb.Append($"\"makeObject\": true,");
 
-
-            sb.Append("\"prefabs\": [");
-
-            for (int i = 0; i < Prefabs.Count; i++)
+            if (customValueId is null)
             {
-                if (i != 0)
-                    sb.Append(',');
+                sb.Append("\"prefabs\": [");
 
-                Prefabs[i].BulidJson(sb);
+                for (int i = 0; i < Prefabs.Count; i++)
+                {
+                    if (i != 0)
+                        sb.Append(',');
+
+                    Prefabs[i].BulidJson(sb);
+                }
+
+                sb.Append("],");
+            }
+            else
+            {
+                sb.Append($"\"prefabs\": \"{customValueId}\"");
             }
 
-            sb.Append("],");
 
             if (Conditions.Count > 0)
             {
@@ -93,15 +114,15 @@ namespace Aadev.JTF.Types
             }
 
             sb.Append($"\"id\": \"{Id}\",");
-            if (IsUsingCustomType)
-                sb.Append($"\"type\": \"{CustomType}\"");
-            else
-                sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
-
-
-
-
+        /// <inheritdoc/>
+        public override JToken CreateDefaultToken()
+        {
+            if (MakeAsObject)
+                return new JObject();
+            return new JArray();
+        }
     }
 }

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public class JtDouble : JtToken
+    public sealed class JtDouble : JtToken
     {
         private const double minValue = double.MinValue;
         private const double maxValue = double.MaxValue;
@@ -12,7 +12,9 @@ namespace Aadev.JTF.Types
         private double min;
         private double max;
 
+        /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Float;
+        /// <inheritdoc/>
         public override JtTokenType Type => JtTokenType.Double;
 
 
@@ -25,7 +27,7 @@ namespace Aadev.JTF.Types
             Max = maxValue;
             Default = 0;
         }
-        public JtDouble(JObject obj, JTemplate template) : base(obj, template)
+        internal JtDouble(JObject obj, JTemplate template) : base(obj, template)
         {
             Min = (double)(obj["min"] ?? minValue);
             Max = (double)(obj["max"] ?? maxValue);
@@ -65,11 +67,12 @@ namespace Aadev.JTF.Types
             }
 
             sb.Append($"\"id\": \"{Id}\",");
-            if (IsUsingCustomType)
-                sb.Append($"\"type\": \"{CustomType}\"");
-            else
-                sb.Append($"\"type\": \"{Type.Name}\"");
+            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
+
+
+        /// <inheritdoc/>
+        public override JToken CreateDefaultToken() => new JValue(Default);
     }
 }
