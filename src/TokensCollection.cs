@@ -10,16 +10,18 @@ namespace Aadev.JTF
         private readonly List<JtToken> tokens;
         private readonly IJtParentType owner;
 
-        public event EventHandler? OnTokenAdded;
 
         public int Count => tokens.Count;
 
-        public bool IsReadOnly => ((IList<JtToken>)tokens).IsReadOnly;
+        bool ICollection<JtToken>.IsReadOnly => ((IList<JtToken>)tokens).IsReadOnly;
 
         public JtToken this[int index]
         {
-            get => tokens[index]; set
+            get => tokens[index];
+            set
             {
+                if (ReadOnly)
+                    return;
                 tokens[index].Parent = null;
 
                 value.Parent = owner;
@@ -35,18 +37,21 @@ namespace Aadev.JTF
 
         public void AddRange(JtToken[] items)
         {
+            if (ReadOnly)
+                return;
             for (int i = 0; i < items.Length; i++)
             {
                 Add(items[i]);
             }
         }
 
-
+        public bool ReadOnly { get; set; }
 
         public int IndexOf(JtToken item) => tokens.IndexOf(item);
         public void Insert(int index, JtToken item)
         {
-
+            if (ReadOnly)
+                return;
 
             if (ContainsToken(item))
                 return;
@@ -55,16 +60,22 @@ namespace Aadev.JTF
             item.Parent = owner;
             tokens.Insert(index, item);
         }
-        public void RemoveAt(int index) => Remove(this[index]);
+        public void RemoveAt(int index)
+        {
+            if (ReadOnly)
+                return;
+            Remove(this[index]);
+        }
+
         public void Add(JtToken item)
         {
+            if (ReadOnly)
+                return;
             if (item is null)
                 return;
 
             if (ContainsToken(item))
                 throw new Exception($"Cannot add multiple tokens with the same name, type and conditions.\nName: {item.Name}\nType: {item.Type.DisplayName}");
-
-            OnTokenAdded?.Invoke(this, EventArgs.Empty);
 
             tokens.Add(item);
             item.Parent = owner;
@@ -72,6 +83,8 @@ namespace Aadev.JTF
         }
         public void Clear()
         {
+            if (ReadOnly)
+                return;
             for (int i = 0; i < tokens.Count; i++)
             {
                 tokens[i].Parent = null;
@@ -82,6 +95,8 @@ namespace Aadev.JTF
         void ICollection<JtToken>.CopyTo(JtToken[] array, int arrayIndex) => throw new NotImplementedException();
         public bool Remove(JtToken item)
         {
+            if (ReadOnly)
+                return false;
             if (item is null)
                 return false;
             if (!tokens.Contains(item))

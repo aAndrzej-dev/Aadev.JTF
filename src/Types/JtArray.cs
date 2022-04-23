@@ -27,7 +27,25 @@ namespace Aadev.JTF.Types
 
 
         TokensCollection IJtParentType.Children => Prefabs;
-        public string? CustomValueId { get => customValueId; set { if (customValueId == value) return; customValueId = value; Prefabs.Clear(); Prefabs.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value); } }
+        public string? CustomValueId
+        {
+            get => customValueId; set
+            {
+
+                if (customValueId == value) return;
+                customValueId = value;
+                if (customValueId is null)
+                {
+                    Prefabs.ReadOnly = false;
+                    return;
+                }
+                Prefabs.Clear();
+                Prefabs.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value);
+            }
+        }
+
+        public override bool HasExternalSources => !(CustomValueId is null);
+
         public JtArray(JTemplate template) : base(template)
         {
             Prefabs = new TokensCollection(this);
@@ -39,6 +57,7 @@ namespace Aadev.JTF.Types
 
             MakeAsObject = (bool)(obj["makeObject"] ?? false);
             FixedSize = (int)(obj["fixedSize"] ?? -1);
+            DefaultPrefabIndex = (int)(obj["defaultPrefabIndex"] ?? 0);
 
             if (obj["prefabs"] is JArray arr)
             {
@@ -56,10 +75,10 @@ namespace Aadev.JTF.Types
             else if (((JValue?)obj["prefabs"])?.Value is string str)
             {
                 if (!str.StartsWith("@"))
-                    throw new System.Exception();
+                    throw new System.Exception("Custom values name must starts with '@'");
 
                 customValueId = str.AsSpan(1).ToString();
-
+                Prefabs.ReadOnly = true;
                 Prefabs.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value);
 
             }
@@ -67,16 +86,14 @@ namespace Aadev.JTF.Types
 
         internal override void BulidJson(StringBuilder sb)
         {
-            sb.Append('{');
-            if (!IsArrayPrefab)
-                sb.Append($"\"name\": \"{Name}\",");
-            if (!string.IsNullOrWhiteSpace(Description))
-                sb.Append($"\"description\": \"{Description}\",");
-            if (DisplayName != Name)
-                sb.Append($"\"displayName\": \"{DisplayName}\",");
+            BuildCommonJson(sb);
+            sb.Append(',');
+
 
             if (MakeAsObject)
                 sb.Append($"\"makeObject\": true,");
+            if (DefaultPrefabIndex != 0)
+                sb.Append($"\"defaultPrefabIndex\": {DefaultPrefabIndex},");
 
             if (customValueId is null)
             {
@@ -90,35 +107,16 @@ namespace Aadev.JTF.Types
                     Prefabs[i].BulidJson(sb);
                 }
 
-                sb.Append("],");
+                sb.Append(']');
             }
             else
             {
-                sb.Append($"\"prefabs\": \"{customValueId}\"");
+                sb.Append($"\"prefabs\": \"@{customValueId}\"");
             }
-
-
-            if (Conditions.Count > 0)
-            {
-                sb.Append("\"conditions\": [");
-
-                for (int i = 0; i < Conditions.Count; i++)
-                {
-                    if (i != 0)
-                        sb.Append(',');
-
-                    sb.Append(Conditions[i].GetString());
-                }
-
-                sb.Append("],");
-            }
-
-            sb.Append($"\"id\": \"{Id}\",");
-            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
         /// <inheritdoc/>
-        public override JToken CreateDefaultToken()
+        public override JToken CreateDefaultValue()
         {
             if (MakeAsObject)
                 return new JObject();

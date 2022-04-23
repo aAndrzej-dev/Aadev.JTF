@@ -27,7 +27,7 @@ namespace Aadev.JTF.Types
                 else @default = value;
             }
         }
-        public IList<string?> Values { get; private set; }
+        public List<string?> Values { get; private set; }
         [DefaultValue(false)] public bool AllowCustomValues { get => allowCustomValues; set => allowCustomValues = value; }
 
         public string? CustomValueId { get => customValueId; set { if (customValueId == value) return; customValueId = value; Values = new List<string?>((string[])(Template.GetCustomValue(customValueId!))!.Value); } }
@@ -57,32 +57,30 @@ namespace Aadev.JTF.Types
             else if (((JValue?)obj["values"])?.Value is string str)
             {
                 if (!str.StartsWith("@"))
-                    throw new System.Exception();
+                    throw new System.Exception("Custom values name must starts with '@'");
 
                 customValueId = str.AsSpan(1).ToString();
 
                 Values = new List<string?>((string[])(Template.GetCustomValue(customValueId!))!.Value);
+
             }
-
+            else
+            {
+                Values = new List<string?>();
+            }
         }
-
+        public override bool HasExternalSources => !(CustomValueId is null);
         internal override void BulidJson(StringBuilder sb)
         {
-            sb.Append('{');
-            if (!IsArrayPrefab)
-                sb.Append($"\"name\": \"{Name}\",");
-            if (!string.IsNullOrWhiteSpace(Description))
-                sb.Append($"\"description\": \"{Description}\",");
-            if (DisplayName != Name)
-                sb.Append($"\"displayName\": \"{DisplayName}\",");
+            BuildCommonJson(sb);
 
             if (!string.IsNullOrEmpty(Default))
-                sb.Append($"\"default\": \"{Default}\",");
+                sb.Append($", \"default\": \"{Default}\"");
             if (AllowCustomValues)
-                sb.Append($"\"allowCustom\": true,");
+                sb.Append($", \"allowCustom\": true");
             if (customValueId is null)
             {
-                sb.Append("\"values\": [");
+                sb.Append(", \"values\": [");
 
                 for (int i = 0; i < Values.Count; i++)
                 {
@@ -92,39 +90,18 @@ namespace Aadev.JTF.Types
                     sb.Append($"{{\"name\": \"{Values[i]}\"}}");
                 }
 
-                sb.Append("],");
+                sb.Append(']');
             }
             else
             {
-                sb.Append($"\"values\": \"{customValueId}\"");
+                sb.Append($", \"values\": \"@{customValueId}\"");
 
             }
-
-
-
-
-            if (Conditions.Count > 0)
-            {
-                sb.Append("\"conditions\": [");
-
-                for (int i = 0; i < Conditions.Count; i++)
-                {
-                    if (i != 0)
-                        sb.Append(',');
-
-                    sb.Append(Conditions[i].GetString());
-                }
-
-                sb.Append("],");
-            }
-
-            sb.Append($"\"id\": \"{Id}\",");
-            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
 
         /// <inheritdoc/>
-        public override JToken CreateDefaultToken() => new JValue(Default);
+        public override JToken CreateDefaultValue() => new JValue(Default);
     }
 
 }

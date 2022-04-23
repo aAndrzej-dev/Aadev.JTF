@@ -13,6 +13,8 @@ namespace Aadev.JTF
         private JtConditionCollection? conditions;
         private IJtParentType? parent;
         private JTemplate template;
+        private string? name;
+        private string? displayName;
 
         /// <summary>
         /// Type of json node
@@ -25,7 +27,8 @@ namespace Aadev.JTF
         /// <summary>
         /// Name of current token used as key in json file; <see langword="null"/> when <see cref="IsArrayPrefab"/> is <see langword="true"/>
         /// </summary>
-        [Category("General")] public string? Name { get; set; }
+        [Category("General"), Description("Name of current token used as key in json file")]
+        public string? Name { get => name; set { if (IsArrayPrefab || IsRoot) return; if (DisplayName == name) DisplayName = value; name = value; } }
         /// <summary>
         /// Description of current <see cref="JtToken"/>
         /// </summary>
@@ -37,7 +40,7 @@ namespace Aadev.JTF
         /// <summary>
         /// Name displayed in editor
         /// </summary>
-        [Category("General")] public string? DisplayName { get; set; }
+        [Category("General")] public string? DisplayName { get => displayName; set { if (IsArrayPrefab || IsRoot) return; displayName = value; } }
         /// <summary>
         /// Parent element
         /// </summary>
@@ -45,8 +48,7 @@ namespace Aadev.JTF
         /// <summary>
         /// Unique id; used in conditions
         /// </summary>
-        [Category("General")] public string Id { get; }
-
+        [Category("General")] public string? Id { get; set; }
 
         /// <summary>
         /// Root template
@@ -58,7 +60,7 @@ namespace Aadev.JTF
 #if NET5_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Parent))]
 #endif
-        [Browsable(false)] public bool IsArrayPrefab => Parent?.Type == JtTokenType.Array;
+        [Browsable(false)] public bool IsArrayPrefab => Parent is JtArray;
         /// <summary>
         /// <see langword="true"/> if one of parents is <see cref="JtArray"/>
         /// </summary>
@@ -72,16 +74,16 @@ namespace Aadev.JTF
 #if NET5_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Parent))]
 #endif
-        [Browsable(false)] public bool IsDynamicName => IsArrayPrefab && ((JtArray)Parent!).MakeAsObject;
+        [Browsable(false)] public bool IsDynamicName => Parent is JtArray array && array.MakeAsObject;
 
+        [Browsable(false)] public bool IsRoot => Template.Root == this;
 
         /// <summary>
         /// Conditions of current element
         /// </summary>
         [Category("General")] public JtConditionCollection Conditions => conditions ??= new JtConditionCollection();
 
-
-
+        [Browsable(false)] public virtual bool HasExternalSources { get; }
 
         /// <summary>
         /// Create empty instace of current element
@@ -90,7 +92,6 @@ namespace Aadev.JTF
         protected internal JtToken(JTemplate template)
         {
             this.template = template;
-            Id = Guid.NewGuid().ToString();
         }
 
 
@@ -108,7 +109,7 @@ namespace Aadev.JTF
             Description = (string?)obj["description"];
             Required = (bool)(obj["required"] ?? false);
             DisplayName = (string?)(obj["displayName"] ?? Name);
-            Id = (string?)obj["id"] ?? Guid.NewGuid().ToString();
+            Id = (string?)obj["id"];
 
             if (obj["if"] is JArray conditions)
             {
@@ -133,6 +134,34 @@ namespace Aadev.JTF
         public JtToken[] GetTwinFamily() => Parent is null ? (new JtToken[] { this }) : Parent.Children.Where(x => x.Name == Name && x.Conditions == Conditions).ToArray();
 
         internal abstract void BulidJson(StringBuilder sb);
+        protected internal void BuildCommonJson(StringBuilder sb)
+        {
+            sb.Append('{');
+            if (!IsArrayPrefab && !IsRoot)
+                sb.Append($"\"name\": \"{Name}\",");
+            sb.Append($"\"type\": \"{Type.Name}\"");
+            if (!string.IsNullOrWhiteSpace(Description))
+                sb.Append($", \"description\": \"{Description}\"");
+            if (DisplayName != Name)
+                sb.Append($", \"displayName\": \"{DisplayName}\"");
+            if (!(Id is null))
+                sb.Append($", \"id\": \"{Id}\"");
+
+            if (Conditions.Count > 0)
+            {
+                sb.Append(", \"conditions\": [");
+
+                for (int i = 0; i < Conditions.Count; i++)
+                {
+                    if (i != 0)
+                        sb.Append(',');
+
+                    Conditions[i].BulidJson(sb);
+                }
+
+                sb.Append(']');
+            }
+        }
 
         /// <summary>
         /// Convert current tag to json 
@@ -157,6 +186,7 @@ namespace Aadev.JTF
         public static JtToken Create(JObject item, JTemplate template)
         {
             if (item is null) throw new ArgumentNullException(nameof(item));
+            if (template is null) throw new ArgumentNullException(nameof(template));
 
 
             if (((JValue?)item["type"])?.Value is int typeId)
@@ -166,10 +196,6 @@ namespace Aadev.JTF
 
             string typeString = (string?)item["type"] ?? throw new Exception($"Item '{item["name"]}' dont have type");
 
-
-            if (typeString.StartsWith("#"))
-                throw new NotImplementedException("Types whih start with '#' are currently not suported!");
-
             return JtTokenType.GetByName(typeString).CreateInstance(item, template);
 
         }
@@ -178,6 +204,6 @@ namespace Aadev.JTF
         /// Creates <see cref="JToken"/> with default value of <see cref="JtToken"/>
         /// </summary>
         /// <returns>New <see cref="JToken"/> with default value </returns>
-        public abstract JToken CreateDefaultToken();
+        public abstract JToken CreateDefaultValue();
     }
 }

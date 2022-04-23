@@ -15,7 +15,7 @@ namespace Aadev.JTF
 
         private CustomValue(JObject obj, JTemplate template)
         {
-            Id = (string)obj["id"] ?? throw new Exception("Invalid id");
+            Id = (string?)obj["id"] ?? throw new Exception("Invalid id");
 
 
             if (!int.TryParse((string?)obj["version"], out int ver))
@@ -30,7 +30,7 @@ namespace Aadev.JTF
 
 
             if (!Enum.TryParse((string?)obj["valueType"], true, out CustomValueType customValueType))
-                return;
+                throw new Exception("Invalid value type");
             CustomValueType = customValueType;
 
 
@@ -39,7 +39,7 @@ namespace Aadev.JTF
                 case CustomValueType.TokenCollection:
                     {
                         if (!(obj["content"] is JArray array))
-                            throw new Exception();
+                            throw new Exception("Content is null");
 
                         JtToken[] tokens = new JtToken[array.Count];
 
@@ -53,18 +53,15 @@ namespace Aadev.JTF
                 case CustomValueType.Token:
                     {
                         if (!(obj["content"] is JObject val))
-                            throw new Exception();
+                            throw new Exception("Content is null");
                         Value = JtToken.Create(val, template);
 
                     }
                     break;
-                case CustomValueType.StringCollection:
-                    throw new NotImplementedException();
-                    break;
                 case CustomValueType.EnumValuesCollection:
                     {
                         if (!(obj["content"] is JArray array))
-                            throw new Exception();
+                            throw new Exception("Content is null");
 
                         string?[] tokens = new string[array.Count];
 
@@ -76,7 +73,7 @@ namespace Aadev.JTF
                     }
                     break;
                 default:
-                    break;
+                    throw new Exception("Invalid enum value");
             }
 
         }
@@ -97,7 +94,6 @@ namespace Aadev.JTF
     {
         TokenCollection,
         Token,
-        StringCollection,
         EnumValuesCollection,
     }
 }

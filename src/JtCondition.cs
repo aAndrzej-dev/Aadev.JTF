@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
+using System.Text;
 
 namespace Aadev.JTF
 {
@@ -35,15 +36,9 @@ namespace Aadev.JTF
 
 
         public override string ToString() => VariableId + (Type == ConditionType.Equal ? " = " : (Type == ConditionType.NotEqual ? " != " : (Type == ConditionType.Less ? " < " : " > "))) + Value;
-        public string GetString() => $"{{ \"id\": \"{VariableId}\", \"type\": \"{Type.ToString().ToLower()}\", \"value\": \"{Value}\" }}";
 
+        internal void BulidJson(StringBuilder sb) => sb.Append($"{{ \"id\": \"{VariableId}\", \"type\": \"{Type.ToString().ToLower()}\", \"value\": \"{Value}\" }}");
 
-        public JObject ToJObject() => new JObject()
-        {
-            ["id"] = VariableId,
-            ["value"] = Value,
-            ["type"] = Type.ToString().ToLower()
-        };
 
         public bool Check(string? value) => Type switch
         {

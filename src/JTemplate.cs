@@ -1,9 +1,11 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Aadev.JTF.Types;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Aadev.JTF
 {
@@ -63,6 +65,27 @@ namespace Aadev.JTF
 
 
         }
+
+        public string GetJson()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append('{');
+            sb.Append($"\"name\": \"{Name}\",");
+            sb.Append($"\"type\": \"main\",");
+            sb.Append($"\"version\": {Version},");
+
+            if (!(Description is null))
+                sb.Append($"\"description\": \"{Description}\",");
+            if (!(CustomValuesDictionaryFile is null))
+                sb.Append($"\"valuesDictionaryFile\": \"{CustomValuesDictionaryFile}\",");
+
+            sb.Append("\"root\": ");
+            Root.BulidJson(sb);
+            sb.Append('}');
+            return sb.ToString();
+
+        }
+
 
         /// <summary>
         /// Load template form file
@@ -127,7 +150,7 @@ namespace Aadev.JTF
                     string? source = (string?)item.Value;
 
                     if (source is null)
-                        return;
+                        continue;
 
                     source = Path.GetFullPath(source.ToString(), Path.GetDirectoryName(absoluteTypeFile)!);
 
@@ -142,16 +165,12 @@ namespace Aadev.JTF
 
             }
             CustomValues ??= Array.Empty<CustomValue>();
-            if (root["root"] is null)
-                return;
-
-            Root = JtToken.Create((JObject)root["root"], this);
-
-
-
+            if (root["root"] is JObject jobj)
+                Root = JtToken.Create(jobj, this);
+            else
+                Root = new JtBlock(this);
 
         }
-
 
         /// <summary>
         /// Gets custom type in <see cref="JTemplate"/> with specific id

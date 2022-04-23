@@ -32,43 +32,19 @@ namespace Aadev.JTF.Types
 
         internal override void BulidJson(StringBuilder sb)
         {
-            sb.Append('{');
-            if (!IsArrayPrefab)
-                sb.Append($"\"name\": \"{Name}\",");
-            if (!string.IsNullOrWhiteSpace(Description))
-                sb.Append($"\"description\": \"{Description}\",");
-            if (DisplayName != Name)
-                sb.Append($"\"displayName\": \"{DisplayName}\",");
-
-            if (MinLength != -1)
-                sb.Append($"\"minLength\": {MinLength},");
-            if (MaxLength != int.MaxValue)
-                sb.Append($"\"maxLength\": {MaxLength},");
+            BuildCommonJson(sb);
+            if (MinLength != 0)
+                sb.Append($", \"minLength\": {MinLength}");
+            if (MaxLength != -1)
+                sb.Append($", \"maxLength\": {MaxLength}");
             if (!string.IsNullOrEmpty(Default))
-                sb.Append($"\"default\": \"{Default}\",");
+                sb.Append($", \"default\": \"{Default}\"");
 
-            if (Conditions.Count > 0)
-            {
-                sb.Append("\"conditions\": [");
-
-                for (int i = 0; i < Conditions.Count; i++)
-                {
-                    if (i != 0)
-                        sb.Append(',');
-
-                    sb.Append(Conditions[i].GetString());
-                }
-
-                sb.Append("],");
-            }
-
-            sb.Append($"\"id\": \"{Id}\",");
-            sb.Append($"\"type\": \"{Type.Name}\"");
             sb.Append('}');
         }
 
 
         /// <inheritdoc/>
-        public override JToken CreateDefaultToken() => new JValue(Default);
+        public override JToken CreateDefaultValue() => new JValue(Default);
     }
 }

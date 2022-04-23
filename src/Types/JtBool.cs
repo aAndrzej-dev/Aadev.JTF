@@ -24,38 +24,13 @@ namespace Aadev.JTF.Types
 
         internal override void BulidJson(StringBuilder sb)
         {
-            sb.Append('{');
-            if (!IsArrayPrefab)
-                sb.Append($"\"name\": \"{Name}\",");
-            if (!string.IsNullOrWhiteSpace(Description))
-                sb.Append($"\"description\": \"{Description}\",");
-            if (DisplayName != Name)
-                sb.Append($"\"displayName\": \"{DisplayName}\",");
+            BuildCommonJson(sb);
 
             if (Default)
-                sb.Append($"\"default\": true,");
-
-            if (Conditions.Count > 0)
-            {
-                sb.Append("\"conditions\": [");
-
-                for (int i = 0; i < Conditions.Count; i++)
-                {
-                    if (i != 0)
-                        sb.Append(',');
-
-                    sb.Append(Conditions[i].GetString());
-                }
-
-                sb.Append("],");
-            }
-
-            sb.Append($"\"id\": \"{Id}\",");
-            sb.Append($"\"type\": \"{Type.Name}\"");
+                sb.Append($", \"default\": true");
             sb.Append('}');
         }
-
         /// <inheritdoc/>
-        public override JToken CreateDefaultToken() => new JValue(Default);
+        public override JToken CreateDefaultValue() => new JValue(Default);
     }
 }

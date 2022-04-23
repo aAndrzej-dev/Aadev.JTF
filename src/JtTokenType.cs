@@ -7,11 +7,13 @@ namespace Aadev.JTF
     public class JtTokenType : IEquatable<JtTokenType?>
     {
         private readonly Func<JObject, JTemplate, JtToken> instanceFactory;
-        private JtTokenType(int id, string name, Func<JObject, JTemplate, JtToken> instanceFactory, string displayName, bool isContainerType = false, bool isNumericType = false)
+        private readonly Func<JTemplate, JtToken> emptyInstanceFactory;
+        private JtTokenType(int id, string name, Func<JObject, JTemplate, JtToken> instanceFactory, Func<JTemplate, JtToken> emptyInstanceFactory, string displayName, bool isContainerType = false, bool isNumericType = false)
         {
             Id = id;
             Name = name;
             this.instanceFactory = instanceFactory;
+            this.emptyInstanceFactory = emptyInstanceFactory;
             DisplayName = displayName;
             IsContainerType = isContainerType;
             IsNumericType = isNumericType;
@@ -25,21 +27,21 @@ namespace Aadev.JTF
         public bool IsNumericType { get; }
 
 
-        public static readonly JtTokenType Unknown = new JtTokenType(0, "unknown", (o, t) => new JtUnknown(o, t), nameof(Unknown));
-        public static readonly JtTokenType Bool = new JtTokenType(1, "bool", (o, t) => new JtBool(o, t), nameof(Bool));
-        public static readonly JtTokenType Byte = new JtTokenType(2, "byte", (o, t) => new JtByte(o, t), nameof(Byte), false, true);
-        public static readonly JtTokenType Short = new JtTokenType(3, "short", (o, t) => new JtShort(o, t), nameof(Short), false, true);
-        public static readonly JtTokenType Int = new JtTokenType(4, "int", (o, t) => new JtInt(o, t), nameof(Int), false, true);
-        public static readonly JtTokenType Long = new JtTokenType(5, "long", (o, t) => new JtLong(o, t), nameof(Long), false, true);
-        public static readonly JtTokenType Float = new JtTokenType(6, "float", (o, t) => new JtFloat(o, t), nameof(Float), false, true);
-        public static readonly JtTokenType Double = new JtTokenType(7, "double", (o, t) => new JtDouble(o, t), nameof(Double), false, true);
-        public static readonly JtTokenType String = new JtTokenType(8, "string", (o, t) => new JtString(o, t), nameof(String));
-        public static readonly JtTokenType Block = new JtTokenType(9, "block", (o, t) => new JtBlock(o, t), nameof(Block), true);
-        public static readonly JtTokenType Array = new JtTokenType(10, "array", (o, t) => new JtArray(o, t), nameof(Array), true);
-        public static readonly JtTokenType Enum = new JtTokenType(11, "enum", (o, t) => new JtEnum(o, t), nameof(Enum));
+        public static readonly JtTokenType Unknown = new JtTokenType(0, "unknown", (o, t) => new JtUnknown(o, t), t => new JtUnknown(t), nameof(Unknown));
+        public static readonly JtTokenType Bool = new JtTokenType(1, "bool", (o, t) => new JtBool(o, t), t => new JtBool(t), nameof(Bool));
+        public static readonly JtTokenType Byte = new JtTokenType(2, "byte", (o, t) => new JtByte(o, t), t => new JtByte(t), nameof(Byte), false, true);
+        public static readonly JtTokenType Short = new JtTokenType(3, "short", (o, t) => new JtShort(o, t), t => new JtShort(t), nameof(Short), false, true);
+        public static readonly JtTokenType Int = new JtTokenType(4, "int", (o, t) => new JtInt(o, t), t => new JtInt(t), nameof(Int), false, true);
+        public static readonly JtTokenType Long = new JtTokenType(5, "long", (o, t) => new JtLong(o, t), t => new JtLong(t), nameof(Long), false, true);
+        public static readonly JtTokenType Float = new JtTokenType(6, "float", (o, t) => new JtFloat(o, t), t => new JtFloat(t), nameof(Float), false, true);
+        public static readonly JtTokenType Double = new JtTokenType(7, "double", (o, t) => new JtDouble(o, t), t => new JtDouble(t), nameof(Double), false, true);
+        public static readonly JtTokenType String = new JtTokenType(8, "string", (o, t) => new JtString(o, t), t => new JtString(t), nameof(String));
+        public static readonly JtTokenType Block = new JtTokenType(9, "block", (o, t) => new JtBlock(o, t), t => new JtBlock(t), nameof(Block), true);
+        public static readonly JtTokenType Array = new JtTokenType(10, "array", (o, t) => new JtArray(o, t), t => new JtArray(t), nameof(Array), true);
+        public static readonly JtTokenType Enum = new JtTokenType(11, "enum", (o, t) => new JtEnum(o, t), t => new JtEnum(t), nameof(Enum));
 
 
-        public static readonly JtTokenType[] Items = new JtTokenType[]
+        private static readonly JtTokenType[] items = new JtTokenType[]
         {
              JtTokenType.Bool,
              JtTokenType.Byte,
@@ -55,6 +57,7 @@ namespace Aadev.JTF
              JtTokenType.Unknown,
 
         };
+        public static JtTokenType[] Items => items;
 
 
         public static JtTokenType GetById(int id)
@@ -95,6 +98,7 @@ namespace Aadev.JTF
             };
         }
         public JtToken CreateInstance(JObject obj, JTemplate template) => instanceFactory(obj, template);
+        public JtToken CreateEmptyInstance(JTemplate template) => emptyInstanceFactory(template);
 
         public override bool Equals(object? obj) => Equals(obj as JtTokenType);
         public bool Equals(JtTokenType? other) => other != null && Id == other.Id;
@@ -104,8 +108,5 @@ namespace Aadev.JTF
 
         public static bool operator ==(JtTokenType? left, JtTokenType? right) => left?.Id == right?.Id;
         public static bool operator !=(JtTokenType? left, JtTokenType? right) => !(left == right);
-
-        public static implicit operator int(JtTokenType tokenType) => tokenType.Id;
-        public static explicit operator JtTokenType(int id) => GetById(id);
     }
 }

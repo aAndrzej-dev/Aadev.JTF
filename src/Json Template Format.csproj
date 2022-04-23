@@ -14,14 +14,8 @@
     <PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.JTF</PackageProjectUrl>
     <Description>Json Template Format</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>Removed custom types
-Introduced custom values
-Added support for array and other root types
-Some Bug Fixes
-
-All JTF files must be rewritten to new format
-	</PackageReleaseNotes>
-    <Version>1.0.0-beta5</Version>
+    <PackageReleaseNotes>Bug fixes</PackageReleaseNotes>
+    <Version>1.0.0-rc1</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
 	<Deterministic>true</Deterministic>
