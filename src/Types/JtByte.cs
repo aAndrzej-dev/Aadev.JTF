@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public sealed class JtByte : JtToken
+    public sealed class JtByte : JtNode
     {
         private const byte minValue = byte.MinValue;
         private const byte maxValue = byte.MaxValue;
@@ -15,7 +15,7 @@ namespace Aadev.JTF.Types
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Integer;
         /// <inheritdoc/>
-        public override JtTokenType Type => JtTokenType.Byte;
+        public override JtNodeType Type => JtNodeType.Byte;
 
 
         [DefaultValue(minValue)] public byte Min { get => min; set { min = value.Min(Max); @default = value.Clamp(Min, Max); } }
@@ -38,12 +38,14 @@ namespace Aadev.JTF.Types
         internal override void BulidJson(StringBuilder sb)
         {
             BuildCommonJson(sb);
+
             if (Min != minValue)
                 sb.Append($", \"min\": {Min}");
             if (Max != maxValue)
                 sb.Append($", \"max\": {Max}");
             if (Default != 0)
                 sb.Append($", \"default\": {Default}");
+
             sb.Append('}');
         }
 

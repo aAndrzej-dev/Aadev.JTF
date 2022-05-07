@@ -35,7 +35,7 @@ namespace Aadev.JTF
         /// <summary>
         /// Root elemnts in template
         /// </summary>
-        [Browsable(false)] public JtToken Root { get; }
+        [Browsable(false)] public JtNode Root { get; }
 
         [Browsable(false)] private CustomValue[] CustomValues { get; }
 
@@ -166,7 +166,7 @@ namespace Aadev.JTF
             }
             CustomValues ??= Array.Empty<CustomValue>();
             if (root["root"] is JObject jobj)
-                Root = JtToken.Create(jobj, this);
+                Root = JtNode.Create(jobj, this);
             else
                 Root = new JtBlock(this);
 

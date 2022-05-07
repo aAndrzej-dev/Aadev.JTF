@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public sealed class JtFloat : JtToken
+    public sealed class JtFloat : JtNode
     {
         private const float minValue = float.MinValue;
         private const float maxValue = float.MaxValue;
@@ -14,7 +14,7 @@ namespace Aadev.JTF.Types
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Float;
         /// <inheritdoc/>
-        public override JtTokenType Type => JtTokenType.Float;
+        public override JtNodeType Type => JtNodeType.Float;
 
 
         [DefaultValue(minValue)] public float Min { get => min; set { min = value.Min(Max); @default = value.Clamp(Min, Max); } }
@@ -44,8 +44,11 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"max\": {Max}");
             if (Default != 0)
                 sb.Append($", \"default\": {Default}");
+
             sb.Append('}');
+
         }
+
 
         /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);

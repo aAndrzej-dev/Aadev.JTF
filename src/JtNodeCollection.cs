@@ -5,17 +5,17 @@ using System.Collections.Generic;
 namespace Aadev.JTF
 {
     [Serializable]
-    public class TokensCollection : IList<JtToken>, IReadOnlyList<JtToken>
+    public class JtNodeCollection : IList<JtNode>, IReadOnlyList<JtNode>
     {
-        private readonly List<JtToken> tokens;
-        private readonly IJtParentType owner;
+        private readonly List<JtNode> tokens;
+        private readonly IJtParentNode owner;
 
 
         public int Count => tokens.Count;
 
-        bool ICollection<JtToken>.IsReadOnly => ((IList<JtToken>)tokens).IsReadOnly;
+        bool ICollection<JtNode>.IsReadOnly => ((IList<JtNode>)tokens).IsReadOnly;
 
-        public JtToken this[int index]
+        public JtNode this[int index]
         {
             get => tokens[index];
             set
@@ -29,13 +29,13 @@ namespace Aadev.JTF
             }
         }
 
-        internal TokensCollection(IJtParentType owner)
+        internal JtNodeCollection(IJtParentNode owner)
         {
-            tokens = new List<JtToken>();
+            tokens = new List<JtNode>();
             this.owner = owner;
         }
 
-        public void AddRange(JtToken[] items)
+        public void AddRange(JtNode[] items)
         {
             if (ReadOnly)
                 return;
@@ -47,8 +47,8 @@ namespace Aadev.JTF
 
         public bool ReadOnly { get; set; }
 
-        public int IndexOf(JtToken item) => tokens.IndexOf(item);
-        public void Insert(int index, JtToken item)
+        public int IndexOf(JtNode item) => tokens.IndexOf(item);
+        public void Insert(int index, JtNode item)
         {
             if (ReadOnly)
                 return;
@@ -67,7 +67,7 @@ namespace Aadev.JTF
             Remove(this[index]);
         }
 
-        public void Add(JtToken item)
+        public void Add(JtNode item)
         {
             if (ReadOnly)
                 return;
@@ -91,9 +91,9 @@ namespace Aadev.JTF
             }
             tokens.Clear();
         }
-        public bool Contains(JtToken item) => tokens.Contains(item);
-        void ICollection<JtToken>.CopyTo(JtToken[] array, int arrayIndex) => throw new NotImplementedException();
-        public bool Remove(JtToken item)
+        public bool Contains(JtNode item) => tokens.Contains(item);
+        void ICollection<JtNode>.CopyTo(JtNode[] array, int arrayIndex) => throw new NotImplementedException();
+        public bool Remove(JtNode item)
         {
             if (ReadOnly)
                 return false;
@@ -106,11 +106,11 @@ namespace Aadev.JTF
 
             return true;
         }
-        public IEnumerator<JtToken> GetEnumerator() => tokens.GetEnumerator();
+        public IEnumerator<JtNode> GetEnumerator() => tokens.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 
-        private bool ContainsToken(JtToken token)
+        private bool ContainsToken(JtNode token)
         {
             for (int i = 0; i < tokens.Count; i++)
             {

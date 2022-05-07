@@ -8,10 +8,10 @@ using System.Text;
 
 namespace Aadev.JTF
 {
-    public abstract class JtToken
+    public abstract class JtNode
     {
         private JtConditionCollection? conditions;
-        private IJtParentType? parent;
+        private IJtParentNode? parent;
         private JTemplate template;
         private string? name;
         private string? displayName;
@@ -21,16 +21,16 @@ namespace Aadev.JTF
         /// </summary>
         [Browsable(false)] public abstract JTokenType JsonType { get; }
         /// <summary>
-        /// Type of <see cref="JtToken"/>
+        /// Type of <see cref="JtNode"/>
         /// </summary>
-        [Browsable(false)] public abstract JtTokenType Type { get; }
+        [Browsable(false)] public abstract JtNodeType Type { get; }
         /// <summary>
         /// Name of current token used as key in json file; <see langword="null"/> when <see cref="IsArrayPrefab"/> is <see langword="true"/>
         /// </summary>
         [Category("General"), Description("Name of current token used as key in json file")]
         public string? Name { get => name; set { if (IsArrayPrefab || IsRoot) return; if (DisplayName == name) DisplayName = value; name = value; } }
         /// <summary>
-        /// Description of current <see cref="JtToken"/>
+        /// Description of current <see cref="JtNode"/>
         /// </summary>
         [Category("General")] public string? Description { get; set; }
         /// <summary>
@@ -44,7 +44,7 @@ namespace Aadev.JTF
         /// <summary>
         /// Parent element
         /// </summary>
-        [Browsable(false)] public IJtParentType? Parent { get => parent; set { parent = value; if (parent is null) return; template = parent.Template; } }
+        [Browsable(false)] public IJtParentNode? Parent { get => parent; set { parent = value; if (parent is null) return; template = parent.Template; } }
         /// <summary>
         /// Unique id; used in conditions
         /// </summary>
@@ -89,7 +89,7 @@ namespace Aadev.JTF
         /// Create empty instace of current element
         /// </summary>
         /// <param name="template">Root template</param>
-        protected internal JtToken(JTemplate template)
+        protected internal JtNode(JTemplate template)
         {
             this.template = template;
         }
@@ -102,7 +102,7 @@ namespace Aadev.JTF
         /// </summary>
         /// <param name="template">Root template</param>
         /// <param name="obj">Object to load proerties from</param>
-        protected internal JtToken(JObject obj, JTemplate template)
+        protected internal JtNode(JObject obj, JTemplate template)
         {
             this.template = template;
             Name = (string?)obj["name"];
@@ -131,7 +131,7 @@ namespace Aadev.JTF
         /// Get all elements witch has this same name ant diffrent type in this same parent
         /// </summary>
         /// <returns></returns>
-        public JtToken[] GetTwinFamily() => Parent is null ? (new JtToken[] { this }) : Parent.Children.Where(x => x.Name == Name && x.Conditions == Conditions).ToArray();
+        public JtNode[] GetTwinFamily() => Parent is null ? (new JtNode[] { this }) : Parent.Children.Where(x => x.Name == Name && x.Conditions == Conditions).ToArray();
 
         internal abstract void BulidJson(StringBuilder sb);
         protected internal void BuildCommonJson(StringBuilder sb)
@@ -175,15 +175,15 @@ namespace Aadev.JTF
         }
 
         /// <summary>
-        /// Create new instace of <see cref="JtToken"/>
+        /// Create new instace of <see cref="JtNode"/>
         /// </summary>
-        /// <param name="item">Object to load <see cref="JtToken"/> from</param>
+        /// <param name="item">Object to load <see cref="JtNode"/> from</param>
         /// <param name="template">Root template</param>
         /// <returns>New instace of JtToken</returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="Exception"></exception>
         /// <exception cref="NotImplementedException"></exception>
-        public static JtToken Create(JObject item, JTemplate template)
+        public static JtNode Create(JObject item, JTemplate template)
         {
             if (item is null) throw new ArgumentNullException(nameof(item));
             if (template is null) throw new ArgumentNullException(nameof(template));
@@ -191,17 +191,17 @@ namespace Aadev.JTF
 
             if (((JValue?)item["type"])?.Value is int typeId)
             {
-                return JtTokenType.GetById(typeId).CreateInstance(item, template);
+                return JtNodeType.GetById(typeId).CreateInstance(item, template);
             }
 
             string typeString = (string?)item["type"] ?? throw new Exception($"Item '{item["name"]}' dont have type");
 
-            return JtTokenType.GetByName(typeString).CreateInstance(item, template);
+            return JtNodeType.GetByName(typeString).CreateInstance(item, template);
 
         }
 
         /// <summary>
-        /// Creates <see cref="JToken"/> with default value of <see cref="JtToken"/>
+        /// Creates <see cref="JToken"/> with default value of <see cref="JtNode"/>
         /// </summary>
         /// <returns>New <see cref="JToken"/> with default value </returns>
         public abstract JToken CreateDefaultValue();

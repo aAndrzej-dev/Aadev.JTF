@@ -52,7 +52,6 @@ namespace Aadev.JTF
                 return max;
             return value;
         }
-
         internal static byte Min(this byte a, byte b) => a < b ? a : b;
         internal static short Min(this short a, short b) => a < b ? a : b;
         internal static int Min(this int a, int b) => a < b ? a : b;

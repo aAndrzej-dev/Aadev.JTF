@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public sealed class JtString : JtToken
+    public sealed class JtString : JtNode
     {
         private int maxLength;
         private int minLength;
@@ -12,10 +12,10 @@ namespace Aadev.JTF.Types
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.String;
         /// <inheritdoc/>
-        public override JtTokenType Type => JtTokenType.String;
+        public override JtNodeType Type => JtNodeType.String;
 
-        [DefaultValue(0)] public int MinLength { get => minLength; set => minLength = value.Max(0); }
-        [DefaultValue(-1)] public int MaxLength { get => maxLength; set => maxLength = value.Max(-1); }
+        [DefaultValue(0)] public int MinLength { get => minLength; set { minLength = value.Max(0); maxLength = maxLength.Max(value); } }
+        [DefaultValue(-1)] public int MaxLength { get => maxLength; set { maxLength = value.Max(-1); minLength = minLength.Min(value).Max(0); } }
         public string Default { get; set; }
         public JtString(JTemplate template) : base(template)
         {

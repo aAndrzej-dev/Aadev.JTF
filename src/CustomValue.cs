@@ -29,51 +29,54 @@ namespace Aadev.JTF
 
 
 
-            if (!Enum.TryParse((string?)obj["valueType"], true, out CustomValueType customValueType))
-                throw new Exception("Invalid value type");
-            CustomValueType = customValueType;
-
-
-            switch (CustomValueType)
+            switch (((string?)obj["valueType"])?.ToLower())
             {
-                case CustomValueType.TokenCollection:
+                case "nodecollection":
+                case "tokencollection": // Backwards compatibility
                     {
                         if (!(obj["content"] is JArray array))
                             throw new Exception("Content is null");
-
-                        JtToken[] tokens = new JtToken[array.Count];
+                        CustomValueType = CustomValueType.NodeCollection;
+                        JtNode[] tokens = new JtNode[array.Count];
 
                         for (int i = 0; i < array.Count; i++)
                         {
-                            tokens[i] = JtToken.Create((JObject)array[i], template);
+                            tokens[i] = JtNode.Create((JObject)array[i], template);
                         }
                         Value = tokens;
                     }
                     break;
-                case CustomValueType.Token:
+                case "node":
+                case "token": // Backwards compatibility
                     {
                         if (!(obj["content"] is JObject val))
                             throw new Exception("Content is null");
-                        Value = JtToken.Create(val, template);
+                        Value = JtNode.Create(val, template);
 
+                        CustomValueType = CustomValueType.Node;
                     }
                     break;
-                case CustomValueType.EnumValuesCollection:
+                case "enumvaluecollection":
+                case "enumvaluescollection": // Backwards compatibility
                     {
                         if (!(obj["content"] is JArray array))
                             throw new Exception("Content is null");
 
-                        string?[] tokens = new string[array.Count];
+                        Types.JtEnum.EnumValue[] tokens = new Types.JtEnum.EnumValue[array.Count];
 
                         for (int i = 0; i < array.Count; i++)
                         {
-                            tokens[i] = (string?)((JObject)array[i])["name"];
+                            JObject? o = ((JObject)array[i]);
+                            tokens[i] = new Types.JtEnum.EnumValue((string?)o["name"], (string?)o["displayName"]);
                         }
                         Value = tokens;
+
+
+                        CustomValueType = CustomValueType.EnumValuesCollection;
                     }
                     break;
                 default:
-                    throw new Exception("Invalid enum value");
+                    throw new Exception("Invalid value");
             }
 
         }
@@ -92,8 +95,8 @@ namespace Aadev.JTF
     }
     public enum CustomValueType
     {
-        TokenCollection,
-        Token,
+        NodeCollection,
+        Node,
         EnumValuesCollection,
     }
 }

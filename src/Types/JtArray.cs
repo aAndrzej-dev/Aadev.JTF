@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public sealed class JtArray : JtToken, IJtParentType
+    public sealed class JtArray : JtNode, IJtParentNode
     {
         private int fixedSize;
         private bool isFixedSize;
@@ -15,10 +15,10 @@ namespace Aadev.JTF.Types
         /// <inheritdoc/>
         public override JTokenType JsonType => MakeAsObject ? JTokenType.Object : JTokenType.Array;
         /// <inheritdoc/>
-        public override JtTokenType Type => JtTokenType.Array;
+        public override JtNodeType Type => JtNodeType.Array;
 
         [Browsable(false)]
-        public TokensCollection Prefabs { get; }
+        public JtNodeCollection Prefabs { get; }
         [DefaultValue(false)] public bool MakeAsObject { get; set; }
 
         [DefaultValue(false)] public bool IsFixedSize { get => isFixedSize; set { isFixedSize = value; fixedSize = isFixedSize ? 0 : -1; } }
@@ -26,7 +26,7 @@ namespace Aadev.JTF.Types
         [DefaultValue(0)] public int DefaultPrefabIndex { get => defaultPrefabIndex; set { if (Prefabs.Count <= value) return; defaultPrefabIndex = value; } }
 
 
-        TokensCollection IJtParentType.Children => Prefabs;
+        JtNodeCollection IJtParentNode.Children => Prefabs;
         public string? CustomValueId
         {
             get => customValueId; set
@@ -40,7 +40,7 @@ namespace Aadev.JTF.Types
                     return;
                 }
                 Prefabs.Clear();
-                Prefabs.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                Prefabs.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
             }
         }
 
@@ -48,12 +48,12 @@ namespace Aadev.JTF.Types
 
         public JtArray(JTemplate template) : base(template)
         {
-            Prefabs = new TokensCollection(this);
+            Prefabs = new JtNodeCollection(this);
         }
 
         internal JtArray(JObject obj, JTemplate template) : base(obj, template)
         {
-            Prefabs = new TokensCollection(this);
+            Prefabs = new JtNodeCollection(this);
 
             MakeAsObject = (bool)(obj["makeObject"] ?? false);
             FixedSize = (int)(obj["fixedSize"] ?? -1);
@@ -79,7 +79,7 @@ namespace Aadev.JTF.Types
 
                 customValueId = str.AsSpan(1).ToString();
                 Prefabs.ReadOnly = true;
-                Prefabs.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                Prefabs.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
 
             }
         }
@@ -113,6 +113,8 @@ namespace Aadev.JTF.Types
             {
                 sb.Append($"\"prefabs\": \"@{customValueId}\"");
             }
+
+
             sb.Append('}');
         }
         /// <inheritdoc/>

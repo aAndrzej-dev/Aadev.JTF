@@ -3,12 +3,12 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public sealed class JtUnknown : JtToken
+    public sealed class JtUnknown : JtNode
     {
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.None;
         /// <inheritdoc/>
-        public override JtTokenType Type => JtTokenType.Unknown;
+        public override JtNodeType Type => JtNodeType.Unknown;
 
 
         public JtUnknown(JTemplate template) : base(template) { }

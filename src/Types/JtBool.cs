@@ -4,12 +4,12 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public sealed class JtBool : JtToken
+    public sealed class JtBool : JtNode
     {
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Boolean;
         /// <inheritdoc/>
-        public override JtTokenType Type => JtTokenType.Bool;
+        public override JtNodeType Type => JtNodeType.Bool;
 
         [DefaultValue(false)] public bool Default { get; set; }
 

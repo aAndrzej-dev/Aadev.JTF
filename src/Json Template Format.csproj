@@ -14,8 +14,9 @@
     <PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.JTF</PackageProjectUrl>
     <Description>Json Template Format</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>Bug fixes</PackageReleaseNotes>
-    <Version>1.0.0-rc1</Version>
+    <PackageReleaseNotes>Bug fixes
+Changes names from JtToken to JtNode</PackageReleaseNotes>
+    <Version>1.0.0</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
 	<Deterministic>true</Deterministic>

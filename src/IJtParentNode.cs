@@ -1,6 +1,6 @@
 ﻿namespace Aadev.JTF
 {
-    public interface IJtParentType
+    public interface IJtParentNode
     {
         /// <summary>
         /// Root template
@@ -11,10 +11,10 @@
         /// </summary>
         bool IsInArrayPrefab { get; }
         /// <summary>
-        /// Type of <see cref="JtToken"/>
+        /// Type of <see cref="JtNode"/>
         /// </summary>
-        JtTokenType Type { get; }
+        JtNodeType Type { get; }
 
-        TokensCollection Children { get; }
+        JtNodeCollection Children { get; }
     }
 }

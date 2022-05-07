@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public sealed class JtLong : JtToken
+    public sealed class JtLong : JtNode
     {
         private const long minValue = long.MinValue;
         private const long maxValue = long.MaxValue;
@@ -15,7 +15,7 @@ namespace Aadev.JTF.Types
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Integer;
         /// <inheritdoc/>
-        public override JtTokenType Type => JtTokenType.Long;
+        public override JtNodeType Type => JtNodeType.Long;
 
 
         [DefaultValue(minValue)] public long Min { get => min; set { min = value.Min(Max); @default = value.Clamp(Min, Max); } }

@@ -5,25 +5,25 @@ using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public sealed class JtBlock : JtToken, IJtParentType
+    public sealed class JtBlock : JtNode, IJtParentNode
     {
-        private TokensCollection? children;
+        private JtNodeCollection? children;
         private string? customValueId;
 
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Object;
         /// <inheritdoc/>
-        public override JtTokenType Type => JtTokenType.Block;
+        public override JtNodeType Type => JtNodeType.Block;
         [Browsable(false)]
-        public TokensCollection Children
+        public JtNodeCollection Children
         {
             get
             {
                 if (children is null)
                 {
-                    children = new TokensCollection(this);
+                    children = new JtNodeCollection(this);
                     children.ReadOnly = true;
-                    children.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                    children.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
 
                 }
 
@@ -38,7 +38,7 @@ namespace Aadev.JTF.Types
 
                 if (customValueId == value) return;
                 customValueId = value;
-                children ??= new TokensCollection(this);
+                children ??= new JtNodeCollection(this);
 
                 if (string.IsNullOrWhiteSpace(value))
                 {
@@ -51,19 +51,19 @@ namespace Aadev.JTF.Types
                 }
                 children.ReadOnly = true;
                 children.Clear();
-                children.AddRange((JtToken[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                children.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
             }
         }
         public override bool HasExternalSources => !(CustomValueId is null);
         public JtBlock(JTemplate template) : base(template)
         {
-            children = new TokensCollection(this);
+            children = new JtNodeCollection(this);
         }
         internal JtBlock(JObject obj, JTemplate template) : base(obj, template)
         {
             if (obj["children"] is JArray arr)
             {
-                children = new TokensCollection(this);
+                children = new JtNodeCollection(this);
                 foreach (JObject item in arr)
                 {
                     children.Add(Create(item, Template));
