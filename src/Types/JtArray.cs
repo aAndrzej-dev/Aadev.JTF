@@ -34,13 +34,14 @@ namespace Aadev.JTF.Types
 
                 if (customValueId == value) return;
                 customValueId = value;
+                Prefabs.ReadOnly = false;
                 if (customValueId is null)
                 {
-                    Prefabs.ReadOnly = false;
                     return;
                 }
                 Prefabs.Clear();
                 Prefabs.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                Prefabs.ReadOnly = true;
             }
         }
 
@@ -78,8 +79,8 @@ namespace Aadev.JTF.Types
                     throw new System.Exception("Custom values name must starts with '@'");
 
                 customValueId = str.AsSpan(1).ToString();
-                Prefabs.ReadOnly = true;
                 Prefabs.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                Prefabs.ReadOnly = true;
 
             }
         }

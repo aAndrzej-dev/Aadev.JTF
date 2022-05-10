@@ -14,11 +14,10 @@
     <PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.JTF</PackageProjectUrl>
     <Description>Json Template Format</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>Bug fixes
-Changes names from JtToken to JtNode</PackageReleaseNotes>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <PackageReleaseNotes>External values for block now load properly</PackageReleaseNotes>
+    <Version>1.0.1</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
 	<Deterministic>true</Deterministic>
 	<GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>

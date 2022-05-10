@@ -22,8 +22,8 @@ namespace Aadev.JTF.Types
                 if (children is null)
                 {
                     children = new JtNodeCollection(this);
-                    children.ReadOnly = true;
                     children.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                    children.ReadOnly = true;
 
                 }
 
@@ -40,18 +40,18 @@ namespace Aadev.JTF.Types
                 customValueId = value;
                 children ??= new JtNodeCollection(this);
 
+                children.ReadOnly = false;
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     customValueId = null;
                 }
                 if (customValueId is null)
                 {
-                    children.ReadOnly = false;
                     return;
                 }
-                children.ReadOnly = true;
                 children.Clear();
                 children.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                children.ReadOnly = true;
             }
         }
         public override bool HasExternalSources => !(CustomValueId is null);
