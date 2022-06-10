@@ -81,20 +81,24 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"allowCustom\": true");
             if (customValueId is null)
             {
-                sb.Append(", \"values\": [");
-
-                for (int i = 0; i < Values.Count; i++)
+                if (Values.Count > 0)
                 {
-                    if (i != 0)
-                        sb.Append(',');
-                    sb.Append('{');
-                    sb.Append($"\"name\": \"{Values[i].Name}\"");
-                    if (!(Values[i].DisplayName is null))
-                        sb.Append($", \"displayName\": \"{Values[i].DisplayName}\"");
-                    sb.Append('}');
+                    sb.Append(", \"values\": [");
+
+                    for (int i = 0; i < Values.Count; i++)
+                    {
+                        if (i != 0)
+                            sb.Append(',');
+                        sb.Append('{');
+                        sb.Append($"\"name\": \"{Values[i].Name}\"");
+                        if (!(Values[i].DisplayName is null))
+                            sb.Append($", \"displayName\": \"{Values[i].DisplayName}\"");
+                        sb.Append('}');
+                    }
+
+                    sb.Append(']');
                 }
 
-                sb.Append(']');
             }
             else
             {

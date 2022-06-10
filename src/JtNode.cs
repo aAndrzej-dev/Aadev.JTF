@@ -1,6 +1,7 @@
 ﻿using Aadev.JTF.Types;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -15,6 +16,9 @@ namespace Aadev.JTF
         private JTemplate template;
         private string? name;
         private string? displayName;
+        private string? description;
+        private bool required;
+        private string? id;
 
         /// <summary>
         /// Type of json node
@@ -28,19 +32,19 @@ namespace Aadev.JTF
         /// Name of current token used as key in json file; <see langword="null"/> when <see cref="IsArrayPrefab"/> is <see langword="true"/>
         /// </summary>
         [Category("General"), Description("Name of current token used as key in json file")]
-        public string? Name { get => name; set { if (IsArrayPrefab || IsRoot) return; if (DisplayName == name) DisplayName = value; name = value; } }
+        public string? Name { get => name; set { if (IsArrayPrefab || IsRoot || ReadOnly) return; if (DisplayName == name) DisplayName = value; name = value; } }
         /// <summary>
         /// Description of current <see cref="JtNode"/>
         /// </summary>
-        [Category("General")] public string? Description { get; set; }
+        [Category("General")] public string? Description { get => description; set { if (ReadOnly) return; description = value; } }
         /// <summary>
         /// Specify whether create json node event value is <see langword="null"/>
         /// </summary>
-        [DefaultValue(false), Category("General")] public bool Required { get; set; }
+        [DefaultValue(false), Category("General")] public bool Required { get => required; set { if (ReadOnly) return; required = value; } }
         /// <summary>
         /// Name displayed in editor
         /// </summary>
-        [Category("General")] public string? DisplayName { get => displayName; set { if (IsArrayPrefab || IsRoot) return; displayName = value; } }
+        [Category("General")] public string? DisplayName { get => displayName; set { if (IsArrayPrefab || IsRoot || ReadOnly) return; displayName = value; } }
         /// <summary>
         /// Parent element
         /// </summary>
@@ -48,7 +52,7 @@ namespace Aadev.JTF
         /// <summary>
         /// Unique id; used in conditions
         /// </summary>
-        [Category("General")] public string? Id { get; set; }
+        [Category("General")] public string? Id { get => id; set { if (ReadOnly) return; id = value; } }
 
         /// <summary>
         /// Root template
@@ -78,12 +82,14 @@ namespace Aadev.JTF
 
         [Browsable(false)] public bool IsRoot => Template.Root == this;
 
+        public bool ReadOnly { get; private set; }
         /// <summary>
         /// Conditions of current element
         /// </summary>
         [Category("General")] public JtConditionCollection Conditions => conditions ??= new JtConditionCollection();
 
         [Browsable(false)] public virtual bool HasExternalSources { get; }
+
 
         /// <summary>
         /// Create empty instace of current element
@@ -110,6 +116,7 @@ namespace Aadev.JTF
             Required = (bool)(obj["required"] ?? false);
             DisplayName = (string?)(obj["displayName"] ?? Name);
             Id = (string?)obj["id"];
+
 
             if (obj["if"] is JArray conditions)
             {

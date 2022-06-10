@@ -11,6 +11,7 @@ namespace Aadev.JTF
 {
     public sealed class JTemplate
     {
+        public const int JTF_VERSION = 1;
         /// <summary>
         /// Name of template. Default is file name
         /// </summary>
@@ -37,13 +38,14 @@ namespace Aadev.JTF
         /// </summary>
         [Browsable(false)] public JtNode Root { get; }
 
-        [Browsable(false)] private CustomValue[] CustomValues { get; }
+        [Browsable(false)] private CustomValuesDictionary CustomValues { get; }
 
-        public static JTemplate CreateTemplate(string filename, int version, string? name = null, string? description = null, string? customTypeFilename = null)
+        public static JTemplate CreateTemplate(string filename, int version = JTF_VERSION, string? name = null, string? description = null, string? customTypeFilename = null)
         {
             JObject obj = new JObject
             {
-                ["version"] = version
+                ["version"] = version,
+                ["type"] = "main"
             };
             if (name != null)
                 obj["name"] = name;
@@ -51,6 +53,8 @@ namespace Aadev.JTF
                 obj["description"] = description;
             if (customTypeFilename != null)
                 obj["typesFile"] = customTypeFilename;
+
+
 
             DirectoryInfo di = new DirectoryInfo(Path.GetDirectoryName(filename)!);
             if (!di.Exists)
@@ -102,7 +106,7 @@ namespace Aadev.JTF
             if (!File.Exists(filename))
                 throw new FileNotFoundException(filename);
 
-            JObject? root;
+            JObject root;
             try
             {
                 root = JObject.Parse(File.ReadAllText(Filename));
@@ -133,38 +137,19 @@ namespace Aadev.JTF
 
             if (!string.IsNullOrEmpty(CustomValuesDictionaryFile))
             {
-                string? absoluteTypeFile = Path.GetFullPath(CustomValuesDictionaryFile, Path.GetDirectoryName(Filename)!);
+                string? absoluteTypeFilename = Path.GetFullPath(CustomValuesDictionaryFile, Path.GetDirectoryName(Filename)!);
 
-                if (!File.Exists(absoluteTypeFile))
-                    throw new FileNotFoundException(absoluteTypeFile);
-
-                JObject valuesDictionaryRoot = JObject.Parse(File.ReadAllText(absoluteTypeFile!));
-
-                if (!((string?)valuesDictionaryRoot["type"]).Compare("valuesdictionary", true))
-                {
-                    throw new InvalidJtfFileTypeException(absoluteTypeFile!, "valuesdictionary", (string?)valuesDictionaryRoot["type"]);
-                }
-                List<CustomValue> types = new List<CustomValue>();
-                foreach (JValue item in valuesDictionaryRoot["values"]!)
-                {
-                    string? source = (string?)item.Value;
-
-                    if (source is null)
-                        continue;
-
-                    source = Path.GetFullPath(source.ToString(), Path.GetDirectoryName(absoluteTypeFile)!);
-
-                    if (!File.Exists(source))
-                        throw new FileNotFoundException(source);
-
-                    types.Add(CustomValue.LoadFormFile(source.ToString(), this));
-                }
-                CustomValues = types.ToArray();
+                if (!File.Exists(absoluteTypeFilename))
+                    throw new FileNotFoundException(absoluteTypeFilename);
 
 
-
+                CustomValues = new CustomValuesDictionary(absoluteTypeFilename, this);
             }
-            CustomValues ??= Array.Empty<CustomValue>();
+            else
+            {
+                CustomValues = CustomValuesDictionary.Empty;
+            }
+
             if (root["root"] is JObject jobj)
                 Root = JtNode.Create(jobj, this);
             else
@@ -173,17 +158,11 @@ namespace Aadev.JTF
         }
 
         /// <summary>
-        /// Gets custom type in <see cref="JTemplate"/> with specific id
+        /// Gets custom value in <see cref="JTemplate"/> with specific id
         /// </summary>
-        /// <param name="id">Id of custom type</param>
-        /// <returns>Custom type with specific id</returns>
-        public CustomValue? GetCustomValue(string id) => CustomValues?.FirstOrDefault(x => x.Id == id);
-
-        /// <summary>
-        /// Gets all custom types in <see cref="JTemplate"/>
-        /// </summary>
-        /// <returns>Custom types registered in template</returns>
-        public CustomValue[] GetCustomValues() => CustomValues;
+        /// <param name="id">Id of custom value</param>
+        /// <returns>Custom value with specific id</returns>
+        public CustomValue? GetCustomValue(string id) => CustomValues.GetCustomValueById(id);
 
     }
 }

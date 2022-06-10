@@ -53,7 +53,7 @@ namespace Aadev.JTF
             if (ReadOnly)
                 return;
 
-            if (ContainsToken(item))
+            if (ContainsSimilarToken(item))
                 return;
 
 
@@ -74,7 +74,7 @@ namespace Aadev.JTF
             if (item is null)
                 return;
 
-            if (ContainsToken(item))
+            if (ContainsSimilarToken(item))
                 throw new Exception($"Cannot add multiple tokens with the same name, type and conditions.\nName: {item.Name}\nType: {item.Type.DisplayName}");
 
             tokens.Add(item);
@@ -110,7 +110,7 @@ namespace Aadev.JTF
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 
-        private bool ContainsToken(JtNode token)
+        private bool ContainsSimilarToken(JtNode token)
         {
             for (int i = 0; i < tokens.Count; i++)
             {

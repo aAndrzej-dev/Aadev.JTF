@@ -20,7 +20,7 @@ namespace Aadev.JTF.Types
         public JtString(JTemplate template) : base(template)
         {
             MinLength = 0;
-            MaxLength = int.MaxValue;
+            MaxLength = -1;
             Default = string.Empty;
         }
         internal JtString(JObject obj, JTemplate template) : base(obj, template)

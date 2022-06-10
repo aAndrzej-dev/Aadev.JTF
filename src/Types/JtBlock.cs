@@ -61,7 +61,11 @@ namespace Aadev.JTF.Types
         }
         internal JtBlock(JObject obj, JTemplate template) : base(obj, template)
         {
-            if (obj["children"] is JArray arr)
+            if (obj["children"] is null)
+            {
+                children = new JtNodeCollection(this);
+            }
+            else if (obj["children"] is JArray arr)
             {
                 children = new JtNodeCollection(this);
                 foreach (JObject item in arr)
@@ -75,10 +79,8 @@ namespace Aadev.JTF.Types
                     throw new System.Exception("Custom values name must starts with '@'");
 
                 customValueId = str.AsSpan(1).ToString();
-
-
-
             }
+
 
 
         }
@@ -86,25 +88,29 @@ namespace Aadev.JTF.Types
         internal override void BulidJson(StringBuilder sb)
         {
             BuildCommonJson(sb);
-            sb.Append(',');
+
 
             if (customValueId is null)
             {
-                sb.Append("\"children\": [");
-
-                for (int i = 0; i < Children.Count; i++)
+                if (Children.Count > 0)
                 {
-                    if (i != 0)
-                        sb.Append(',');
+                    sb.Append(",\"children\": [");
 
-                    Children[i].BulidJson(sb);
+                    for (int i = 0; i < Children.Count; i++)
+                    {
+                        if (i != 0)
+                            sb.Append(',');
+
+                        Children[i].BulidJson(sb);
+                    }
+
+                    sb.Append(']');
                 }
 
-                sb.Append(']');
             }
             else
             {
-                sb.Append($"\"children\": \"@{customValueId}\"");
+                sb.Append($", \"children\": \"@{customValueId}\"");
             }
             sb.Append('}');
         }
