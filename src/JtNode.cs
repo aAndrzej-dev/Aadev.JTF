@@ -11,7 +11,6 @@ namespace Aadev.JTF
 {
     public abstract class JtNode
     {
-        private JtConditionCollection? conditions;
         private IJtParentNode? parent;
         private JTemplate template;
         private string? name;
@@ -86,7 +85,7 @@ namespace Aadev.JTF
         /// <summary>
         /// Conditions of current element
         /// </summary>
-        [Category("General")] public JtConditionCollection Conditions => conditions ??= new JtConditionCollection();
+        [Category("General")] public string? Condition { get; set; }
 
         [Browsable(false)] public virtual bool HasExternalSources { get; }
 
@@ -111,26 +110,88 @@ namespace Aadev.JTF
         protected internal JtNode(JObject obj, JTemplate template)
         {
             this.template = template;
-            Name = (string?)obj["name"];
-            Description = (string?)obj["description"];
-            Required = (bool)(obj["required"] ?? false);
-            DisplayName = (string?)(obj["displayName"] ?? Name);
+            Name = (string?)(obj["name"] ?? obj["n"]);
+            Description = (string?)(obj["description"] ?? obj["desc"]);
+            Required = (bool)(obj["required"] ?? obj["req"] ?? false);
+            DisplayName = (string?)(obj["displayName"] ?? obj["dn"] ?? Name);
             Id = (string?)obj["id"];
+            Condition = (string?)obj["condition"];
 
+
+
+            if (Condition != null)
+                return;
+
+            if (obj["if"] is JValue jval && jval.Value is string con)
+            {
+                Condition = con;
+            }
 
             if (obj["if"] is JArray conditions)
             {
-                foreach (JObject item in conditions)
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < conditions.Count; i++)
                 {
-                    Conditions.Add(new JtCondition(item));
+                    if (i != 0)
+                        sb.Append("||");
+                    JObject item = (JObject)conditions[i];
+
+                    sb.Append($"'$({(string?)item["id"]})'");
+
+                    switch ((string?)item["type"])
+                    {
+                        case "Equal":
+                            sb.Append("==");
+                            break;
+                        case "NotEqual":
+                            sb.Append("!=");
+                            break;
+                        case "Less":
+                            sb.Append('<');
+                            break;
+                        case "Bigger":
+                            sb.Append('>');
+                            break;
+                        default:
+                            throw new Exception($"Invalid condition type `{item["type"]}`");
+                    }
+                    sb.Append($"'{(string?)item["value"]}'");
+
                 }
+                Condition = sb.ToString();
             }
             else if (obj["conditions"] is JArray conditions2)
             {
-                foreach (JObject item in conditions2)
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < conditions2.Count; i++)
                 {
-                    Conditions.Add(new JtCondition(item));
+                    if (i != 0)
+                        sb.Append("||");
+                    JObject item = (JObject)conditions2[i];
+
+                    sb.Append($"'$({(string?)item["id"]})'");
+
+                    switch (((string?)item["type"])?.ToLower())
+                    {
+                        case "equal":
+                            sb.Append("==");
+                            break;
+                        case "notEqual":
+                            sb.Append("!=");
+                            break;
+                        case "less":
+                            sb.Append('<');
+                            break;
+                        case "bigger":
+                            sb.Append('>');
+                            break;
+                        default:
+                            throw new Exception($"Invalid condition type `{item["type"]}`");
+                    }
+                    sb.Append($"'{(string?)item["value"]}'");
+
                 }
+                Condition = sb.ToString();
             }
         }
 
@@ -138,7 +199,7 @@ namespace Aadev.JTF
         /// Get all elements witch has this same name ant diffrent type in this same parent
         /// </summary>
         /// <returns></returns>
-        public JtNode[] GetTwinFamily() => Parent is null ? (new JtNode[] { this }) : Parent.Children.Where(x => x.Name == Name && x.Conditions == Conditions).ToArray();
+        public JtNode[] GetTwinFamily() => Parent is null ? (new JtNode[] { this }) : Parent.Children.Where(x => x.Name == Name && x.Condition == Condition).ToArray();
 
         internal abstract void BulidJson(StringBuilder sb);
         protected internal void BuildCommonJson(StringBuilder sb)
@@ -154,19 +215,9 @@ namespace Aadev.JTF
             if (!(Id is null))
                 sb.Append($", \"id\": \"{Id}\"");
 
-            if (Conditions.Count > 0)
+            if (!(Condition is null))
             {
-                sb.Append(", \"conditions\": [");
-
-                for (int i = 0; i < Conditions.Count; i++)
-                {
-                    if (i != 0)
-                        sb.Append(',');
-
-                    Conditions[i].BulidJson(sb);
-                }
-
-                sb.Append(']');
+                sb.Append($", \"condition\": \"{Condition}\"");
             }
         }
 
@@ -192,8 +243,10 @@ namespace Aadev.JTF
         /// <exception cref="NotImplementedException"></exception>
         public static JtNode Create(JObject item, JTemplate template)
         {
-            if (item is null) throw new ArgumentNullException(nameof(item));
-            if (template is null) throw new ArgumentNullException(nameof(template));
+            if (item is null)
+                throw new ArgumentNullException(nameof(item));
+            if (template is null)
+                throw new ArgumentNullException(nameof(template));
 
 
             if (((JValue?)item["type"])?.Value is int typeId)
@@ -212,5 +265,6 @@ namespace Aadev.JTF
         /// </summary>
         /// <returns>New <see cref="JToken"/> with default value </returns>
         public abstract JToken CreateDefaultValue();
+
     }
 }

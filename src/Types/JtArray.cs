@@ -40,7 +40,7 @@ namespace Aadev.JTF.Types
                     return;
                 }
                 Prefabs.Clear();
-                Prefabs.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                Prefabs.AddRange((JtNode[])Template.GetCustomValue(CustomValueId!)!.Value);
                 Prefabs.ReadOnly = true;
             }
         }

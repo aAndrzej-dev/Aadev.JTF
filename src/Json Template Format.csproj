@@ -14,25 +14,17 @@
     <PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.JTF</PackageProjectUrl>
     <Description>Json Template Format</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>Bug fixes
-Icon updated</PackageReleaseNotes>
-    <Version>1.0.2</Version>
-    <AssemblyVersion>1.0.2.0</AssemblyVersion>
-    <FileVersion>1.0.2.0</FileVersion>
+    <PackageReleaseNotes>Conditions now are using conditions string
+Bug fixes and performance improvements</PackageReleaseNotes>
+    <Version>1.1.0-rc1</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
 	<Deterministic>true</Deterministic>
 	<GenerateDocumentationFile>True</GenerateDocumentationFile>
-	<PackageIcon>JTF.png</PackageIcon>
   </PropertyGroup>
-	
-  <ItemGroup>
-    <None Include="..\JTF.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
-
 </Project>

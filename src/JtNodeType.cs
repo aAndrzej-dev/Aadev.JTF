@@ -29,7 +29,7 @@ namespace Aadev.JTF
 
         public static readonly JtNodeType Unknown = new JtNodeType(0, "unknown", (o, t) => new JtUnknown(o, t), t => new JtUnknown(t), nameof(Unknown));
         public static readonly JtNodeType Bool = new JtNodeType(1, "bool", (o, t) => new JtBool(o, t), t => new JtBool(t), nameof(Bool));
-        public static readonly JtNodeType Byte = new JtNodeType(2, "byte", (o, t) => new JtByte(o, t), t => new JtByte(t), nameof(Byte), false, true);
+        public static readonly JtNodeType Byte = new JtNodeType(2, "byte", (o, t) => new JtByte(o, t) , t => new JtByte(t), nameof(Byte), false, true);
         public static readonly JtNodeType Short = new JtNodeType(3, "short", (o, t) => new JtShort(o, t), t => new JtShort(t), nameof(Short), false, true);
         public static readonly JtNodeType Int = new JtNodeType(4, "int", (o, t) => new JtInt(o, t), t => new JtInt(t), nameof(Int), false, true);
         public static readonly JtNodeType Long = new JtNodeType(5, "long", (o, t) => new JtLong(o, t), t => new JtLong(t), nameof(Long), false, true);

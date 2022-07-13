@@ -29,6 +29,7 @@ namespace Aadev.JTF
 
 
 
+
             switch (((string?)obj["valueType"])?.ToLower())
             {
                 case "nodecollection":
@@ -78,7 +79,6 @@ namespace Aadev.JTF
                 default:
                     throw new Exception("Invalid value");
             }
-
         }
         public static CustomValue LoadFormFile(string filename, JTemplate template)
         {

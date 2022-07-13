@@ -114,7 +114,7 @@ namespace Aadev.JTF
         {
             for (int i = 0; i < tokens.Count; i++)
             {
-                if (tokens[i].Name == token.Name && tokens[i].Type == token.Type && tokens[i].Conditions == token.Conditions)
+                if (tokens[i].Name == token.Name && tokens[i].Type == token.Type && tokens[i].Condition == token.Condition)
                     return true;
             }
             return false;

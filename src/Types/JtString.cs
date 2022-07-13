@@ -39,7 +39,6 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"maxLength\": {MaxLength}");
             if (!string.IsNullOrEmpty(Default))
                 sb.Append($", \"default\": \"{Default}\"");
-
             sb.Append('}');
         }
 

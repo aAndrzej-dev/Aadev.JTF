@@ -30,6 +30,7 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"default\": true");
             sb.Append('}');
         }
+
         /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
     }

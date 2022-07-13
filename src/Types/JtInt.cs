@@ -11,6 +11,8 @@ namespace Aadev.JTF.Types
         private int @default;
         private int min;
         private int max;
+
+
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Integer;
         /// <inheritdoc/>
@@ -43,8 +45,13 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"max\": {Max}");
             if (Default != 0)
                 sb.Append($", \"default\": {Default}");
+
             sb.Append('}');
         }
+
+
+
+
         /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
     }

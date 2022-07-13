@@ -22,7 +22,7 @@ namespace Aadev.JTF.Types
                 if (children is null)
                 {
                     children = new JtNodeCollection(this);
-                    children.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                    children.AddRange((JtNode[])Template.GetCustomValue(CustomValueId!)!.Value);
                     children.ReadOnly = true;
 
                 }
@@ -36,7 +36,8 @@ namespace Aadev.JTF.Types
             get => customValueId; set
             {
 
-                if (customValueId == value) return;
+                if (customValueId == value)
+                    return;
                 customValueId = value;
                 children ??= new JtNodeCollection(this);
 
@@ -50,7 +51,7 @@ namespace Aadev.JTF.Types
                     return;
                 }
                 children.Clear();
-                children.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                children.AddRange((JtNode[])Template.GetCustomValue(CustomValueId!)!.Value);
                 children.ReadOnly = true;
             }
         }

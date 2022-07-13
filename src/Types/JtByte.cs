@@ -49,6 +49,7 @@ namespace Aadev.JTF.Types
             sb.Append('}');
         }
 
+
         /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
     }

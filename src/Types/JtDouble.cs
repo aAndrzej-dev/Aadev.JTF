@@ -46,7 +46,6 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"default\": {Default}");
 
             sb.Append('}');
-
         }
 
 
