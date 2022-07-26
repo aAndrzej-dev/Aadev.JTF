@@ -19,16 +19,16 @@ namespace Aadev.JTF.Types
         public override JtNodeType Type => JtNodeType.Int;
 
 
-        [DefaultValue(minValue)] public int Min { get => min; set { min = value.Min(Max); @default = value.Clamp(Min, Max); } }
-        [DefaultValue(maxValue)] public int Max { get => max; set { max = value.Max(Min); @default = value.Clamp(Min, Max); } }
-        [DefaultValue(0)] public int Default { get => @default; set => @default = value.Clamp(Min, Max); }
-        public JtInt(JTemplate template) : base(template)
+        [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public int Min { get => min; set { min = value; max = max.Max(min); @default = @default.Clamp(min, max); } }
+        [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public int Max { get => max; set { max = value; min = min.Min(max); @default = @default.Clamp(min, max); } }
+        [DefaultValue(0)] public int Default { get => @default; set => @default = value.Clamp(min, max); }
+        public JtInt(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
             Min = minValue;
             Max = maxValue;
             Default = 0;
         }
-        internal JtInt(JObject obj, JTemplate template) : base(obj, template)
+        internal JtInt(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager)
         {
             Min = (int)(obj["min"] ?? minValue);
             Max = (int)(obj["max"] ?? maxValue);
@@ -48,8 +48,6 @@ namespace Aadev.JTF.Types
 
             sb.Append('}');
         }
-
-
 
 
         /// <inheritdoc/>

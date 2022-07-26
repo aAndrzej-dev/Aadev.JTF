@@ -19,16 +19,16 @@ namespace Aadev.JTF.Types
         public override JtNodeType Type => JtNodeType.Short;
 
 
-        [DefaultValue(minValue)] public short Min { get => min; set { min = value.Min(Max); @default = value.Clamp(Min, Max); } }
-        [DefaultValue(maxValue)] public short Max { get => max; set { max = value.Max(Min); @default = value.Clamp(Min, Max); } }
-        [DefaultValue(0)] public short Default { get => @default; set => @default = value.Clamp(Min, Max); }
-        public JtShort(JTemplate template) : base(template)
+        [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public short Min { get => min; set { min = value; max = max.Max(min); @default = @default.Clamp(min, max); } }
+        [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public short Max { get => max; set { max = value; min = min.Min(max); @default = @default.Clamp(min, max); } }
+        [DefaultValue(0)] public short Default { get => @default; set => @default = value.Clamp(min, max); }
+        public JtShort(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
             Min = minValue;
             Max = maxValue;
             Default = 0;
         }
-        internal JtShort(JObject obj, JTemplate template) : base(obj, template)
+        internal JtShort(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager)
         {
             Min = (short)(obj["min"] ?? minValue);
             Max = (short)(obj["max"] ?? maxValue);

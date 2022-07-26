@@ -18,17 +18,17 @@ namespace Aadev.JTF.Types
         public override JtNodeType Type => JtNodeType.Byte;
 
 
-        [DefaultValue(minValue)] public byte Min { get => min; set { min = value.Min(Max); @default = value.Clamp(Min, Max); } }
-        [DefaultValue(maxValue)] public byte Max { get => max; set { max = value.Max(Min); @default = value.Clamp(Min, Max); } }
-        [DefaultValue(0)] public byte Default { get => @default; set => @default = value.Clamp(Min, Max); }
+        [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public byte Min { get => min; set { min = value; max = max.Max(min); @default = @default.Clamp(min, max); } }
+        [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public byte Max { get => max; set { max = value; min = min.Min(max); @default = @default.Clamp(min, max); } }
+        [DefaultValue(0)] public byte Default { get => @default; set => @default = value.Clamp(min, max); }
 
-        public JtByte(JTemplate template) : base(template)
+        public JtByte(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
             Min = minValue;
             Max = maxValue;
             Default = 0;
         }
-        internal JtByte(JObject obj, JTemplate template) : base(obj, template)
+        internal JtByte(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager)
         {
             Min = (byte)(obj["min"] ?? minValue);
             Max = (byte)(obj["max"] ?? maxValue);

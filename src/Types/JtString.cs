@@ -14,16 +14,16 @@ namespace Aadev.JTF.Types
         /// <inheritdoc/>
         public override JtNodeType Type => JtNodeType.String;
 
-        [DefaultValue(0)] public int MinLength { get => minLength; set { minLength = value.Max(0); maxLength = maxLength.Max(value); } }
-        [DefaultValue(-1)] public int MaxLength { get => maxLength; set { maxLength = value.Max(-1); minLength = minLength.Min(value).Max(0); } }
+        [DefaultValue(0), RefreshProperties(RefreshProperties.All)] public int MinLength { get => minLength; set { minLength = value.Max(0); maxLength = maxLength.Max(value); } }
+        [DefaultValue(-1), RefreshProperties(RefreshProperties.All)] public int MaxLength { get => maxLength; set { maxLength = value.Max(-1); minLength = minLength.Min(value).Max(0); } }
         public string Default { get; set; }
-        public JtString(JTemplate template) : base(template)
+        public JtString(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
             MinLength = 0;
             MaxLength = -1;
             Default = string.Empty;
         }
-        internal JtString(JObject obj, JTemplate template) : base(obj, template)
+        internal JtString(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager)
         {
             MinLength = (int)(obj["minLength"] ?? 0);
             MaxLength = (int)(obj["maxLength"] ?? -1);

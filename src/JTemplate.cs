@@ -6,11 +6,15 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Aadev.JTF
 {
-    public sealed class JTemplate
+    public sealed class JTemplate : IIdentifiersManager
     {
+        internal static readonly Regex identifierRegex = new Regex("^[a-z]+[a-z0-9_]*$", RegexOptions.Compiled);
+
+
         public const int JTF_VERSION = 1;
         /// <summary>
         /// Name of template. Default is file name
@@ -151,9 +155,9 @@ namespace Aadev.JTF
             }
 
             if (root["root"] is JObject jobj)
-                Root = JtNode.Create(jobj, this);
+                Root = JtNode.Create(jobj, this, this);
             else
-                Root = new JtBlock(this);
+                Root = new JtBlock(this, this);
 
         }
 
@@ -164,5 +168,27 @@ namespace Aadev.JTF
         /// <returns>Custom value with specific id</returns>
         public CustomValue? GetCustomValue(string id) => CustomValues.GetCustomValueById(id);
 
+        private readonly Dictionary<string, JtNode> registeredNodes = new Dictionary<string, JtNode>();
+
+        public bool RegisterNode(string id, JtNode node)
+        {
+            if (registeredNodes.ContainsKey(id))
+                return false;
+            registeredNodes.Add(id, node);
+            return true;
+        }
+        public bool UnregisterNode(string id)
+        {
+            return registeredNodes.Remove(id);
+        }
+        public JtNode? GetNodeById(string id)
+        {
+            if (registeredNodes.ContainsKey(id))
+                return registeredNodes[id];
+            return null;
+        }
+
+        public bool ContainsNode(string id) => registeredNodes.ContainsKey(id);
+        public JtNode[] GetRegisteredNodes() => registeredNodes.Values.ToArray();
     }
 }

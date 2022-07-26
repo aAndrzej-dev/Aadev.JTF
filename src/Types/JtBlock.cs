@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -22,7 +23,37 @@ namespace Aadev.JTF.Types
                 if (children is null)
                 {
                     children = new JtNodeCollection(this);
-                    children.AddRange((JtNode[])Template.GetCustomValue(CustomValueId!)!.Value);
+                    if (customValueId.StartsWith('@'))
+                    {
+                        children.AddRange((JtNode[])Template.GetCustomValue(customValueId.AsSpan(1).ToString())!.GetInstance());
+                    }
+                    else if (customValueId.StartsWith('#'))
+                    {
+                        JtNode? node = IdentifiersManager.GetNodeById(customValueId.AsSpan(1).ToString());
+                        if (node is JtBlock block)
+                        {
+
+                            children.AddRange(block.Children.ToArray());
+
+                        }
+                        else if (node is null)
+                        {
+                            JtNode? tNode = Template.GetNodeById(customValueId.AsSpan(1).ToString());
+                            if (tNode is JtBlock tblock)
+                            {
+                                children.AddRange(tblock.Children.ToArray());
+                            }
+                            else
+                            {
+                                throw new Exception();
+
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception();
+                        }
+                    }
                     children.ReadOnly = true;
 
                 }
@@ -45,22 +76,41 @@ namespace Aadev.JTF.Types
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     customValueId = null;
+                    return;
                 }
                 if (customValueId is null)
                 {
                     return;
                 }
                 children.Clear();
-                children.AddRange((JtNode[])Template.GetCustomValue(CustomValueId!)!.Value);
+
+                if (customValueId.StartsWith('@'))
+                {
+                    children.AddRange((JtNode[])Template.GetCustomValue(customValueId.AsSpan(1).ToString())!.GetInstance());
+                }
+                else if (customValueId.StartsWith('#'))
+                {
+                    JtNode? node = IdentifiersManager.GetNodeById(customValueId.AsSpan(1).ToString());
+                    if (node is JtBlock block)
+                    {
+
+                        children.AddRange(block.Children.ToArray());
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                }
+
                 children.ReadOnly = true;
             }
         }
         public override bool HasExternalSources => !(CustomValueId is null);
-        public JtBlock(JTemplate template) : base(template)
+        public JtBlock(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
             children = new JtNodeCollection(this);
         }
-        internal JtBlock(JObject obj, JTemplate template) : base(obj, template)
+        internal JtBlock(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager)
         {
             if (obj["children"] is null)
             {
@@ -71,15 +121,15 @@ namespace Aadev.JTF.Types
                 children = new JtNodeCollection(this);
                 foreach (JObject item in arr)
                 {
-                    children.Add(Create(item, Template));
+                    children.Add(Create(item, Template, IdentifiersManager));
                 }
             }
             else if (((JValue?)obj["children"])?.Value is string str)
             {
-                if (!str.StartsWith("@"))
-                    throw new System.Exception("Custom values name must starts with '@'");
+                if (!str.StartsWith("@") && !str.StartsWith("#"))
+                    throw new System.Exception("Custom values name must starts with '@' or '#'");
 
-                customValueId = str.AsSpan(1).ToString();
+                customValueId = str;
             }
 
 
@@ -111,7 +161,7 @@ namespace Aadev.JTF.Types
             }
             else
             {
-                sb.Append($", \"children\": \"@{customValueId}\"");
+                sb.Append($", \"children\": \"{customValueId}\"");
             }
             sb.Append('}');
         }

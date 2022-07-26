@@ -48,6 +48,6 @@ namespace Aadev.JTF
         private static readonly CustomValuesDictionary empty = new CustomValuesDictionary();
         public static CustomValuesDictionary Empty => empty;
 
-        public CustomValue GetCustomValueById(string id) => customValues.Where(x => x.Id == id).Single();
+        public CustomValue? GetCustomValueById(string id) => customValues.Where(x => x.Id == id).SingleOrDefault();
     }
 }

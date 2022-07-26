@@ -32,7 +32,8 @@ namespace Aadev.JTF.Types
             get => customValueId; set
             {
 
-                if (customValueId == value) return;
+                if (customValueId == value)
+                    return;
                 customValueId = value;
                 Prefabs.ReadOnly = false;
                 if (customValueId is null)
@@ -40,19 +41,19 @@ namespace Aadev.JTF.Types
                     return;
                 }
                 Prefabs.Clear();
-                Prefabs.AddRange((JtNode[])Template.GetCustomValue(CustomValueId!)!.Value);
+                Prefabs.AddRange((JtNode[])Template.GetCustomValue(CustomValueId!)!.GetInstance());
                 Prefabs.ReadOnly = true;
             }
         }
 
         public override bool HasExternalSources => !(CustomValueId is null);
 
-        public JtArray(JTemplate template) : base(template)
+        public JtArray(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
             Prefabs = new JtNodeCollection(this);
         }
 
-        internal JtArray(JObject obj, JTemplate template) : base(obj, template)
+        internal JtArray(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager)
         {
             Prefabs = new JtNodeCollection(this);
 
@@ -66,12 +67,12 @@ namespace Aadev.JTF.Types
                 {
                     if (item is null)
                         continue;
-                    Prefabs.Add(Create(item, template));
+                    Prefabs.Add(Create(item, template, new BlankIdentifiersManager()));
                 }
             }
             else if (obj["prefab"] is JObject pref)
             {
-                Prefabs.Add(Create(pref, template));
+                Prefabs.Add(Create(pref, template, new BlankIdentifiersManager()));
             }
             else if (((JValue?)obj["prefabs"])?.Value is string str)
             {
@@ -79,7 +80,7 @@ namespace Aadev.JTF.Types
                     throw new System.Exception("Custom values name must starts with '@'");
 
                 customValueId = str.AsSpan(1).ToString();
-                Prefabs.AddRange((JtNode[])(Template.GetCustomValue(CustomValueId!))!.Value);
+                Prefabs.AddRange((JtNode[])Template.GetCustomValue(CustomValueId!)!.GetInstance());
                 Prefabs.ReadOnly = true;
 
             }
@@ -125,5 +126,7 @@ namespace Aadev.JTF.Types
                 return new JObject();
             return new JArray();
         }
+
+
     }
 }

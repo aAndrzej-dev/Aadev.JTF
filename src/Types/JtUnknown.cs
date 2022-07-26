@@ -11,8 +11,8 @@ namespace Aadev.JTF.Types
         public override JtNodeType Type => JtNodeType.Unknown;
 
 
-        public JtUnknown(JTemplate template) : base(template) { }
-        internal JtUnknown(JObject obj, JTemplate template) : base(obj, template) { }
+        public JtUnknown(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager) { }
+        internal JtUnknown(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager) { }
         internal override void BulidJson(StringBuilder sb)
         {
             BuildCommonJson(sb);

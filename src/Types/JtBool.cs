@@ -13,11 +13,11 @@ namespace Aadev.JTF.Types
 
         [DefaultValue(false)] public bool Default { get; set; }
 
-        public JtBool(JTemplate template) : base(template)
+        public JtBool(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
             Default = false;
         }
-        internal JtBool(JObject obj, JTemplate template) : base(obj, template)
+        internal JtBool(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager)
         {
             Default = (bool)(obj["default"] ?? false);
         }

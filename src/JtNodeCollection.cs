@@ -92,7 +92,7 @@ namespace Aadev.JTF
             tokens.Clear();
         }
         public bool Contains(JtNode item) => tokens.Contains(item);
-        void ICollection<JtNode>.CopyTo(JtNode[] array, int arrayIndex) => throw new NotImplementedException();
+        void ICollection<JtNode>.CopyTo(JtNode[] array, int arrayIndex) => tokens.CopyTo(array, arrayIndex);
         public bool Remove(JtNode item)
         {
             if (ReadOnly)
@@ -120,5 +120,4 @@ namespace Aadev.JTF
             return false;
         }
     }
-
 }
