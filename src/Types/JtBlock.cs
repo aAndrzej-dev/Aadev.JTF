@@ -25,7 +25,7 @@ namespace Aadev.JTF.Types
                     children = new JtNodeCollection(this);
                     if (customValueId.StartsWith('@'))
                     {
-                        children.AddRange((JtNode[])Template.GetCustomValue(customValueId.AsSpan(1).ToString())!.GetInstance());
+                        children.AddRange((JtNode[])Template.GetCustomValue(customValueId.AsSpan(1).ToString())!.Value);
                     }
                     else if (customValueId.StartsWith('#'))
                     {
@@ -61,6 +61,7 @@ namespace Aadev.JTF.Types
                 return children;
             }
         }
+        public CustomValue? CustomValueSource => customValueId is null || !customValueId.StartsWith("@") ? null : Template.GetCustomValue(customValueId.AsSpan(1).ToString())!;
 
         public string? CustomValueId
         {
@@ -86,7 +87,7 @@ namespace Aadev.JTF.Types
 
                 if (customValueId.StartsWith('@'))
                 {
-                    children.AddRange((JtNode[])Template.GetCustomValue(customValueId.AsSpan(1).ToString())!.GetInstance());
+                    children.AddRange((JtNode[])CustomValueSource!.Value);
                 }
                 else if (customValueId.StartsWith('#'))
                 {
@@ -106,6 +107,7 @@ namespace Aadev.JTF.Types
             }
         }
         public override bool HasExternalSources => !(CustomValueId is null);
+
         public JtBlock(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
             children = new JtNodeCollection(this);
@@ -127,7 +129,7 @@ namespace Aadev.JTF.Types
             else if (((JValue?)obj["children"])?.Value is string str)
             {
                 if (!str.StartsWith("@") && !str.StartsWith("#"))
-                    throw new System.Exception("Custom values name must starts with '@' or '#'");
+                    throw new Exception("Custom values name must starts with '@' or '#'");
 
                 customValueId = str;
             }

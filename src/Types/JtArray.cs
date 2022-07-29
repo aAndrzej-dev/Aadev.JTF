@@ -41,12 +41,14 @@ namespace Aadev.JTF.Types
                     return;
                 }
                 Prefabs.Clear();
-                Prefabs.AddRange((JtNode[])Template.GetCustomValue(CustomValueId!)!.GetInstance());
+                Prefabs.AddRange((JtNode[])Template.GetCustomValue(CustomValueId.AsSpan(1).ToString()!)!.Value);
                 Prefabs.ReadOnly = true;
             }
         }
 
         public override bool HasExternalSources => !(CustomValueId is null);
+
+
 
         public JtArray(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
@@ -79,8 +81,8 @@ namespace Aadev.JTF.Types
                 if (!str.StartsWith("@"))
                     throw new System.Exception("Custom values name must starts with '@'");
 
-                customValueId = str.AsSpan(1).ToString();
-                Prefabs.AddRange((JtNode[])Template.GetCustomValue(CustomValueId!)!.GetInstance());
+                customValueId = str;
+                Prefabs.AddRange((JtNode[])Template.GetCustomValue(CustomValueId.AsSpan(1).ToString()!)!.Value);
                 Prefabs.ReadOnly = true;
 
             }
@@ -113,7 +115,7 @@ namespace Aadev.JTF.Types
             }
             else
             {
-                sb.Append($"\"prefabs\": \"@{customValueId}\"");
+                sb.Append($"\"prefabs\": \"{customValueId}\"");
             }
 
 
@@ -126,7 +128,5 @@ namespace Aadev.JTF.Types
                 return new JObject();
             return new JArray();
         }
-
-
     }
 }

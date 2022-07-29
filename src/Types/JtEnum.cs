@@ -32,7 +32,9 @@ namespace Aadev.JTF.Types
         public List<EnumValue> Values { get; private set; }
         [DefaultValue(false)] public bool AllowCustomValues { get => allowCustomValues; set => allowCustomValues = value; }
 
-        public string? CustomValueId { get => customValueId; set { if (customValueId == value) return; customValueId = value; Values = new List<EnumValue>((EnumValue[])Template.GetCustomValue(customValueId!)!.GetInstance()); } }
+        public string? CustomValueId { get => customValueId; set { if (customValueId == value) return; customValueId = value; Values = new List<EnumValue>((EnumValue[])Template.GetCustomValue(customValueId!)!.Value); } }
+
+
         public JtEnum(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
             Values = new List<EnumValue>();
@@ -60,10 +62,10 @@ namespace Aadev.JTF.Types
                 if (str.StartsWith("@"))
                 {
                     customValueId = str.AsSpan(1).ToString();
-                    Values = new List<EnumValue>((EnumValue[])Template.GetCustomValue(customValueId!)!.GetInstance());
+                    Values = new List<EnumValue>((EnumValue[])Template.GetCustomValue(customValueId!)!.Value);
                 }
                 else
-                    throw new System.Exception("Custom values name must starts with '@'");
+                    throw new Exception("Custom values name must starts with '@'");
 
             }
             else

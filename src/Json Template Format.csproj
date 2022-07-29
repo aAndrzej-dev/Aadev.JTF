@@ -15,7 +15,7 @@
     <Description>Json Template Format</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReleaseNotes>Bug fixes and performance improvements</PackageReleaseNotes>
-    <Version>1.1.0-rc2</Version>
+    <Version>1.1.0-rc3</Version>
     <AssemblyVersion>1.1.0.0</AssemblyVersion>
     <FileVersion>1.1.0.0</FileVersion>
 	<Deterministic>true</Deterministic>

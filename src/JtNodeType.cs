@@ -99,7 +99,6 @@ namespace Aadev.JTF
         }
         public JtNode CreateInstance(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) => instanceFactory(obj, template, identifiersManager);
         public JtNode CreateEmptyInstance(JTemplate template, IIdentifiersManager identifiersManager) => emptyInstanceFactory(template, identifiersManager);
-
         public override bool Equals(object? obj) => Equals(obj as JtNodeType);
         public bool Equals(JtNodeType? other) => other != null && Id == other.Id;
         public override int GetHashCode() => HashCode.Combine(Id);

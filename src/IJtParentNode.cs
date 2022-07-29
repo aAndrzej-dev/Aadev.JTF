@@ -16,5 +16,6 @@
         JtNodeType Type { get; }
 
         JtNodeCollection Children { get; }
+        bool IsExternal { get; }
     }
 }

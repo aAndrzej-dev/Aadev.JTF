@@ -115,7 +115,7 @@ namespace Aadev.JTF
         [Browsable(false)] public bool ReadOnly { get; private set; }
         [Category("General")] public string? Condition { get; set; }
         [Browsable(false)] public virtual bool HasExternalSources { get; }
-
+        [Browsable(false)] public bool IsExternal => HasExternalSources || Parent?.IsExternal is true;
 
 
         protected internal JtNode(JTemplate template, IIdentifiersManager identifiersManager)
@@ -127,8 +127,8 @@ namespace Aadev.JTF
         {
             this.template = template;
             IdentifiersManager = identifiersManager;
-            Name = (string?)(obj["name"]);
-            Description = (string?)(obj["description"]);
+            Name = (string?)obj["name"];
+            Description = (string?)obj["description"];
             Required = (bool)(obj["required"] ?? false);
             DisplayName = (string?)(obj["displayName"] ?? Name);
             Id = (string?)obj["id"];
