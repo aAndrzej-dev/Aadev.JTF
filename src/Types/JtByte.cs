@@ -1,10 +1,11 @@
 ﻿using Newtonsoft.Json.Linq;
+using System;
 using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
 {
-    public sealed class JtByte : JtNode
+    public sealed class JtByte : JtValue
     {
         private const byte minValue = byte.MinValue;
         private const byte maxValue = byte.MaxValue;
@@ -22,6 +23,10 @@ namespace Aadev.JTF.Types
         [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public byte Max { get => max; set { max = value; min = min.Min(max); @default = @default.Clamp(min, max); } }
         [DefaultValue(0)] public byte Default { get => @default; set => @default = value.Clamp(min, max); }
 
+        public override IJtSuggestionCollection Suggestions { get; }
+
+        public override Type ValueType => typeof(byte);
+
         public JtByte(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
             Min = minValue;
@@ -33,6 +38,8 @@ namespace Aadev.JTF.Types
             Min = (byte)(obj["min"] ?? minValue);
             Max = (byte)(obj["max"] ?? maxValue);
             Default = (byte)(obj["default"] ?? 0);
+
+            Suggestions = new JtSuggestionCollection<byte>(this, obj["suggestions"]);
         }
 
         internal override void BulidJson(StringBuilder sb)
@@ -45,12 +52,21 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"max\": {Max}");
             if (Default != 0)
                 sb.Append($", \"default\": {Default}");
+            if (Suggestions.Count > 0)
+            {
+                sb.Append($", \"suggestions\": ");
+                Suggestions.BuildJson(sb);
 
+                if (ForecUsingSuggestions)
+                    sb.Append(", \"forceSuggestions\": true");
+            }
             sb.Append('}');
         }
 
 
         /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
+
+        public override object GetDefault() => Default;
     }
 }

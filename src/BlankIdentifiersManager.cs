@@ -6,7 +6,6 @@ namespace Aadev.JTF
     internal class BlankIdentifiersManager : IIdentifiersManager
     {
         private readonly Dictionary<string, JtNode> registeredNodes = new Dictionary<string, JtNode>();
-       
         public bool RegisterNode(string id, JtNode node)
         {
             if (registeredNodes.ContainsKey(id))

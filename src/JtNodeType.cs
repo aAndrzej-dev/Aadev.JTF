@@ -38,7 +38,6 @@ namespace Aadev.JTF
         public static readonly JtNodeType String = new JtNodeType(8, "string", (o, t, i) => new JtString(o, t, i), (t, i) => new JtString(t, i), nameof(String));
         public static readonly JtNodeType Block = new JtNodeType(9, "block", (o, t, i) => new JtBlock(o, t, i), (t, i) => new JtBlock(t, i), nameof(Block), true);
         public static readonly JtNodeType Array = new JtNodeType(10, "array", (o, t, i) => new JtArray(o, t, i), (t, i) => new JtArray(t, i), nameof(Array), true);
-        public static readonly JtNodeType Enum = new JtNodeType(11, "enum", (o, t, i) => new JtEnum(o, t, i), (t, i) => new JtEnum(t, i), nameof(Enum));
 
 
         private static readonly JtNodeType[] items = new JtNodeType[]
@@ -53,7 +52,6 @@ namespace Aadev.JTF
          JtNodeType.String,
          JtNodeType.Block,
          JtNodeType.Array,
-         JtNodeType.Enum,
          JtNodeType.Unknown,
 
         };
@@ -74,7 +72,7 @@ namespace Aadev.JTF
                 8 => JtNodeType.String,
                 9 => JtNodeType.Block,
                 10 => JtNodeType.Array,
-                11 => JtNodeType.Enum,
+                11 => JtNodeType.String,
                 _ => JtNodeType.Unknown,
             };
         }
@@ -93,7 +91,7 @@ namespace Aadev.JTF
                 "string" => JtNodeType.String,
                 "block" => JtNodeType.Block,
                 "array" => JtNodeType.Array,
-                "enum" => JtNodeType.Enum,
+                "enum" => JtNodeType.String,
                 _ => JtNodeType.Unknown,
             };
         }

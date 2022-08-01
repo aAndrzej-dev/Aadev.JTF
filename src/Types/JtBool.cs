@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System;
 using System.ComponentModel;
 using System.Text;
 
@@ -13,13 +14,14 @@ namespace Aadev.JTF.Types
 
         [DefaultValue(false)] public bool Default { get; set; }
 
+
         public JtBool(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
         {
-            Default = false;
         }
         internal JtBool(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager)
         {
-            Default = (bool)(obj["default"] ?? false);
+            Default = (bool?)obj["default"] ?? false;
+
         }
 
         internal override void BulidJson(StringBuilder sb)
@@ -33,5 +35,6 @@ namespace Aadev.JTF.Types
 
         /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
+
     }
 }

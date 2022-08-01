@@ -14,8 +14,10 @@
     <PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.JTF</PackageProjectUrl>
     <Description>Json Template Format</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>Bug fixes and performance improvements</PackageReleaseNotes>
-    <Version>1.1.0-rc3</Version>
+    <PackageReleaseNotes>Removed JtEnum
+Added suggestions for every value type
+Bug fixes and improvements</PackageReleaseNotes>
+    <Version>1.1.0-rc4</Version>
     <AssemblyVersion>1.1.0.0</AssemblyVersion>
     <FileVersion>1.1.0.0</FileVersion>
 	<Deterministic>true</Deterministic>

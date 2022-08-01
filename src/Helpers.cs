@@ -59,6 +59,7 @@ namespace Aadev.JTF
         internal static float Min(this float a, float b) => a < b ? a : b;
         internal static double Min(this double a, double b) => a < b ? a : b;
 
+
         internal static byte Max(this byte a, byte b) => a > b ? a : b;
         internal static short Max(this short a, short b) => a > b ? a : b;
         internal static int Max(this int a, int b) => a > b ? a : b;

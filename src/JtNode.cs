@@ -9,6 +9,8 @@ namespace Aadev.JTF
 {
     public abstract class JtNode
     {
+
+
         private IJtParentNode? parent;
         private JTemplate template;
         private string? name;
@@ -16,12 +18,16 @@ namespace Aadev.JTF
         private string? description;
         private bool required;
         private string? id;
+        private string? condition;
+
         [Browsable(false)]
         public IIdentifiersManager IdentifiersManager { get; }
         [Browsable(false)]
         public abstract JTokenType JsonType { get; }
         [Browsable(false)]
         public abstract JtNodeType Type { get; }
+
+
         [Category("General"), Description("Name of current token used as key in json file"), RefreshProperties(RefreshProperties.All)]
         public string? Name
         {
@@ -107,13 +113,16 @@ namespace Aadev.JTF
 
             }
         }
+        [Category("General")] public string? Condition { get => condition; set => condition = value; }
+
+
+
         [Browsable(false)] public JTemplate Template => template;
         [Browsable(false)] public bool IsArrayPrefab => Parent is JtArray;
         [Browsable(false)] public bool IsInArrayPrefab => IsArrayPrefab || Parent?.IsInArrayPrefab is true;
         [Browsable(false)] public bool IsDynamicName => Parent is JtArray array && array.MakeAsObject;
         [Browsable(false)] public bool IsRoot => Template.Root == this;
         [Browsable(false)] public bool ReadOnly { get; private set; }
-        [Category("General")] public string? Condition { get; set; }
         [Browsable(false)] public virtual bool HasExternalSources { get; }
         [Browsable(false)] public bool IsExternal => HasExternalSources || Parent?.IsExternal is true;
 
@@ -127,6 +136,8 @@ namespace Aadev.JTF
         {
             this.template = template;
             IdentifiersManager = identifiersManager;
+
+
             Name = (string?)obj["name"];
             Description = (string?)obj["description"];
             Required = (bool)(obj["required"] ?? false);
