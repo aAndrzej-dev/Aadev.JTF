@@ -11,7 +11,7 @@ namespace Aadev.JTF
     {
 
 
-        private IJtParentNode? parent;
+        private JtContainer? parent;
         private JTemplate template;
         private string? name;
         private string? displayName;
@@ -73,7 +73,7 @@ namespace Aadev.JTF
             }
         }
         [Browsable(false)]
-        public IJtParentNode? Parent
+        public JtContainer? Parent
         {
             get => parent; set
             {
@@ -118,9 +118,9 @@ namespace Aadev.JTF
 
 
         [Browsable(false)] public JTemplate Template => template;
-        [Browsable(false)] public bool IsArrayPrefab => Parent is JtArray;
+        [Browsable(false)] public bool IsArrayPrefab => Parent?.ContainerDisplayType is JtContainerType.Array;
         [Browsable(false)] public bool IsInArrayPrefab => IsArrayPrefab || Parent?.IsInArrayPrefab is true;
-        [Browsable(false)] public bool IsDynamicName => Parent is JtArray array && array.MakeAsObject;
+        [Browsable(false)] public bool IsDynamicName => Parent is { ContainerDisplayType: JtContainerType.Array, ContainerJsonType: JtContainerType.Block };
         [Browsable(false)] public bool IsRoot => Template.Root == this;
         [Browsable(false)] public bool ReadOnly { get; private set; }
         [Browsable(false)] public virtual bool HasExternalSources { get; }
@@ -136,7 +136,6 @@ namespace Aadev.JTF
         {
             this.template = template;
             IdentifiersManager = identifiersManager;
-
 
             Name = (string?)obj["name"];
             Description = (string?)obj["description"];
@@ -218,7 +217,7 @@ namespace Aadev.JTF
         }
         public JtNode[] GetTwinFamily() => Parent is null ? (new JtNode[] { this }) : Parent.Children.Where(x => x.Name == Name && x.Condition == Condition).ToArray();
         internal abstract void BulidJson(StringBuilder sb);
-        protected internal void BuildCommonJson(StringBuilder sb)
+        protected internal virtual void BuildCommonJson(StringBuilder sb)
         {
             sb.Append('{');
             if (!IsArrayPrefab && !IsRoot)
@@ -230,6 +229,8 @@ namespace Aadev.JTF
                 sb.Append($", \"displayName\": \"{DisplayName}\"");
             if (!(Id is null))
                 sb.Append($", \"id\": \"{Id}\"");
+            if (Required)
+                sb.Append(", \"required\": true");
             if (!(Condition is null))
             {
                 sb.Append($", \"condition\": \"{Condition}\"");
@@ -249,9 +250,29 @@ namespace Aadev.JTF
                 throw new ArgumentNullException(nameof(template));
             if (((JValue?)item["type"])?.Value is int typeId)
             {
+                if (typeId == 11)
+                {
+                    bool allowCustom = (bool?)item["allowCustom"] ?? false;
+                    if (!allowCustom)
+                    {
+                        item["forceSuggestions"] = true;
+                    }
+                }
+
+
                 return JtNodeType.GetById(typeId).CreateInstance(item, template, identifiersManager);
             }
             string typeString = (string?)item["type"] ?? throw new Exception($"Item '{item["name"]}' dont have type");
+
+            if (typeString.ToLower() is "enum")
+            {
+                bool allowCustom = (bool?)item["allowCustom"] ?? false;
+                if (!allowCustom)
+                {
+                    item["forceSuggestions"] = true;
+                }
+            }
+
             return JtNodeType.GetByName(typeString).CreateInstance(item, template, identifiersManager);
         }
         public abstract JToken CreateDefaultValue();

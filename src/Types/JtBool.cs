@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json.Linq;
-using System;
 using System.ComponentModel;
 using System.Text;
 
@@ -35,6 +34,6 @@ namespace Aadev.JTF.Types
 
         /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
-
+    
     }
 }

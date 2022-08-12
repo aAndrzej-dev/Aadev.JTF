@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Aadev.JTF
 {
     public interface IJtSuggestionCollection : IJtCollection, IList<IJtSuggestion>
     {
+        Type ValueType { get; }
     }
 }

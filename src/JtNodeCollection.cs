@@ -12,7 +12,7 @@ namespace Aadev.JTF
     public class JtNodeCollection : IList<JtNode>, IReadOnlyList<JtNode>, IJtCollection, IList
     {
         private List<JtNode>? tokens;
-        private readonly IJtParentNode owner;
+        private readonly JtContainer owner;
         private string? customSourceId;
 
         public string? CustomSourceId
@@ -45,7 +45,7 @@ namespace Aadev.JTF
                 else if (customSourceId.StartsWith('#'))
                 {
                     JtNode? node = owner.IdentifiersManager.GetNodeById(customSourceId.AsSpan(1).ToString());
-                    if (node is JtBlock block)
+                    if (node is JtContainer block)
                     {
 
                         AddRange(block.Children.ToArray());
@@ -66,14 +66,14 @@ namespace Aadev.JTF
                 if (tokens is null)
                 {
                     tokens = new List<JtNode>();
-                    if (CustomSourceId.StartsWith('@'))
+                    if (CustomSourceId!.StartsWith('@'))
                     {
                         tokens.AddRange((JtNode[])owner.Template.GetCustomValue(CustomSourceId.AsSpan(1).ToString())!.Value);
                     }
                     else if (CustomSourceId.StartsWith('#'))
                     {
                         JtNode? node = owner.IdentifiersManager.GetNodeById(CustomSourceId.AsSpan(1).ToString());
-                        if (node is JtBlock block)
+                        if (node is JtContainer block)
                         {
 
                             tokens.AddRange(block.Children.ToArray());
@@ -82,7 +82,7 @@ namespace Aadev.JTF
                         else if (node is null)
                         {
                             JtNode? tNode = owner.Template.GetNodeById(CustomSourceId.AsSpan(1).ToString());
-                            if (tNode is JtBlock tblock)
+                            if (tNode is JtContainer tblock)
                             {
                                 tokens.AddRange(tblock.Children.ToArray());
                             }
@@ -123,12 +123,12 @@ namespace Aadev.JTF
             }
         }
 
-        internal JtNodeCollection(IJtParentNode owner)
+        internal JtNodeCollection(JtContainer owner)
         {
             tokens = new List<JtNode>();
             this.owner = owner;
         }
-        internal JtNodeCollection(IJtParentNode owner, JToken? source)
+        internal JtNodeCollection(JtContainer owner, JToken? source)
         {
             this.owner = owner;
             if (source is JArray)
@@ -136,7 +136,7 @@ namespace Aadev.JTF
                 tokens = new List<JtNode>();
                 foreach (JObject item in source)
                 {
-                    Add(JtNode.Create(item, owner.Template, owner is JArray ? new BlankIdentifiersManager() : owner.IdentifiersManager));
+                    Add(JtNode.Create(item, owner.Template, owner.ContainerDisplayType is JtContainerType.Array ? new BlankIdentifiersManager() : owner.IdentifiersManager));
                 }
             }
             else if (((JValue?)source)?.Value is string str)
@@ -146,6 +146,8 @@ namespace Aadev.JTF
 
                 customSourceId = str;
             }
+            else
+                tokens = new List<JtNode>();
         }
 
         public void AddRange(JtNode[] items)

@@ -56,14 +56,7 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"maxLength\": {MaxLength}");
             if (!string.IsNullOrEmpty(Default))
                 sb.Append($", \"default\": \"{Default}\"");
-            if (Suggestions.Count > 0)
-            {
-                sb.Append($", \"suggestions\": ");
-                Suggestions.BuildJson(sb);
 
-                if (ForecUsingSuggestions)
-                    sb.Append(", \"forceSuggestions\": true");
-            }
             sb.Append('}');
         }
 

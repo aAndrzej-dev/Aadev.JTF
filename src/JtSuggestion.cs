@@ -24,20 +24,19 @@ namespace Aadev.JTF
 
         public Type ValueType => typeof(T);
 
-        public JtSuggestion() { }
         public JtSuggestion(T value)
         {
-            Value = value;
+            this.value = value;
             DisplayName = value?.ToString();
         }
         public JtSuggestion(JObject obj)
         {
 
             if (((JValue?)obj["name"])?.Value is string && typeof(T) == typeof(string))
-                Value = (T)((JValue?)obj["name"])?.Value!;
+                value = (T)((JValue?)obj["name"])?.Value!;
             else
-                Value = (T)Convert.ChangeType(((JValue?)obj["value"])?.Value, typeof(T), CultureInfo.InvariantCulture)!;
-            DisplayName = (string?)obj["displayName"] ?? Value?.ToString();
+                value = (T)Convert.ChangeType(((JValue?)obj["value"])?.Value, typeof(T), CultureInfo.InvariantCulture)!;
+            DisplayName = (string?)obj["displayName"] ?? value?.ToString();
         }
         public override string? ToString() => DisplayName ?? Value?.ToString();
 
@@ -58,13 +57,13 @@ namespace Aadev.JTF
         {
             if (Value is T1 v)
                 return v;
-            throw new Exception();
+            throw new Exception("Invalid type");
         }
         public void SetValue<T1>(T1 value)
         {
             if (value is T v)
                 Value = v;
-            throw new Exception();
+            throw new Exception("Invalid type");
         }
 
         public object? GetValue() => Value;
@@ -72,7 +71,7 @@ namespace Aadev.JTF
         {
             if (value is T v)
                 Value = v;
-            throw new Exception();
+            throw new Exception("Invalid type");
         }
     }
 }

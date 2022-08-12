@@ -84,6 +84,8 @@ namespace Aadev.JTF
 
         public object SyncRoot => ((ICollection)suggestions).SyncRoot;
 
+        public Type ValueType => typeof(T);
+
         IJtSuggestion IList<IJtSuggestion>.this[int index] { get => suggestions[index]; set => suggestions[index] = (JtSuggestion<T>)value; }
         object? IList.this[int index] { get => ((IList)suggestions)[index]; set => ((IList)suggestions)[index] = value; }
 

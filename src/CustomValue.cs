@@ -6,7 +6,7 @@ namespace Aadev.JTF
 {
     public class CustomValue
     {
-        private object value;
+        private object? value;
         private readonly JObject obj;
 
         public CustomValueType CustomValueType { get; private set; }
@@ -48,7 +48,7 @@ namespace Aadev.JTF
                     break;
                     case "enumvaluecollection": // Backwards compatibility
                     case "enumvaluescollection": // Backwards compatibility
-                    case "suggestioncollection": 
+                    case "suggestioncollection":
                     {
                         if (!(obj["content"] is JArray array))
                             throw new Exception("Content is null");
