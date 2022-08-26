@@ -34,6 +34,6 @@ namespace Aadev.JTF.Types
 
         /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
-    
+
     }
 }

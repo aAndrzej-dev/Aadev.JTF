@@ -1,6 +1,6 @@
 ﻿# Json Template Format
 
-![JTF Icon](https://github.com/aAndrzej-dev/Aadev.JTF/blob/main/JTF.png)
+![JTF Icon](https://raw.githubusercontent.com/aAndrzej-dev/Aadev.JTF/main/JTF.png)
 
 Advanced json schematic format
 

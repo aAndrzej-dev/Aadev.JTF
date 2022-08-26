@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.ComponentModel;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -7,11 +8,11 @@ namespace Aadev.JTF.Types
     {
         private bool disableCollapse;
 
-        public abstract JtNodeCollection Children { get; }
-        public abstract JtContainerType ContainerDisplayType { get; }
+        [Browsable(false)] public abstract JtNodeCollection Children { get; }
+        [Browsable(false)] public abstract JtContainerType ContainerDisplayType { get; }
 
 
-        public bool DisableCollapse { get => disableCollapse; set => disableCollapse = value; }
+        [DefaultValue(false)] public bool DisableCollapse { get => disableCollapse; set => disableCollapse = value; }
         public JtContainerType ContainerJsonType { get; set; }
 
 

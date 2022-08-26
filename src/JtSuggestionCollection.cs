@@ -10,7 +10,7 @@ namespace Aadev.JTF
     /// Collection of <see cref="JtSuggestion{T}"/>
     /// </summary>
     /// <typeparam name="T">Type of <see cref="JtSuggestion{T}"/></typeparam>
-    public class JtSuggestionCollection<T> : IList<JtSuggestion<T>>, IReadOnlyList<JtSuggestion<T>>, IJtSuggestionCollection, IList
+    public class JtSuggestionCollection<T> : IList<JtSuggestion<T>>, IReadOnlyList<JtSuggestion<T>>, IJtSuggestionCollection
     {
         private readonly List<JtSuggestion<T>> suggestions;
         private readonly JtNode owner;

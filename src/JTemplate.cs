@@ -106,7 +106,6 @@ namespace Aadev.JTF
         public JTemplate(string filename)
         {
             Filename = filename ?? throw new ArgumentNullException(nameof(filename));
-
             if (!File.Exists(filename))
                 throw new FileNotFoundException(filename);
 

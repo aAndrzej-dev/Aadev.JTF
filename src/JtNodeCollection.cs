@@ -9,7 +9,7 @@ using System.Text;
 namespace Aadev.JTF
 {
     [Serializable]
-    public class JtNodeCollection : IList<JtNode>, IReadOnlyList<JtNode>, IJtCollection, IList
+    public class JtNodeCollection : IList<JtNode>, IReadOnlyList<JtNode>, IJtCollection
     {
         private List<JtNode>? tokens;
         private readonly JtContainer owner;

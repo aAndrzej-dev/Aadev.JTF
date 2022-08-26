@@ -1,6 +1,7 @@
 ﻿using Aadev.JTF.Types;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -9,8 +10,6 @@ namespace Aadev.JTF
 {
     public abstract class JtNode
     {
-
-
         private JtContainer? parent;
         private JTemplate template;
         private string? name;
@@ -215,7 +214,7 @@ namespace Aadev.JTF
 
 
         }
-        public JtNode[] GetTwinFamily() => Parent is null ? (new JtNode[] { this }) : Parent.Children.Where(x => x.Name == Name && x.Condition == Condition).ToArray();
+        public IEnumerable<JtNode> GetTwinFamily() => Parent is null ? (new JtNode[] { this }) : Parent.Children.Where(x => x.Name == Name && x.Condition == Condition);
         internal abstract void BulidJson(StringBuilder sb);
         protected internal virtual void BuildCommonJson(StringBuilder sb)
         {
@@ -276,5 +275,5 @@ namespace Aadev.JTF
             return JtNodeType.GetByName(typeString).CreateInstance(item, template, identifiersManager);
         }
         public abstract JToken CreateDefaultValue();
-    }
+   }
 }

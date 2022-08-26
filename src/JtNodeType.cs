@@ -50,7 +50,6 @@ namespace Aadev.JTF
          JtNodeType.Block,
          JtNodeType.Array,
          JtNodeType.Unknown,
-
         };
         public static JtNodeType[] Items => items;
 

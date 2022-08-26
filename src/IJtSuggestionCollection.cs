@@ -6,5 +6,6 @@ namespace Aadev.JTF
     public interface IJtSuggestionCollection : IJtCollection, IList<IJtSuggestion>
     {
         Type ValueType { get; }
+        new int Count { get; }
     }
 }
