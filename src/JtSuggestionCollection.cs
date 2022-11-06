@@ -1,141 +1,107 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Aadev.JTF.CustomSources;
+using Aadev.JTF.JtEnumerable;
+using Newtonsoft.Json.Linq;
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Aadev.JTF
 {
-    /// <summary>
-    /// Collection of <see cref="JtSuggestion{T}"/>
-    /// </summary>
-    /// <typeparam name="T">Type of <see cref="JtSuggestion{T}"/></typeparam>
-    public class JtSuggestionCollection<T> : IList<JtSuggestion<T>>, IReadOnlyList<JtSuggestion<T>>, IJtSuggestionCollection
+    public sealed class JtSuggestionCollection<T> : IJtSuggestionCollectionChild<T>, IJtSuggestionCollection
     {
-        private readonly List<JtSuggestion<T>> suggestions;
-        private readonly JtNode owner;
-        private string? customSourceId;
+        internal JtCustomResourceIdentifier Id { get; }
+        internal readonly IJtEnumerable<IJtSuggestionCollectionChild<T>> suggestionEnumerable;
 
-        /// <summary>
-        /// Custom source for items of collection
-        /// </summary>
-        public string? CustomSourceId
+        public Type SuggestionType => typeof(T);
+
+        private JtSuggestionCollection()
         {
-            get => customSourceId;
-            set
-            {
-                if (customSourceId == value || value is null || value.Length <= 1)
-                    return;
-                customSourceId = value;
-                Clear();
-                if (customSourceId.StartsWith("@"))
-                    AddRange((JtSuggestion<T>[])owner.Template.GetCustomValue(customSourceId.AsSpan(1).ToString())!.Value);
-            }
+            suggestionEnumerable = JtEnumerable.JtEnumerable.CreateEmpty<IJtSuggestionCollectionChild<T>>();
         }
-
-        /// <summary>
-        /// Creates empty collection of <see cref="JtSuggestion{T}"/>
-        /// </summary>
-        /// <param name="owner">Owner node</param>
-        public JtSuggestionCollection(JtNode owner)
+        private JtSuggestionCollection(JArray? source, ICustomSourceProvider sourceProvider)
         {
-            suggestions = new List<JtSuggestion<T>>();
-            this.owner = owner;
+            suggestionEnumerable = JtEnumerable.JtEnumerable.CreateJtSuggestionCollection<T>(source, sourceProvider);
         }
-        /// <summary>
-        /// Load collection for <see cref="JToken"/>
-        /// </summary>
-        /// <param name="owner">Owner node</param>
-        /// <param name="source">Source of collection</param>
-        /// <exception cref="Exception"></exception>
-        public JtSuggestionCollection(JtNode owner, JToken? source)
+        private JtSuggestionCollection(JtCustomResourceIdentifier id)
         {
-            suggestions = new List<JtSuggestion<T>>();
-            this.owner = owner;
+            suggestionEnumerable = JtEnumerable.JtEnumerable.CreateEmpty<IJtSuggestionCollectionChild<T>>();
+            Id = id;
+        }
+        private JtSuggestionCollection(JtSuggestionCollectionSource<T> source, JtCustomResourceIdentifier id)
+        {
+            suggestionEnumerable = JtEnumerable.JtEnumerable.CreateJtSuggestionCollection<T>(source);
+            Id = id;
+        }
+        public bool IsStatic => Id.Type != JtCustomResourceIdentifierType.Dynamic && suggestionEnumerable.Enumerate().All(x => x.IsStatic);
 
-            if (source is JArray values)
+        public static JtSuggestionCollection<T> Create() => new JtSuggestionCollection<T>();
+        public static JtSuggestionCollection<T> Create(JToken? value, ICustomSourceProvider sourceProvider)
+        {
+            if (value?.Type is JTokenType.String)
             {
-                foreach (JObject item in values)
+                JtCustomResourceIdentifier id = (string?)value;
+                if (id.Type is JtCustomResourceIdentifierType.None)
+                    return new JtSuggestionCollection<T>();
+                if (id.Type is JtCustomResourceIdentifierType.Dynamic)
+                    return new JtSuggestionCollection<T>(id);
+                if (id.Type is JtCustomResourceIdentifierType.External)
+                    return sourceProvider.GetCustomSource<JtSuggestionCollectionSource<T>>(id)?.CreateInstance(id) ?? new JtSuggestionCollection<T>(id);
+                if (id.Type is JtCustomResourceIdentifierType.Direct)
                 {
-                    Add(new JtSuggestion<T>(item));
+                    JtValueNodeSource? element = sourceProvider.GetCustomSource<JtValueNodeSource>(id);
+                    if (element is null)
+                        return new JtSuggestionCollection<T>(id);
+                    IJtSuggestionCollection instance = element.Suggestions.CreateInstance();
+
+                    if (instance.SuggestionType != typeof(T))
+                        return new JtSuggestionCollection<T>(id);
+
+                    return (JtSuggestionCollection<T>)instance;
                 }
+
             }
-            else if (((JValue?)source)?.Value is string suggestionsStr)
+            if (value?.Type is JTokenType.Array)
             {
-                if (suggestionsStr.StartsWith("@") || suggestionsStr.StartsWith("$"))
-                {
-                    CustomSourceId = suggestionsStr;
-                }
-                else
-                    throw new Exception("Custom values name must starts with '@' or '$'");
+                return new JtSuggestionCollection<T>((JArray)value, sourceProvider);
             }
+            return new JtSuggestionCollection<T>();
         }
+        internal static JtSuggestionCollection<T> Create(JtSuggestionCollectionSource<T> source, JtCustomResourceIdentifier id) => new JtSuggestionCollection<T>(source, id);
 
 
-        public JtSuggestion<T> this[int index] { get => ((IList<JtSuggestion<T>>)suggestions)[index]; set => ((IList<JtSuggestion<T>>)suggestions)[index] = value; }
-
-        public int Count => ((ICollection<JtSuggestion<T>>)suggestions).Count;
-
-        public bool IsReadOnly => ((ICollection<JtSuggestion<T>>)suggestions).IsReadOnly;
-
-        public bool IsFixedSize => ((IList)suggestions).IsFixedSize;
-
-        public bool IsSynchronized => ((ICollection)suggestions).IsSynchronized;
-
-        public object SyncRoot => ((ICollection)suggestions).SyncRoot;
-
-        public Type ValueType => typeof(T);
-
-        IJtSuggestion IList<IJtSuggestion>.this[int index] { get => suggestions[index]; set => suggestions[index] = (JtSuggestion<T>)value; }
-        object? IList.this[int index] { get => ((IList)suggestions)[index]; set => ((IList)suggestions)[index] = value; }
-
-        public void Add(JtSuggestion<T> item) => ((ICollection<JtSuggestion<T>>)suggestions).Add(item);
-        public void AddRange(JtSuggestion<T>[] items)
+        public IEnumerable<IJtSuggestion> GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource)
         {
-            for (int i = 0; i < items.Length; i++)
-            {
-                Add(items[i]);
-            }
+            if (Id.Type is JtCustomResourceIdentifierType.Dynamic)
+                return dynamicSuggestionsSource(Id.Identifier).Select(x => (JtSuggestion<T>)x);
+
+            return suggestionEnumerable.Enumerate().SelectMany(x => x.GetSuggestions(dynamicSuggestionsSource)).Distinct();
         }
-        public void Clear() => ((ICollection<JtSuggestion<T>>)suggestions).Clear();
-        public bool Contains(JtSuggestion<T> item) => ((ICollection<JtSuggestion<T>>)suggestions).Contains(item);
-        public void CopyTo(JtSuggestion<T>[] array, int arrayIndex) => ((ICollection<JtSuggestion<T>>)suggestions).CopyTo(array, arrayIndex);
-        public IEnumerator<JtSuggestion<T>> GetEnumerator() => ((IEnumerable<JtSuggestion<T>>)suggestions).GetEnumerator();
-        public int IndexOf(JtSuggestion<T> item) => ((IList<JtSuggestion<T>>)suggestions).IndexOf(item);
-        public void Insert(int index, JtSuggestion<T> item) => ((IList<JtSuggestion<T>>)suggestions).Insert(index, item);
-        public bool Remove(JtSuggestion<T> item) => ((ICollection<JtSuggestion<T>>)suggestions).Remove(item);
-        public void RemoveAt(int index) => ((IList<JtSuggestion<T>>)suggestions).RemoveAt(index);
-        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)suggestions).GetEnumerator();
-        public int Add(object? value) => ((IList)suggestions).Add(value);
-        public bool Contains(object? value) => ((IList)suggestions).Contains(value);
-        public int IndexOf(object? value) => ((IList)suggestions).IndexOf(value);
-        public void Insert(int index, object? value) => ((IList)suggestions).Insert(index, value);
-        public void Remove(object? value) => ((IList)suggestions).Remove(value);
-        public void CopyTo(Array array, int index) => ((ICollection)suggestions).CopyTo(array, index);
-        public int IndexOf(IJtSuggestion item) => suggestions.IndexOf((JtSuggestion<T>)item);
-        public void Insert(int index, IJtSuggestion item) => suggestions.Insert(index, (JtSuggestion<T>)item);
-        public void Add(IJtSuggestion item) => suggestions.Add((JtSuggestion<T>)item);
-        public bool Contains(IJtSuggestion item) => suggestions.Contains((JtSuggestion<T>)item);
-        public void CopyTo(IJtSuggestion[] array, int arrayIndex) => suggestions.CopyTo((JtSuggestion<T>[])array, arrayIndex);
-        public bool Remove(IJtSuggestion item) => suggestions.Remove((JtSuggestion<T>)item);
-        IEnumerator<IJtSuggestion> IEnumerable<IJtSuggestion>.GetEnumerator() => suggestions.GetEnumerator();
         public void BuildJson(StringBuilder sb)
         {
-            if (CustomSourceId is null)
+            if (Id.IsEmpty)
             {
                 sb.Append('[');
-                for (int i = 0; i < Count; i++)
+                for (int i = 0; i < suggestionEnumerable.Enumerate().Count; i++)
                 {
                     if (i > 0)
                         sb.Append(',');
-                    this[i].BulidJson(sb);
+                    suggestionEnumerable.Enumerate()[i].BuildJson(sb);
                 }
                 sb.Append(']');
             }
             else
             {
-                sb.Append($"\"{CustomSourceId}\"");
+                sb.Append($"\"{Id}\"");
             }
         }
+
+
+
+        internal JtSuggestionCollectionSource<T> CreateSource(ICustomSourceParent parent) => JtSuggestionCollectionSource<T>.Create(this, parent);
+        IJtSuggestionCollectionSourceChild<T> IJtSuggestionCollectionChild<T>.CreateSource(ICustomSourceParent parent) => CreateSource(parent);
+        IJtSuggestionCollectionSource IJtSuggestionCollection.CreateSource(ICustomSourceParent parent) => CreateSource(parent);
+
+        public bool IsEmpty => suggestionEnumerable.Enumerate().Count == 0 && Id.Type != JtCustomResourceIdentifierType.Dynamic;
     }
 }

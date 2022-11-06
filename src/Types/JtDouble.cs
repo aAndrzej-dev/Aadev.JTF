@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Aadev.JTF.CustomSources;
+using Newtonsoft.Json.Linq;
 using System;
 using System.ComponentModel;
 using System.Text;
@@ -9,42 +10,52 @@ namespace Aadev.JTF.Types
     {
         private const double minValue = double.MinValue;
         private const double maxValue = double.MaxValue;
-        private double @default;
-        private double min;
-        private double max;
+        private double? @default;
+        private double? min;
+        private double? max;
 
         /// <inheritdoc/>
         public override JTokenType JsonType => JTokenType.Float;
         /// <inheritdoc/>
         public override JtNodeType Type => JtNodeType.Double;
 
+        public new JtDoubleNodeSource? Base => (JtDoubleNodeSource?)base.Base;
 
-        [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public double Min { get => min; set { min = value; max = max.Max(min); @default = @default.Clamp(min, max); } }
-        [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public double Max { get => max; set { max = value; min = min.Min(max); @default = @default.Clamp(min, max); } }
-        [DefaultValue(0)] public double Default { get => @default; set => @default = value.Clamp(min, max); }
+        [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public double Min { get => min ?? Base?.Min ?? minValue; set { min = value; max = max.Max(min); @default = @default.Clamp(Min, Max); } }
+        [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public double Max { get => max ?? Base?.Max ?? maxValue; set { max = value; min = min.Min(max); @default = @default.Clamp(Min, Max); } }
+        [DefaultValue(0)] public double Default { get => @default ?? Base?.Default ?? 0; set => @default = value.Clamp(Min, Max); }
 
         public override IJtSuggestionCollection Suggestions { get; }
-
         public override Type ValueType => typeof(double);
 
-        public JtDouble(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager)
+        public JtDouble(IJtNodeParent parent) : base(parent)
         {
             Min = minValue;
             Max = maxValue;
             Default = 0;
-            Suggestions = new JtSuggestionCollection<double>(this);
+            Suggestions = JtSuggestionCollection<double>.Create();
         }
-        internal JtDouble(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager)
+        internal JtDouble(JObject obj, IJtNodeParent parent) : base(obj, parent)
         {
             Min = (double)(obj["min"] ?? minValue);
             Max = (double)(obj["max"] ?? maxValue);
             Default = (double)(obj["default"] ?? 0);
 
 
-            Suggestions = new JtSuggestionCollection<double>(this, obj["suggestions"]);
+
+            Suggestions = JtSuggestionCollection<double>.Create(obj["suggestions"], this);
+        }
+        internal JtDouble(JtDoubleNodeSource source, JToken? @override, IJtNodeParent parent) : base(source, @override, parent)
+        {
+            Suggestions = source.Suggestions.CreateInstance();
+            if (@override is null)
+                return;
+            min = (double?)@override["min"];
+            max = (double?)@override["max"];
+            @default = (double?)@override["default"];
         }
 
-        internal override void BulidJson(StringBuilder sb)
+        internal override void BuildJson(StringBuilder sb)
         {
             BuildCommonJson(sb);
 
@@ -61,6 +72,7 @@ namespace Aadev.JTF.Types
         /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
 
-        public override object GetDefault() => Default;
+        public override object GetDefaultValue() => Default;
+        public override JtNodeSource CreateSource() => currentSource ??= new JtDoubleNodeSource(this, this);
     }
 }

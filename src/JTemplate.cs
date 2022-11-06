@@ -1,8 +1,10 @@
-﻿using Aadev.JTF.Types;
+﻿using Aadev.JTF.CustomSources;
+using Aadev.JTF.Types;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -10,12 +12,14 @@ using System.Text.RegularExpressions;
 
 namespace Aadev.JTF
 {
-    public sealed class JTemplate : IIdentifiersManager
+    public sealed class JTemplate : IJtFile, ICustomSourceProvider, IJtNodeParent
     {
         internal static readonly Regex identifierRegex = new Regex("^[a-z]+[a-z0-9_]*$", RegexOptions.Compiled);
 
 
-        public const int JTF_VERSION = 1;
+        public static void RemoveCustomSourcesCache() => CustomSourceDeclaration.RemoveGlobalCache();
+
+        public const int JTFVERSION = 2;
         /// <summary>
         /// Name of template. Default is file name
         /// </summary>
@@ -32,7 +36,7 @@ namespace Aadev.JTF
         /// Relative path to types dictionary file
         /// </summary>
 
-        [Category("General")] public string? CustomValuesDictionaryFile { get; set; }
+        [Category("General")] public string? CustomSourcesDictionaryFile { get; set; }
         /// <summary>
         /// Description of template
         /// </summary>
@@ -40,11 +44,29 @@ namespace Aadev.JTF
         /// <summary>
         /// Root elemnts in template
         /// </summary>
-        [Browsable(false)] public JtNode Root { get; }
+        [Browsable(false)] public List<JtNode> Roots { get; }
 
-        [Browsable(false)] private CustomValuesDictionary CustomValues { get; }
 
-        public static JTemplate CreateTemplate(string filename, int version = JTF_VERSION, string? name = null, string? description = null, string? customTypeFilename = null)
+
+        public bool Debug { get; set; }
+#if DEBUG
+        = true;
+#endif
+
+        public JtFileType Type => JtFileType.Template;
+
+
+        public List<CustomSourceDeclaration> CustomSources { get; }
+
+        JtContainer? IJtNodeParent.Owner => null;
+
+        public IIdentifiersManager IdentifiersManager { get; }
+
+        JTemplate IJtNodeParent.Template => this;
+
+        bool IJtNodeParent.HasExternalChildren => false;
+
+        public static JTemplate CreateTemplate(string filename, int version = JTFVERSION, string? name = null, string? description = null, string? customTypeFilename = null)
         {
             JObject obj = new JObject
             {
@@ -65,7 +87,7 @@ namespace Aadev.JTF
                 di.Create();
 
             if (File.Exists(filename))
-                throw new Exception($"File already exist: '{filename}'");
+                throw new IOException($"File already exist: '{filename}'");
 
             File.WriteAllText(filename, obj.ToString(Newtonsoft.Json.Formatting.None));
 
@@ -84,12 +106,15 @@ namespace Aadev.JTF
 
             if (!(Description is null))
                 sb.Append($"\"description\": \"{Description}\",");
-            if (!(CustomValuesDictionaryFile is null))
-                sb.Append($"\"valuesDictionaryFile\": \"{CustomValuesDictionaryFile}\",");
+            if (!(CustomSourcesDictionaryFile is null))
+                sb.Append($"\"valuesDictionaryFile\": \"{CustomSourcesDictionaryFile}\",");
+            if (Roots.Count == 1)
+            {
+                sb.Append("\"root\": ");
+                Roots[0].BuildJson(sb);
+                sb.Append('}');
+            }
 
-            sb.Append("\"root\": ");
-            Root.BulidJson(sb);
-            sb.Append('}');
             return sb.ToString();
 
         }
@@ -103,7 +128,7 @@ namespace Aadev.JTF
         /// <exception cref="Exception"></exception>
         /// <exception cref="InvalidJtfFileTypeException"></exception>
         /// <exception cref="FileNotFoundException"></exception>
-        public JTemplate(string filename)
+        public JTemplate(string filename, string? workingDir = null)
         {
             Filename = filename ?? throw new ArgumentNullException(nameof(filename));
             if (!File.Exists(filename))
@@ -116,78 +141,117 @@ namespace Aadev.JTF
             }
             catch (Exception ex)
             {
-                throw new Exception($"Cannot convert file `{filename}` to json", ex);
+                throw new JtfException($"Cannot convert file `{filename}` to json", ex);
             }
-
-            if (!((string?)root["type"]).Compare("main", true))
-            {
-                throw new InvalidJtfFileTypeException(Filename, "main", (string?)root["type"]);
-            }
-
+            JtFileType.Template.ThorwIfInvalidType((string?)root["type"], Filename);
 
             Name = (string?)root["name"] ?? Path.GetFileNameWithoutExtension(Filename);
-            CustomValuesDictionaryFile = (string?)root["valuesDictionaryFile"];
+            CustomSourcesDictionaryFile = (string?)root["valuesDictionaryFile"];
             Description = (string?)root["description"];
 
+            IdentifiersManager = new IdentifiersManager(null);
 
             if (!int.TryParse((string?)root["version"], out int ver))
             {
-                throw new Exception($"Parameter 'version' in file `{filename}` must by integer type.");
+                throw new JtfException($"Parameter 'version' in file `{filename}` must by integer type.");
             }
 
 
             Version = ver;
 
-            if (!string.IsNullOrEmpty(CustomValuesDictionaryFile))
+
+            if (!string.IsNullOrEmpty(CustomSourcesDictionaryFile))
             {
-                string? absoluteTypeFilename = Path.GetFullPath(CustomValuesDictionaryFile, Path.GetDirectoryName(Filename)!);
+                string? absoluteTypeFilename = Path.GetFullPath(CustomSourcesDictionaryFile, Path.GetDirectoryName(Filename)!);
 
                 if (!File.Exists(absoluteTypeFilename))
                     throw new FileNotFoundException(absoluteTypeFilename);
 
+                if (workingDir != null)
+                {
+                    if (Path.GetRelativePath(workingDir, absoluteTypeFilename).StartsWith("..", StringComparison.Ordinal))
+                    {
+                        throw new Exception($"File is outside working dir: {absoluteTypeFilename}");
+                    }
 
-                CustomValues = new CustomValuesDictionary(absoluteTypeFilename, this);
+                }
+
+                JObject valuesDictionaryRoot = JObject.Parse(File.ReadAllText(absoluteTypeFilename));
+
+
+                JtFileType.CustomValueDictionary.ThorwIfInvalidType((string?)valuesDictionaryRoot["type"], absoluteTypeFilename);
+                CustomSources = new List<CustomSourceDeclaration>();
+
+                foreach (JToken item in valuesDictionaryRoot["values"]!)
+                {
+                    string? source = (string?)item;
+
+                    if (source is null)
+                    {
+                        continue;
+                    }
+
+                    source = Path.GetFullPath(source, Path.GetDirectoryName(absoluteTypeFilename)!);
+
+                    if(workingDir != null)
+                    {
+                        if(Path.GetRelativePath(workingDir, source).StartsWith("..", StringComparison.Ordinal))
+                        {
+                            throw new Exception($"File is outside working dir: {source}");
+                        }
+                        
+                    }
+
+                    if (!File.Exists(source))
+                    {
+                        throw new FileNotFoundException(source);
+                    }
+
+                    CustomSources.Add(CustomSourceDeclaration.Create(source, this));
+                }
             }
             else
             {
-                CustomValues = CustomValuesDictionary.Empty;
+                CustomSources = Enumerable.Empty<CustomSourceDeclaration>().ToList();
             }
-
-            if (root["root"] is JObject jobj)
-                Root = JtNode.Create(jobj, this, this);
+            Roots = new List<JtNode>();
+            if (root["root"] is JToken rootToken)
+                Roots.Add(JtNode.Create(rootToken, this, this));
+            else if (root["roots"] is JArray rootsArray)
+            {
+                foreach (JToken item in rootsArray)
+                {
+                    Roots.Add(JtNode.Create(item, this, this));
+                }
+            }
             else
-                Root = new JtBlock(this, this);
+                Roots.Add(new JtBlock(this));
 
         }
 
-        /// <summary>
-        /// Gets custom value in <see cref="JTemplate"/> with specific id
-        /// </summary>
-        /// <param name="id">Id of custom value</param>
-        /// <returns>Custom value with specific id</returns>
-        public CustomValue? GetCustomValue(string id) => CustomValues.GetCustomValueById(id);
-
-        private readonly Dictionary<string, JtNode> registeredNodes = new Dictionary<string, JtNode>();
-
-        public bool RegisterNode(string id, JtNode node)
+        public T? GetCustomSource<T>(JtCustomResourceIdentifier identifier) where T : CustomSource
         {
-            if (registeredNodes.ContainsKey(id))
-                return false;
-            registeredNodes.Add(id, node);
-            return true;
-        }
-        public bool UnregisterNode(string id)
-        {
-            return registeredNodes.Remove(id);
-        }
-        public JtNode? GetNodeById(string id)
-        {
-            if (registeredNodes.ContainsKey(id))
-                return registeredNodes[id];
-            return null;
+            if (identifier.Type is JtCustomResourceIdentifierType.Dynamic)
+                return null;
+            if (identifier.Type is JtCustomResourceIdentifierType.Direct)
+            {
+                if (IdentifiersManager.GetNodeById(identifier.Identifier)?.CreateSource() is T value)
+                    return value;
+                return null;
+            }
+            return (T?)CustomSources.Where(x => x.Id == identifier.Identifier).FirstOrDefault()?.Value;
         }
 
-        public bool ContainsNode(string id) => registeredNodes.ContainsKey(id);
-        public JtNode[] GetRegisteredNodes() => registeredNodes.Values.ToArray();
+
+        public CustomSource? GetCustomSource(JtCustomResourceIdentifier identifier)
+        {
+            if (identifier.Type is JtCustomResourceIdentifierType.Dynamic)
+                return null;
+            if (identifier.Type is JtCustomResourceIdentifierType.Direct)
+                return IdentifiersManager.GetRegisteredNodes().Where(x => x.Id == identifier.Identifier).FirstOrDefault()?.CreateSource();
+            return CustomSources.Where(x => x.Id == identifier.Identifier).FirstOrDefault()?.Value;
+        }
+
+        public IIdentifiersManager GetIdentifiersManagerForChild() => IdentifiersManager;
     }
 }

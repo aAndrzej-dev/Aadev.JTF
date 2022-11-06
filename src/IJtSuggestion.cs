@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Text;
 
 namespace Aadev.JTF
 {
     public interface IJtSuggestion
     {
-        Type ValueType { get; }
+        Type SuggestionType { get; }
         string? DisplayName { get; set; }
-        void BulidJson(StringBuilder sb);
+        string? StringValue { get; }
+
         T GetValue<T>();
         void SetValue<T>(T value);
         object? GetValue();

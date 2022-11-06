@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Aadev.JTF.CustomSources;
+using Newtonsoft.Json.Linq;
 using System.Text;
 
 namespace Aadev.JTF.Types
@@ -11,9 +12,12 @@ namespace Aadev.JTF.Types
         public override JtNodeType Type => JtNodeType.Unknown;
 
 
-        public JtUnknown(JTemplate template, IIdentifiersManager identifiersManager) : base(template, identifiersManager) { }
-        internal JtUnknown(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) : base(obj, template, identifiersManager) { }
-        internal override void BulidJson(StringBuilder sb)
+        public JtUnknown(IJtNodeParent parent) : base(parent) { }
+        internal JtUnknown(JObject obj, IJtNodeParent parent) : base(obj, parent) { }
+
+        internal JtUnknown(JtUnknownNodeSource source, JToken? @override, IJtNodeParent parent) : base(source, @override, parent) { }
+
+        internal override void BuildJson(StringBuilder sb)
         {
             BuildCommonJson(sb);
             sb.Append('}');
@@ -21,5 +25,6 @@ namespace Aadev.JTF.Types
 
         /// <inheritdoc/>
         public override JToken CreateDefaultValue() => JValue.CreateUndefined();
+        public override JtNodeSource CreateSource() => currentSource ??= new JtUnknownNodeSource(this, this);
     }
 }

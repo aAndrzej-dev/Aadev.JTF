@@ -1,12 +1,15 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Aadev.JTF.CustomSources;
+using Aadev.JTF.Types;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
 namespace Aadev.JTF
 {
     [Serializable]
-    public class JtSuggestion<T> : IJtSuggestion
+    public sealed class JtSuggestion<T> : IJtSuggestion, IJtSuggestionCollectionChild<T>, IEquatable<JtSuggestion<T>?>
     {
         private T value;
 
@@ -15,32 +18,39 @@ namespace Aadev.JTF
             get => value;
             set
             {
-                if (DisplayName?.Equals(Value?.ToString()) is true)
+                if (DisplayName?.Equals(Value?.ToString(),StringComparison.Ordinal) is true)
                     DisplayName = value?.ToString();
                 this.value = value;
             }
         }
         public string? DisplayName { get; set; }
 
-        public Type ValueType => typeof(T);
+        public Type SuggestionType => typeof(T);
 
-        public JtSuggestion(T value)
+        public bool IsEmpty => true;
+
+        public string? StringValue => Value?.ToString();
+
+        public bool IsStatic => true;
+
+        public JtSuggestion(T value, string? displayName = null)
         {
             this.value = value;
-            DisplayName = value?.ToString();
+            DisplayName = displayName ?? value?.ToString();
         }
-        public JtSuggestion(JObject obj)
+        public JtSuggestion(JObject source)
         {
-
-            if (((JValue?)obj["name"])?.Value is string && typeof(T) == typeof(string))
-                value = (T)((JValue?)obj["name"])?.Value!;
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (source["name"]?.Type is JTokenType.String && typeof(T) == typeof(string))
+                value = (T)((JValue?)source["name"])?.Value!;
             else
-                value = (T)Convert.ChangeType(((JValue?)obj["value"])?.Value, typeof(T), CultureInfo.InvariantCulture)!;
-            DisplayName = (string?)obj["displayName"] ?? value?.ToString();
+                value = (T)Convert.ChangeType(((JValue?)source["value"])?.Value, typeof(T), CultureInfo.InvariantCulture)!;
+            DisplayName = (string?)source["displayName"] ?? value?.ToString();
         }
         public override string? ToString() => DisplayName ?? Value?.ToString();
 
-        public void BulidJson(StringBuilder sb)
+        void IJtSuggestionCollectionChild<T>.BuildJson(StringBuilder sb)
         {
             sb.Append('{');
             if (Value is string str)
@@ -49,29 +59,45 @@ namespace Aadev.JTF
                 sb.Append($"\"value\": {Value}");
             else if (Value is bool b)
                 sb.Append($"\"value\": {(b ? "true" : "false")}");
-            if (DisplayName?.Equals(Value?.ToString()) is false)
+            if (DisplayName?.Equals(Value?.ToString(), StringComparison.Ordinal) is false)
                 sb.Append($", \"displayName\": \"{DisplayName}\"");
             sb.Append('}');
         }
-        public T1 GetValue<T1>()
+        T1 IJtSuggestion.GetValue<T1>()
         {
             if (Value is T1 v)
                 return v;
-            throw new Exception("Invalid type");
+            throw new InvalidCastException($"Cannot convert {typeof(T1)} to {typeof(T)}");
         }
-        public void SetValue<T1>(T1 value)
+        void IJtSuggestion.SetValue<T1>(T1 value)
         {
             if (value is T v)
                 Value = v;
-            throw new Exception("Invalid type");
+            throw new InvalidCastException($"Cannot convert {typeof(T1)} to {typeof(T)}");
         }
 
-        public object? GetValue() => Value;
-        public void SetValue(object? value)
+        object? IJtSuggestion.GetValue() => Value;
+        void IJtSuggestion.SetValue(object? value)
         {
             if (value is T v)
                 Value = v;
-            throw new Exception("Invalid type");
+            throw new InvalidCastException($"Cannot convert {value?.GetType()} to {typeof(T)}");
         }
+
+        IEnumerable<IJtSuggestion> IJtSuggestionCollectionChild<T>.GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource) 
+        {
+            yield return this;
+        }
+
+        public override bool Equals(object? obj) => Equals(obj as JtSuggestion<T>);
+        public bool Equals(JtSuggestion<T>? other) => !(other is null) && EqualityComparer<T>.Default.Equals(Value, other.Value) && DisplayName == other.DisplayName;
+        public override int GetHashCode() => HashCode.Combine(Value, DisplayName);
+
+        public JtSuggestionSource<T> CreateSource() => new JtSuggestionSource<T>(this);
+        IJtSuggestionCollectionSourceChild<T> IJtSuggestionCollectionChild<T>.CreateSource(ICustomSourceParent parent) => CreateSource();
+
+
+        public static bool operator ==(JtSuggestion<T>? left, JtSuggestion<T>? right) => !(left is null || right is null) && EqualityComparer<JtSuggestion<T>>.Default.Equals(left, right);
+        public static bool operator !=(JtSuggestion<T>? left, JtSuggestion<T>? right) => !(left == right);
     }
 }

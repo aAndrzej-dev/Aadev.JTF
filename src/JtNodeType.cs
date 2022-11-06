@@ -4,52 +4,50 @@ using System;
 
 namespace Aadev.JTF
 {
-    public class JtNodeType : IEquatable<JtNodeType?>
+    public sealed class JtNodeType : IEquatable<JtNodeType?>
     {
-        private readonly Func<JObject, JTemplate, IIdentifiersManager, JtNode> instanceFactory;
-        private readonly Func<JTemplate, IIdentifiersManager, JtNode> emptyInstanceFactory;
-        private JtNodeType(int id, string name, Func<JObject, JTemplate, IIdentifiersManager, JtNode> instanceFactory, Func<JTemplate, IIdentifiersManager, JtNode> emptyInstanceFactory, string displayName, bool isNumericType = false)
+        private readonly Func<JObject, IJtNodeParent, JtNode> instanceFactory;
+        private readonly Func<IJtNodeParent, JtNode> emptyInstanceFactory;
+        private JtNodeType(int id, string name, Func<JObject, IJtNodeParent, JtNode> instanceFactory, Func<IJtNodeParent, JtNode> emptyInstanceFactory, string displayName)
         {
             Id = id;
             Name = name;
             this.instanceFactory = instanceFactory;
             this.emptyInstanceFactory = emptyInstanceFactory;
             DisplayName = displayName;
-            IsNumericType = isNumericType;
         }
 
         public int Id { get; }
         public string Name { get; }
         public string DisplayName { get; }
-        public bool IsNumericType { get; }
 
 
-        public static readonly JtNodeType Unknown = new JtNodeType(0, "unknown", (o, t, i) => new JtUnknown(o, t, i), (t, i) => new JtUnknown(t, i), nameof(Unknown));
-        public static readonly JtNodeType Bool = new JtNodeType(1, "bool", (o, t, i) => new JtBool(o, t, i), (t, i) => new JtBool(t, i), nameof(Bool));
-        public static readonly JtNodeType Byte = new JtNodeType(2, "byte", (o, t, i) => new JtByte(o, t, i), (t, i) => new JtByte(t, i), nameof(Byte), true);
-        public static readonly JtNodeType Short = new JtNodeType(3, "short", (o, t, i) => new JtShort(o, t, i), (t, i) => new JtShort(t, i), nameof(Short), true);
-        public static readonly JtNodeType Int = new JtNodeType(4, "int", (o, t, i) => new JtInt(o, t, i), (t, i) => new JtInt(t, i), nameof(Int), true);
-        public static readonly JtNodeType Long = new JtNodeType(5, "long", (o, t, i) => new JtLong(o, t, i), (t, i) => new JtLong(t, i), nameof(Long), true);
-        public static readonly JtNodeType Float = new JtNodeType(6, "float", (o, t, i) => new JtFloat(o, t, i), (t, i) => new JtFloat(t, i), nameof(Float), true);
-        public static readonly JtNodeType Double = new JtNodeType(7, "double", (o, t, i) => new JtDouble(o, t, i), (t, i) => new JtDouble(t, i), nameof(Double), true);
-        public static readonly JtNodeType String = new JtNodeType(8, "string", (o, t, i) => new JtString(o, t, i), (t, i) => new JtString(t, i), nameof(String));
-        public static readonly JtNodeType Block = new JtNodeType(9, "block", (o, t, i) => new JtBlock(o, t, i), (t, i) => new JtBlock(t, i), nameof(Block));
-        public static readonly JtNodeType Array = new JtNodeType(10, "array", (o, t, i) => new JtArray(o, t, i), (t, i) => new JtArray(t, i), nameof(Array));
+        public static readonly JtNodeType Unknown = new JtNodeType(0, "unknown", (o, t) => new JtUnknown(o, t), (t) => new JtUnknown(t), nameof(Unknown));
+        public static readonly JtNodeType Bool = new JtNodeType(1, "bool", (o, t) => new JtBool(o, t), (t) => new JtBool(t), nameof(Bool));
+        public static readonly JtNodeType Byte = new JtNodeType(2, "byte", (o, t) => new JtByte(o, t), (t) => new JtByte(t), nameof(Byte));
+        public static readonly JtNodeType Short = new JtNodeType(3, "short", (o, t) => new JtShort(o, t), (t) => new JtShort(t), nameof(Short));
+        public static readonly JtNodeType Int = new JtNodeType(4, "int", (o, t) => new JtInt(o, t), (t) => new JtInt(t), nameof(Int));
+        public static readonly JtNodeType Long = new JtNodeType(5, "long", (o, t) => new JtLong(o, t), (t) => new JtLong(t), nameof(Long));
+        public static readonly JtNodeType Float = new JtNodeType(6, "float", (o, t) => new JtFloat(o, t), (t) => new JtFloat(t), nameof(Float));
+        public static readonly JtNodeType Double = new JtNodeType(7, "double", (o, t) => new JtDouble(o, t), (t) => new JtDouble(t), nameof(Double));
+        public static readonly JtNodeType String = new JtNodeType(8, "string", (o, t) => new JtString(o, t), (t) => new JtString(t), nameof(String));
+        public static readonly JtNodeType Block = new JtNodeType(9, "block", (o, t) => new JtBlock(o, t), (t) => new JtBlock(t), nameof(Block));
+        public static readonly JtNodeType Array = new JtNodeType(10, "array", (o, t) => new JtArray(o, t), (t) => new JtArray(t), nameof(Array));
 
 
         private static readonly JtNodeType[] items = new JtNodeType[]
         {
-         JtNodeType.Bool,
-         JtNodeType.Byte,
-         JtNodeType.Short,
-         JtNodeType.Int,
-         JtNodeType.Long,
-         JtNodeType.Float,
-         JtNodeType.Double,
-         JtNodeType.String,
-         JtNodeType.Block,
-         JtNodeType.Array,
-         JtNodeType.Unknown,
+             JtNodeType.Bool,
+             JtNodeType.Byte,
+             JtNodeType.Short,
+             JtNodeType.Int,
+             JtNodeType.Long,
+             JtNodeType.Float,
+             JtNodeType.Double,
+             JtNodeType.String,
+             JtNodeType.Block,
+             JtNodeType.Array,
+             JtNodeType.Unknown,
         };
         public static JtNodeType[] Items => items;
 
@@ -74,7 +72,7 @@ namespace Aadev.JTF
         }
         public static JtNodeType GetByName(string? name)
         {
-            name = name?.ToLower();
+            name = name?.ToLowerInvariant();
             return name switch
             {
                 "bool" => JtNodeType.Bool,
@@ -91,8 +89,8 @@ namespace Aadev.JTF
                 _ => JtNodeType.Unknown,
             };
         }
-        public JtNode CreateInstance(JObject obj, JTemplate template, IIdentifiersManager identifiersManager) => instanceFactory(obj, template, identifiersManager);
-        public JtNode CreateEmptyInstance(JTemplate template, IIdentifiersManager identifiersManager) => emptyInstanceFactory(template, identifiersManager);
+        public JtNode CreateInstance(JObject obj, IJtNodeParent parent) => instanceFactory(obj, parent);
+        public JtNode CreateEmptyInstance(IJtNodeParent parent) => emptyInstanceFactory(parent);
         public override bool Equals(object? obj) => Equals(obj as JtNodeType);
         public bool Equals(JtNodeType? other) => other != null && Id == other.Id;
         public override int GetHashCode() => HashCode.Combine(Id);
