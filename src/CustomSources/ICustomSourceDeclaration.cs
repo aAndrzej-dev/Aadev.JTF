@@ -6,6 +6,6 @@ namespace Aadev.JTF.CustomSources
     {
         bool IsDeclaratingSource { get; }
 
-        void BuildJson(StringBuilder sb);
+        internal void BuildJson(StringBuilder sb);
     }
 }

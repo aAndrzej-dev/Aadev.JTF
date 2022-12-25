@@ -7,14 +7,34 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtByteNodeSource : JtValueNodeSource
     {
-        internal JtByteNodeSource(JtByte node, ICustomSourceProvider sourceProvider) : base(node, sourceProvider)
+        public override JtNodeType Type => JtNodeType.Byte;
+
+
+        public byte Max { get; set; }
+        public byte Min { get; set; }
+        public byte Default { get; set; }
+        public override IJtSuggestionCollectionSource Suggestions { get; }
+
+        public JtByteNodeSource(ICustomSourceParent parent) : base(parent)
+        {
+            Max = byte.MaxValue;
+            Min = byte.MinValue;
+            Suggestions = JtSuggestionCollectionSource<byte>.Create(this);
+        }
+        internal JtByteNodeSource(JtByte node) : base(node)
         {
             Max = node.Max;
             Min = node.Min;
             Default = node.Default;
             Suggestions = (JtSuggestionCollectionSource<byte>)node.Suggestions.CreateSource(this);
         }
-
+        internal JtByteNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
+        {
+            Suggestions = JtSuggestionCollectionSource<byte>.Create(this, source["suggestions"]);
+            Min = (byte)(source["min"] ?? byte.MinValue);
+            Max = (byte)(source["max"] ?? byte.MaxValue);
+            Default = (byte)(source["default"] ?? 0);
+        } 
         internal JtByteNodeSource(ICustomSourceParent parent, JtByteNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             Min = (byte)(@override?["minLength"] ?? @base.Min);
@@ -23,24 +43,7 @@ namespace Aadev.JTF.CustomSources
             Suggestions = @base.Suggestions;
         }
 
-        internal JtByteNodeSource(ICustomSourceParent parent, JObject source, ICustomSourceProvider sourceProvider) : base(parent, source, sourceProvider)
-        {
-            Suggestions = JtSuggestionCollectionSource<byte>.Create(this, source["suggestions"], sourceProvider);
-            Min = (byte)(source["min"] ?? byte.MinValue);
-            Max = (byte)(source["max"] ?? byte.MaxValue);
-            Default = (byte)(source["default"] ?? 0);
-        }
-
       
-        public byte Max { get; internal set; }
-        public byte Min { get; internal set; }
-        public byte Default { get; internal set; }
-        public override IJtSuggestionCollectionSource Suggestions { get; }
-
-
-        public override JtNodeType Type => JtNodeType.Byte;
-
-        public override JtNode CreateInstance(JToken? @override, IJtNodeParent parent) => new JtByte(this,@override, parent);
         internal override void BuildJsonDeclaration(StringBuilder sb)
         {
             BuildCommonJson(sb);
@@ -57,6 +60,7 @@ namespace Aadev.JTF.CustomSources
             }
             sb.Append('}');
         }
-        internal override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? item) => new JtByteNodeSource(parent, this, item);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtByte(parent, this, @override);
+        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtByteNodeSource(parent, this, @override);
     }
 }

@@ -20,7 +20,11 @@ namespace Aadev.JTF.JtEnumerable
         {
             if (state == 4)
                 return enumeratedList!.GetEnumerator();
-            JtIterator<T> enumerator = state == 0 && threadId == Environment.CurrentManagedThreadId ? this : Clone();
+            JtIterator<T> enumerator;
+            if (state == 0 && threadId == Environment.CurrentManagedThreadId)
+                enumerator = this;
+            else
+                enumerator = Clone();
             enumerator.state = 1;
             return enumerator;
         }

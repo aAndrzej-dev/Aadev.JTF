@@ -14,12 +14,12 @@ namespace Aadev.JTF.Types
         private byte? min;
         private byte? max;
 
-        /// <inheritdoc/>
-        public override JTokenType JsonType => JTokenType.Integer;
-        /// <inheritdoc/>
-        public override JtNodeType Type => JtNodeType.Byte;
 
         public new JtByteNodeSource? Base => (JtByteNodeSource?)base.Base;
+        public override JTokenType JsonType => JTokenType.Integer;
+        public override JtNodeType Type => JtNodeType.Byte;
+
+
 
         [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public byte Min { get => min ?? Base?.Min ?? minValue; set { min = value; max = max.Max(min); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public byte Max { get => max ?? Base?.Max ?? maxValue; set { max = value; min = min.Min(max); @default = @default.Clamp(Min, Max); } }
@@ -27,7 +27,6 @@ namespace Aadev.JTF.Types
 
         public override IJtSuggestionCollection Suggestions { get; }
 
-        public override Type ValueType => typeof(byte);
 
         public JtByte(IJtNodeParent parent) : base(parent)
         {
@@ -36,17 +35,16 @@ namespace Aadev.JTF.Types
             Default = 0;
             Suggestions = JtSuggestionCollection<byte>.Create();
         }
-        internal JtByte(JObject obj, IJtNodeParent parent) : base(obj, parent)
+        internal JtByte(IJtNodeParent parent, JObject source) : base(parent, source)
         {
-            Min = (byte)(obj["min"] ?? minValue);
-            Max = (byte)(obj["max"] ?? maxValue);
-            Default = (byte)(obj["default"] ?? 0);
+            Min = (byte)(source["min"] ?? minValue);
+            Max = (byte)(source["max"] ?? maxValue);
+            Default = (byte)(source["default"] ?? 0);
 
 
-            Suggestions = JtSuggestionCollection<byte>.Create(obj["suggestions"], this);
+            Suggestions = JtSuggestionCollection<byte>.Create(this, source["suggestions"]);
         }
-
-        internal JtByte(JtByteNodeSource source, JToken? @override, IJtNodeParent parent) : base(source, @override, parent)
+        internal JtByte(IJtNodeParent parent, JtByteNodeSource source, JToken? @override) : base(parent, source, @override)
         {
             Suggestions = source.Suggestions.CreateInstance();
             if (@override is null)
@@ -69,12 +67,8 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"default\": {Default}");
             sb.Append('}');
         }
-
-
-        /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
-
         public override object GetDefaultValue() => Default;
-        public override JtNodeSource CreateSource() => currentSource ??= new JtByteNodeSource(this, this);
+        public override JtNodeSource CreateSource() => currentSource ??= new JtByteNodeSource(this);
     }
 }

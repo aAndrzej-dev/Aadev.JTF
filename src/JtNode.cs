@@ -25,6 +25,8 @@ namespace Aadev.JTF
 
         [Browsable(false)] public IIdentifiersManager IdentifiersManager { get; }
         [Browsable(false)] public abstract JTokenType JsonType { get; }
+
+
         [Browsable(false)] public abstract JtNodeType Type { get; }
 
 
@@ -34,22 +36,22 @@ namespace Aadev.JTF
             get => name ?? Base?.Name;
             set
             {
-                if (IsArrayPrefab || IsRoot)
+                if (IsRoot)
                     return;
                 if (DisplayName == name)
                     DisplayName = value;
                 name = value;
             }
         }
-        [Category("General")] public string? Description { get => description ?? Base?.Description; set => description = value; }
-        [DefaultValue(false), Category("General")] public bool Required { get => required ?? Base?.Required ?? false; set => required = value; }
+        [Category("General")] public string? Description { get => description ?? Base?.Description; set { description = value; } }
+        [DefaultValue(false), Category("General")] public bool Required { get => required ?? Base?.Required ?? false; set { required = value; } }
         [Category("General")]
         public string? DisplayName
         {
             get => displayName ?? Base?.DisplayName;
             set
             {
-                if (IsArrayPrefab || IsRoot)
+                if (IsRoot)
                     return;
                 displayName = value;
             }
@@ -90,7 +92,7 @@ namespace Aadev.JTF
 
             }
         }
-        [Category("General")] public string? Condition { get => condition ?? Base?.Condition; set => condition = value; }
+        [Category("General")] public string? Condition { get => condition ?? Base?.Condition; set { condition = value; } }
 
 
 
@@ -98,44 +100,46 @@ namespace Aadev.JTF
         [Browsable(false)] public bool IsArrayPrefab => Parent.Owner?.ContainerDisplayType is JtContainerType.Array;
         [Browsable(false)] public bool IsInArrayPrefab => IsArrayPrefab || Parent.Owner?.IsInArrayPrefab is true;
         [Browsable(false)] public bool IsDynamicName => Parent.Owner is { ContainerDisplayType: JtContainerType.Array, ContainerJsonType: JtContainerType.Block };
-        [Browsable(false)] public bool IsRoot => Template.Roots.Contains(this);
+        [Browsable(false)] public bool IsRoot => Parent == Template || Template.Roots.Contains(this);
+        public bool IsFormTemplate => Parent is JTemplate || Parent.Owner?.IsFormTemplate is true;
 
+        public bool IsExternal => Base?.IsDeclarated ?? false;
 
-        protected internal JtNode(IJtNodeParent parent)
+        private protected JtNode(IJtNodeParent parent)
         {
             this.parent = parent ?? throw new ArgumentNullException(nameof(parent));
             template = parent.Template;
             IdentifiersManager = parent.GetIdentifiersManagerForChild();
         }
-        protected internal JtNode(JObject obj, IJtNodeParent parent)
+        private protected JtNode(IJtNodeParent parent, JObject source)
         {
             this.parent = parent ?? throw new ArgumentNullException(nameof(parent));
             template = parent.Template;
             IdentifiersManager = parent.GetIdentifiersManagerForChild();
 
-            Name = (string?)obj["name"];
-            Description = (string?)obj["description"];
-            Required = (bool)(obj["required"] ?? false);
-            DisplayName = (string?)(obj["displayName"] ?? Name);
-            Id = (string?)obj["id"];
-            Condition = (string?)obj["condition"] ?? (string?)obj["if"];
+            Name = (string?)source["name"];
+            Description = (string?)source["description"];
+            Required = (bool)(source["required"] ?? false);
+            DisplayName = (string?)(source["displayName"] ?? Name);
+            Id = (string?)source["id"];
+            Condition = (string?)source["condition"] ?? (string?)source["if"];
 
 
 
             if (Condition != null)
                 return;
-            if (obj["if"] is JArray conditions)
+            if (source["if"] is JArray conditions)
             {
                 Condition = ConvertLegacyCondition(conditions);
             }
-            else if (obj["conditions"] is JArray conditions2)
+            else if (source["conditions"] is JArray conditions2)
             {
                 Condition = ConvertLegacyCondition(conditions2);
             }
         }
 
 
-        protected internal JtNode(JtNodeSource source, JToken? @override, IJtNodeParent parent)
+        private protected JtNode(IJtNodeParent parent, JtNodeSource source, JToken? @override)
         {
             Base = source;
             this.parent = parent ?? throw new ArgumentNullException(nameof(parent));
@@ -165,17 +169,17 @@ namespace Aadev.JTF
 
         }
 
-        public JtNode[] GetTwinFamily()
+        public IEnumerable<JtNode> GetTwinFamily()
         {
             if (IsRoot)
-                return Template.Roots.ToArray();
+                return Template.Roots;
             else if (Parent.Owner is null || Parent.Owner is JtArray)
                 return new JtNode[] { this };
             else
-                return Parent.Owner.Children.Nodes!.Where(x => x.Name == Name && x.Condition == Condition).ToArray();
+                return Parent.Owner.Children.Nodes!.Where(x => x.Name == Name && x.Condition == Condition);
         }
         internal abstract void BuildJson(StringBuilder sb);
-        protected internal virtual void BuildCommonJson(StringBuilder sb)
+        private protected virtual void BuildCommonJson(StringBuilder sb)
         {
             sb.Append('{');
             if (Base != null)
@@ -231,7 +235,8 @@ namespace Aadev.JTF
                 }
                 return;
             }
-            if (!IsArrayPrefab && !IsRoot)
+
+            if (!IsRoot && (!IsArrayPrefab || !string.IsNullOrEmpty(Name)))
                 sb.Append($"\"name\": \"{Name}\",");
             sb.Append($"\"type\": \"{Type.Name}\"");
             if (!string.IsNullOrWhiteSpace(Description))
@@ -265,57 +270,57 @@ namespace Aadev.JTF
             BuildJson(sb);
             return sb.ToString();
         }
-        public static JtNode Create(JToken item, IJtNodeParent parent, ICustomSourceProvider sourceProvider)
+        public static JtNode Create(IJtNodeParent parent, JToken source)
         {
-            if (item is null)
-                throw new ArgumentNullException(nameof(item));
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
             if (parent is null)
                 throw new ArgumentNullException(nameof(parent));
 
-            if (item.Type is JTokenType.String)
+            if (source.Type is JTokenType.String)
             {
-                string? id = (string?)item;
+                string? id = (string?)source;
                 if (id is null)
                     return new JtUnknown(parent);
-                JtCustomResourceIdentifier customResourceIdentifier = new JtCustomResourceIdentifier(id);
-                if (customResourceIdentifier.Type is JtCustomResourceIdentifierType.None)
+                JtSourceReference customResourceIdentifier = new JtSourceReference(id);
+                if (customResourceIdentifier.Type is JtSourceReferenceType.None)
                     return new JtUnknown(parent);
 
-                return sourceProvider.GetCustomSource<JtNodeSource>(id)?.CreateInstance(null, parent)!;
+                return parent.SourceProvider.GetCustomSource<JtNodeSource>(id)?.CreateInstance(parent, null)!;
 
             }
-            if (item["base"]?.Type is JTokenType.String)
+            if (source["base"]?.Type is JTokenType.String)
             {
-                return sourceProvider.GetCustomSource<JtNodeSource>((string)item["base"]!)?.CreateInstance(item, parent) ?? new JtUnknown(parent);
+                return parent.SourceProvider.GetCustomSource<JtNodeSource>((string)source["base"]!)?.CreateInstance(parent, source) ?? new JtUnknown(parent);
 
             }
 
-            if (((JValue?)item["type"])?.Value is int typeId)
+            if (((JValue?)source["type"])?.Value is int typeId)
             {
                 if (typeId is 11)
                 {
-                    bool allowCustom = (bool?)item["allowCustom"] ?? false;
+                    bool allowCustom = (bool?)source["allowCustom"] ?? false;
                     if (!allowCustom)
                     {
-                        item["forceSuggestions"] = true;
+                        source["forceSuggestions"] = true;
                     }
                 }
 
 
-                return JtNodeType.GetById(typeId).CreateInstance((JObject)item, parent);
+                return JtNodeType.GetById(typeId).CreateInstance(parent, (JObject)source);
             }
-            string typeString = (string?)item["type"] ?? throw new JtfException($"Item '{item["name"]}' dont have type");
+            string typeString = (string?)source["type"] ?? throw new JtfException($"Item '{source["name"]}' dont have type");
 
-            if (typeString.ToLowerInvariant() is "enum")
+            if (typeString.Equals("enum", StringComparison.OrdinalIgnoreCase))
             {
-                bool allowCustom = (bool?)item["allowCustom"] ?? false;
+                bool allowCustom = (bool?)source["allowCustom"] ?? false;
                 if (!allowCustom)
                 {
-                    item["forceSuggestions"] = true;
+                    source["forceSuggestions"] = true;
                 }
             }
 
-            return JtNodeType.GetByName(typeString).CreateInstance((JObject)item, parent);
+            return JtNodeType.GetByName(typeString).CreateInstance(parent, (JObject)source);
         }
         public abstract JToken CreateDefaultValue();
         public abstract JtNodeSource CreateSource();
@@ -351,9 +356,9 @@ namespace Aadev.JTF
             return sb.ToString();
         }
 
-        public T? GetCustomSource<T>(JtCustomResourceIdentifier identifier) where T : CustomSource
+        public T? GetCustomSource<T>(JtSourceReference identifier) where T : CustomSource
         {
-            if (identifier.Type is JtCustomResourceIdentifierType.Direct)
+            if (identifier.Type is JtSourceReferenceType.Direct)
             {
                 if (IdentifiersManager.GetNodeById(identifier.Identifier)?.CreateSource() is T value)
                     return value;
@@ -361,12 +366,15 @@ namespace Aadev.JTF
             }
             return Template.GetCustomSource<T>(identifier);
         }
-        public CustomSource? GetCustomSource(JtCustomResourceIdentifier identifier) => GetCustomSource<CustomSource>(identifier);
+        public CustomSource? GetCustomSource(JtSourceReference identifier) => GetCustomSource<CustomSource>(identifier);
         public IEnumerable<JtNode> GetNodes()
         {
             yield return this;
         }
 
         void IJtNodeCollectionChild.BuildJson(StringBuilder sb) => BuildJson(sb);
+        IJtNodeCollectionSourceChild IJtNodeCollectionChild.CreateSource() => CreateSource();
+
     }
+
 }

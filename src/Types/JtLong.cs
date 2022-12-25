@@ -13,21 +13,17 @@ namespace Aadev.JTF.Types
         private long? @default;
         private long? min;
         private long? max;
-        public new JtLongNodeSource? Base => (JtLongNodeSource?)base.Base;
 
-        /// <inheritdoc/>
+        public new JtLongNodeSource? Base => (JtLongNodeSource?)base.Base;
         public override JTokenType JsonType => JTokenType.Integer;
-        /// <inheritdoc/>
         public override JtNodeType Type => JtNodeType.Long;
 
 
         [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public long Min { get => min ?? Base?.Min ?? minValue; set { min = value; max = max.Max(min); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public long Max { get => max ?? Base?.Max ?? maxValue; set { max = value; min = min.Min(max); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(0)] public long Default { get => @default ?? Base?.Default ?? 0; set => @default = value.Clamp(Min, Max); }
-
         public override IJtSuggestionCollection Suggestions { get; }
 
-        public override Type ValueType => typeof(long);
         public JtLong(IJtNodeParent parent) : base(parent)
         {
             Min = minValue;
@@ -36,15 +32,15 @@ namespace Aadev.JTF.Types
 
             Suggestions = JtSuggestionCollection<long>.Create();
         }
-        internal JtLong(JObject obj, IJtNodeParent parent) : base(obj,parent)
+        internal JtLong(IJtNodeParent parent, JObject source) : base(parent, source)
         {
-            Min = (long)(obj["min"] ?? minValue);
-            Max = (long)(obj["max"] ?? maxValue);
-            Default = (long)(obj["default"] ?? 0);
+            Min = (long)(source["min"] ?? minValue);
+            Max = (long)(source["max"] ?? maxValue);
+            Default = (long)(source["default"] ?? 0);
 
-            Suggestions = JtSuggestionCollection<long>.Create(obj["suggestions"], this);
+            Suggestions = JtSuggestionCollection<long>.Create(this, source["suggestions"]);
         }
-        internal JtLong(JtLongNodeSource source, JToken? @override, IJtNodeParent parent) : base(source, @override, parent)
+        internal JtLong(IJtNodeParent parent, JtLongNodeSource source, JToken? @override) : base(parent, source, @override)
         {
             Suggestions = source.Suggestions.CreateInstance();
             if (@override is null)
@@ -66,12 +62,8 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"default\": {Default}");
             sb.Append('}');
         }
-
-
-
-        /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
         public override object GetDefaultValue() => Default;
-        public override JtNodeSource CreateSource() => currentSource ??= new JtLongNodeSource(this, this);
+        public override JtNodeSource CreateSource() => currentSource ??= new JtLongNodeSource(this);
     }
 }

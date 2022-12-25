@@ -10,37 +10,36 @@ namespace Aadev.JTF.Types
         private int? maxSize;
         private bool? singleType;
 
+        public new JtArrayNodeSource? Base => (JtArrayNodeSource?)base.Base;
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)] public override JtNodeCollection Children => Prefabs;
+        public override JtContainerType ContainerDisplayType => JtContainerType.Array;
         public override JtNodeType Type => JtNodeType.Array;
 
-        public new JtArrayNodeSource? Base => (JtArrayNodeSource?)base.Base;
-
         [Browsable(false)] public JtNodeCollection Prefabs { get; }
-        [Browsable(false), EditorBrowsable(EditorBrowsableState.Never)] public override JtNodeCollection Children => Prefabs;
-        [Browsable(false)] public bool MakeAsObject => ContainerJsonType is JtContainerType.Block;
-
         [DefaultValue(-1)] public int MaxSize { get => maxSize ?? Base?.MaxSize ?? -1; set => maxSize = value; }
         [DefaultValue(false)] public bool SingleType { get => singleType ?? Base?.SingleType ?? false; set => singleType = value; }
 
-        public override JtContainerType ContainerDisplayType => JtContainerType.Array;
+
+        [Browsable(false)] public bool MakeAsObject => ContainerJsonType is JtContainerType.Block;
+
+
 
         public JtArray(IJtNodeParent parent) : base(parent)
         {
             MaxSize = -1;
             Prefabs = JtNodeCollection.Create(this);
         }
-
-        internal JtArray(JObject obj, IJtNodeParent parent) : base(obj, parent)
+        internal JtArray(IJtNodeParent parent, JObject source) : base(parent, source)
         {
-            SingleType = (bool?)obj["singleType"] ?? false;
-            MaxSize = (int?)obj["maxSize"] ?? -1;
+            SingleType = (bool?)source["singleType"] ?? false;
+            MaxSize = (int?)source["maxSize"] ?? -1;
 
 
-            Prefabs = JtNodeCollection.Create(this, obj["prefabs"], this);
+            Prefabs = JtNodeCollection.Create(this, source["prefabs"]);
             if (ContainerDisplayType == ContainerJsonType)
-                ContainerJsonType = (bool)(obj["makeObject"] ?? false) ? JtContainerType.Block : JtContainerType.Array;
+                ContainerJsonType = (bool)(source["makeObject"] ?? false) ? JtContainerType.Block : JtContainerType.Array;
         }
-
-        internal JtArray(JtArrayNodeSource source, JToken? @override, IJtNodeParent parent) : base(source, @override, parent)
+        internal JtArray(IJtNodeParent parent, JtArrayNodeSource source, JToken? @override) : base(parent, source, @override)
         {
             Prefabs = source.Prefabs.CreateInstance(this, @override?["prefabs"]);
             if (@override is null)
@@ -79,7 +78,6 @@ namespace Aadev.JTF.Types
 
             sb.Append('}');
         }
-
-        public override JtNodeSource CreateSource() => currentSource ??= new JtArrayNodeSource(this, this);
+        public override JtNodeSource CreateSource() => currentSource ??= new JtArrayNodeSource(this);
     }
 }

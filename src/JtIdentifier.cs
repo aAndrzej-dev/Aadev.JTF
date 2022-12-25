@@ -7,7 +7,7 @@ namespace Aadev.JTF
     {
         internal static readonly JtIdentifier Empty = new JtIdentifier(null);
 
-        public readonly string? Identifier {  get; }
+        public readonly string? Identifier { get; }
 
         public JtIdentifier(string? identifier)
         {
@@ -25,10 +25,10 @@ namespace Aadev.JTF
         public static bool operator ==(JtIdentifier left, JtIdentifier right) => left.Equals(right);
         public static bool operator !=(JtIdentifier left, JtIdentifier right) => !(left == right);
 
-        public readonly override bool Equals(object? obj) => obj is JtIdentifier identifier && Equals(identifier);
+        public override readonly bool Equals(object? obj) => obj is JtIdentifier identifier && Equals(identifier);
         public readonly bool Equals(JtIdentifier other) => Identifier == other.Identifier;
-        public readonly override int GetHashCode() => HashCode.Combine(Identifier);
-        public readonly override string? ToString() => Identifier;
+        public override readonly int GetHashCode() => HashCode.Combine(Identifier);
+        public override readonly string? ToString() => Identifier;
 
         public static JtIdentifier FromString(string? identifier) => new JtIdentifier(identifier);
     }

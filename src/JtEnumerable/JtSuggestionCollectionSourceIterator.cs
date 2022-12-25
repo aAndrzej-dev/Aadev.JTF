@@ -7,30 +7,28 @@ namespace Aadev.JTF.JtEnumerable
     {
         private readonly JtSuggestionCollectionSource<T> parent;
         private readonly JArray source;
-        private readonly ICustomSourceProvider sourceProvider;
         private int index = -1;
 
-        public JtSuggestionCollectionSourceIterator(JtSuggestionCollectionSource<T> parent, JArray source, ICustomSourceProvider sourceProvider)
+        public JtSuggestionCollectionSourceIterator(JtSuggestionCollectionSource<T> parent, JArray source)
         {
             this.parent = parent;
             this.source = source;
-            this.sourceProvider = sourceProvider;
         }
         private IJtSuggestionCollectionSourceChild<T> CreateSuggestionItem(JToken source)
         {
             if (source is null)
-                return new JtSuggestionSource<T>(parent, default!, "Unknown", sourceProvider);
+                return new JtSuggestionSource<T>(parent, default!, "Unknown");
             if (source.Type is JTokenType.Array || source.Type is JTokenType.String)
             {
-                return JtSuggestionCollectionSource<T>.Create(parent, source, sourceProvider);
+                return JtSuggestionCollectionSource<T>.Create(parent, source);
             }
             if (source.Type is JTokenType.Object)
             {
-                return new JtSuggestionSource<T>(parent, (JObject)source, sourceProvider);
+                return new JtSuggestionSource<T>(parent, (JObject)source);
             }
-            return new JtSuggestionSource<T>(parent, default!, "Unknown", sourceProvider);
+            return new JtSuggestionSource<T>(parent, default!, "Unknown");
         }
-        public override JtIterator<IJtSuggestionCollectionSourceChild<T>> Clone() => new JtSuggestionCollectionSourceIterator<T>(parent, source, sourceProvider);
+        public override JtIterator<IJtSuggestionCollectionSourceChild<T>> Clone() => new JtSuggestionCollectionSourceIterator<T>(parent, source);
         public override bool MoveNext()
         {
             index++;

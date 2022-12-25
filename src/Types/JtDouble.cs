@@ -1,6 +1,5 @@
 ﻿using Aadev.JTF.CustomSources;
 using Newtonsoft.Json.Linq;
-using System;
 using System.ComponentModel;
 using System.Text;
 
@@ -14,19 +13,18 @@ namespace Aadev.JTF.Types
         private double? min;
         private double? max;
 
-        /// <inheritdoc/>
-        public override JTokenType JsonType => JTokenType.Float;
-        /// <inheritdoc/>
-        public override JtNodeType Type => JtNodeType.Double;
 
         public new JtDoubleNodeSource? Base => (JtDoubleNodeSource?)base.Base;
+        public override JTokenType JsonType => JTokenType.Float;
+        public override JtNodeType Type => JtNodeType.Double;
+
+
 
         [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public double Min { get => min ?? Base?.Min ?? minValue; set { min = value; max = max.Max(min); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public double Max { get => max ?? Base?.Max ?? maxValue; set { max = value; min = min.Min(max); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(0)] public double Default { get => @default ?? Base?.Default ?? 0; set => @default = value.Clamp(Min, Max); }
-
         public override IJtSuggestionCollection Suggestions { get; }
-        public override Type ValueType => typeof(double);
+
 
         public JtDouble(IJtNodeParent parent) : base(parent)
         {
@@ -35,17 +33,17 @@ namespace Aadev.JTF.Types
             Default = 0;
             Suggestions = JtSuggestionCollection<double>.Create();
         }
-        internal JtDouble(JObject obj, IJtNodeParent parent) : base(obj, parent)
+        internal JtDouble(IJtNodeParent parent, JObject source) : base(parent, source)
         {
-            Min = (double)(obj["min"] ?? minValue);
-            Max = (double)(obj["max"] ?? maxValue);
-            Default = (double)(obj["default"] ?? 0);
+            Min = (double)(source["min"] ?? minValue);
+            Max = (double)(source["max"] ?? maxValue);
+            Default = (double)(source["default"] ?? 0);
 
 
 
-            Suggestions = JtSuggestionCollection<double>.Create(obj["suggestions"], this);
+            Suggestions = JtSuggestionCollection<double>.Create(this, source["suggestions"]);
         }
-        internal JtDouble(JtDoubleNodeSource source, JToken? @override, IJtNodeParent parent) : base(source, @override, parent)
+        internal JtDouble(IJtNodeParent parent, JtDoubleNodeSource source, JToken? @override) : base(parent, source, @override)
         {
             Suggestions = source.Suggestions.CreateInstance();
             if (@override is null)
@@ -67,12 +65,8 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"default\": {Default}");
             sb.Append('}');
         }
-
-
-        /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
-
         public override object GetDefaultValue() => Default;
-        public override JtNodeSource CreateSource() => currentSource ??= new JtDoubleNodeSource(this, this);
+        public override JtNodeSource CreateSource() => currentSource ??= new JtDoubleNodeSource(this);
     }
 }

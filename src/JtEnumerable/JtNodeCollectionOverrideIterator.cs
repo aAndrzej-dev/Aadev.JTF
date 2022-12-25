@@ -9,19 +9,17 @@ namespace Aadev.JTF.JtEnumerable
         private readonly IJtNodeParent parent;
         private readonly JtNodeCollectionSource @base;
         private readonly JArray @override;
-        private readonly ICustomSourceProvider sourceProvider;
         private IEnumerator<IJtNodeCollectionSourceChild>? sourceEnumerator;
         private int index = -1;
 
-        public JtNodeCollectionOverrideIterator(IJtNodeParent parent, JtNodeCollectionSource @base, JArray @override, ICustomSourceProvider sourceProvider)
+        public JtNodeCollectionOverrideIterator(IJtNodeParent parent, JtNodeCollectionSource @base, JArray @override)
         {
             this.parent = parent;
             this.@base = @base;
             this.@override = @override;
-            this.sourceProvider = sourceProvider;
         }
 
-        public override JtIterator<IJtNodeCollectionChild> Clone() => new JtNodeCollectionOverrideIterator(parent, @base, @override, sourceProvider);
+        public override JtIterator<IJtNodeCollectionChild> Clone() => new JtNodeCollectionOverrideIterator(parent, @base, @override);
         public override bool MoveNext()
         {
             sourceEnumerator ??= @base.nodeEnumerable.Enumerate().GetEnumerator();
@@ -35,7 +33,7 @@ namespace Aadev.JTF.JtEnumerable
                 }
                 else
                 {
-                    Current = JtNodeCollectionIterator.CreateChildItem(@override[index], parent, sourceProvider);
+                    Current = JtNodeCollectionIterator.CreateChildItem(parent, @override[index]);
                     return true;
                 }
             }

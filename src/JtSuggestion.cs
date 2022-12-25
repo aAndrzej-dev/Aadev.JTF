@@ -96,7 +96,6 @@ namespace Aadev.JTF
         public JtSuggestionSource<T> CreateSource() => new JtSuggestionSource<T>(this);
         IJtSuggestionCollectionSourceChild<T> IJtSuggestionCollectionChild<T>.CreateSource(ICustomSourceParent parent) => CreateSource();
 
-
         public static bool operator ==(JtSuggestion<T>? left, JtSuggestion<T>? right) => !(left is null || right is null) && EqualityComparer<JtSuggestion<T>>.Default.Equals(left, right);
         public static bool operator !=(JtSuggestion<T>? left, JtSuggestion<T>? right) => !(left == right);
     }

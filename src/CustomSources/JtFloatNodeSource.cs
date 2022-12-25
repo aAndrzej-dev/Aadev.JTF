@@ -7,29 +7,32 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtFloatNodeSource : JtValueNodeSource
     {
+        public override JtNodeType Type => JtNodeType.Float;
+
         public float Max { get; set; }
         public float Min { get; set; }
         public float Default { get; set; }
         public override IJtSuggestionCollectionSource Suggestions { get; }
-        public override JtNodeType Type => JtNodeType.Float;
-
-        internal JtFloatNodeSource(JtFloat node, ICustomSourceProvider sourceProvider) : base(node, sourceProvider)
+        public JtFloatNodeSource(ICustomSourceParent parent) : base(parent)
+        {
+            Max = float.MaxValue;
+            Min = float.MinValue;
+            Suggestions = JtSuggestionCollectionSource<float>.Create(this);
+        }
+        internal JtFloatNodeSource(JtFloat node) : base(node)
         {
             Max = node.Max;
             Min = node.Min;
             Default = node.Default;
             Suggestions = node.Suggestions.CreateSource(this);
         }
-
-        internal JtFloatNodeSource(ICustomSourceParent parent, JObject source, ICustomSourceProvider sourceProvider) : base(parent, source, sourceProvider)
+        internal JtFloatNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
         {
-            Suggestions = JtSuggestionCollectionSource<float>.Create(this, source["suggestions"], sourceProvider);
+            Suggestions = JtSuggestionCollectionSource<float>.Create(this, source["suggestions"]);
             Min = (float)(source["min"] ?? float.MinValue);
             Max = (float)(source["max"] ?? float.MaxValue);
             Default = (float)(source["default"] ?? 0);
         }
-
-
         internal JtFloatNodeSource(ICustomSourceParent parent, JtFloatNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             Min = (float)(@override?["minLength"] ?? @base.Min);
@@ -37,7 +40,6 @@ namespace Aadev.JTF.CustomSources
             Default = (float)(@override?["default"] ?? @base.Default);
             Suggestions = @base.Suggestions;
         }
-        public override JtNode CreateInstance(JToken? @override, IJtNodeParent parent) => new JtFloat(this, @override, parent);
         internal override void BuildJsonDeclaration(StringBuilder sb)
         {
             BuildCommonJson(sb);
@@ -54,6 +56,7 @@ namespace Aadev.JTF.CustomSources
             }
             sb.Append('}');
         }
-        internal override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? item) => new JtFloatNodeSource(parent, this, item);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtFloat(parent, this, @override);
+        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtFloatNodeSource(parent, this, @override);
     }
 }

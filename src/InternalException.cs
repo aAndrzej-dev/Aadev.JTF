@@ -1,5 +1,5 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿#if !NET7_0_OR_GREATER
+using System;
 
 namespace Aadev.JTF
 {
@@ -19,3 +19,4 @@ namespace Aadev.JTF
         }
     }
 }
+#endif

@@ -8,16 +8,16 @@ namespace Aadev.JTF.JtEnumerable
         private readonly JtSuggestionCollection<T> source;
         private readonly ICustomSourceParent parent;
         private IEnumerator<IJtSuggestionCollectionChild<T>>? suggestionEnumerator;
-        public JtSuggestionCollectionSourceInstanceIterator(JtSuggestionCollection<T> source, ICustomSourceParent parent)
+        public JtSuggestionCollectionSourceInstanceIterator(ICustomSourceParent parent, JtSuggestionCollection<T> source)
         {
             this.source = source;
             this.parent = parent;
         }
 
-        public override JtIterator<IJtSuggestionCollectionSourceChild<T>> Clone() => new JtSuggestionCollectionSourceInstanceIterator<T>(source, parent);
+        public override JtIterator<IJtSuggestionCollectionSourceChild<T>> Clone() => new JtSuggestionCollectionSourceInstanceIterator<T>(parent, source);
         public override bool MoveNext()
         {
-            suggestionEnumerator ??= source.suggestionEnumerable.GetEnumerator();
+            suggestionEnumerator ??= source.suggestionEnumerable.Enumerate().GetEnumerator();
             if (!suggestionEnumerator.MoveNext())
             {
                 Current = null!;

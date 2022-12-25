@@ -1,4 +1,5 @@
 ﻿using Aadev.JTF.CustomSources;
+using Aadev.JTF.Types;
 using Newtonsoft.Json.Linq;
 using System;
 
@@ -6,17 +7,17 @@ namespace Aadev.JTF.JtEnumerable
 {
     internal sealed class JtSuggestionCollectionIterator<T> : JtIterator<IJtSuggestionCollectionChild<T>>
     {
+        private readonly JtValue owner;
         private readonly JArray source;
-        private readonly ICustomSourceProvider sourceProvider;
         private int index = -1;
-        public JtSuggestionCollectionIterator(JArray source, ICustomSourceProvider sourceProvider)
+        public JtSuggestionCollectionIterator(JtValue owner, JArray source)
         {
+            this.owner = owner;
             this.source = source;
-            this.sourceProvider = sourceProvider;
         }
 
 
-        public override JtIterator<IJtSuggestionCollectionChild<T>> Clone() => new JtSuggestionCollectionIterator<T>(source, sourceProvider);
+        public override JtIterator<IJtSuggestionCollectionChild<T>> Clone() => new JtSuggestionCollectionIterator<T>(owner, source);
         public override bool MoveNext()
         {
             index++;
@@ -35,7 +36,7 @@ namespace Aadev.JTF.JtEnumerable
                 return new JtSuggestion<T>(default!, "Unknown");
             if (source.Type is JTokenType.Array || source.Type is JTokenType.String)
             {
-                return JtSuggestionCollection<T>.Create(source, sourceProvider);
+                return JtSuggestionCollection<T>.Create(owner, source);
             }
             if (source.Type is JTokenType.Object)
             {

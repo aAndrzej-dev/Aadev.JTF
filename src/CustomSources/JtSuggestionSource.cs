@@ -12,7 +12,7 @@ namespace Aadev.JTF.CustomSources
 
         public Type SuggestionType => typeof(T);
 
-        internal JtSuggestionSource(ICustomSourceParent parent, JObject source, ICustomSourceProvider sourceProvider) : base(parent, sourceProvider)
+        internal JtSuggestionSource(ICustomSourceParent parent, JObject source) : base(parent)
         {
             if (source["name"]?.Type is JTokenType.String && typeof(T) == typeof(string))
                 Value = (T)((JValue?)source["name"])?.Value!;
@@ -21,13 +21,13 @@ namespace Aadev.JTF.CustomSources
             DisplayName = (string?)source["displayName"] ?? Value?.ToString();
         }
 
-        internal JtSuggestionSource(JtSuggestion<T> jtSuggestion) : base(null!, null)
+        internal JtSuggestionSource(JtSuggestion<T> jtSuggestion) : base(null!)
         {
             Value = jtSuggestion.Value;
             DisplayName = jtSuggestion.DisplayName;
         }
 
-        internal JtSuggestionSource(JtSuggestionCollectionSource<T> parent, T value, string displayName, ICustomSourceProvider sourceProvider) : base(parent, sourceProvider)
+        internal JtSuggestionSource(JtSuggestionCollectionSource<T> parent, T value, string displayName) : base(parent)
         {
             Value = value;
             DisplayName = displayName;

@@ -10,24 +10,23 @@ namespace Aadev.JTF.Types
     {
         private bool? constant;
         private bool? forecUsingSuggestions;
+
+
         public new JtValueNodeSource? Base => (JtValueNodeSource?)base.Base;
 
-        public abstract Type ValueType { get; }
-        public abstract IJtSuggestionCollection Suggestions { get; }
-        public JtSuggestionDisplayType SuggestionDisplayType { get; set; }
         [DefaultValue(false)] public bool ForecUsingSuggestions { get => forecUsingSuggestions ?? Base?.ForecUsingSuggestions ?? false; set => forecUsingSuggestions = value; }
         [DefaultValue(false)] public bool Constant { get => constant ?? Base?.Constant ?? false; set => constant = value; }
-        protected internal JtValue(IJtNodeParent parent) : base(parent)
+        public abstract IJtSuggestionCollection Suggestions { get; }
+
+        private protected JtValue(IJtNodeParent parent) : base(parent)
         {
         }
-
-        protected internal JtValue(JObject obj, IJtNodeParent parent) : base(obj, parent)
+        private protected JtValue(IJtNodeParent parent, JObject source) : base(parent, source)
         {
-            ForecUsingSuggestions = (bool?)obj["forceSuggestions"] ?? false;
-            Constant = (bool?)obj["constant"] ?? false;
+            ForecUsingSuggestions = (bool?)source["forceSuggestions"] ?? false;
+            Constant = (bool?)source["constant"] ?? false;
         }
-
-        protected internal JtValue(JtValueNodeSource source, JToken? @override, IJtNodeParent parent) : base(source, @override, parent)
+        private protected JtValue(IJtNodeParent parent, JtValueNodeSource source, JToken? @override) : base(parent, source, @override)
         {
             if (@override is null)
                 return;
@@ -35,7 +34,7 @@ namespace Aadev.JTF.Types
             constant = (bool?)@override["constant"];
         }
 
-        protected internal override void BuildCommonJson(StringBuilder sb)
+        private protected override void BuildCommonJson(StringBuilder sb)
         {
             base.BuildCommonJson(sb);
             if (!Suggestions.IsEmpty)
@@ -50,6 +49,5 @@ namespace Aadev.JTF.Types
                 sb.Append(", \"constant\": true");
         }
         public abstract object GetDefaultValue();
-
     }
 }

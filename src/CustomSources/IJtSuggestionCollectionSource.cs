@@ -1,13 +1,14 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace Aadev.JTF.CustomSources
 {
     public interface IJtSuggestionCollectionSource
     {
         bool IsSaveable { get; }
+        Type SuggestionType { get; }
 
         IJtSuggestionCollection CreateInstance();
-        IJtSuggestionCollection CreateInstance(JtCustomResourceIdentifier id);
-        void BuildJson(StringBuilder sb);
+        internal void BuildJson(StringBuilder sb);
     }
 }

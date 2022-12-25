@@ -9,19 +9,17 @@ namespace Aadev.JTF.JtEnumerable
         private readonly ICustomSourceParent parent;
         private readonly JArray @override;
         private readonly JtNodeCollectionSource @base;
-        private readonly ICustomSourceProvider sourceProvider;
         private IEnumerator<IJtNodeCollectionSourceChild>? sourceEnumerator;
         private int index = -1;
 
-        public JtNodeSourceCollectionOverrideIterator(ICustomSourceParent parent, JtNodeCollectionSource @base, JArray @override, ICustomSourceProvider sourceProvider)
+        public JtNodeSourceCollectionOverrideIterator(ICustomSourceParent parent, JtNodeCollectionSource @base, JArray @override)
         {
             this.@override = @override;
             this.@base = @base;
-            this.sourceProvider = sourceProvider;
             this.parent = parent;
         }
 
-        public override JtIterator<IJtNodeCollectionSourceChild> Clone() => new JtNodeSourceCollectionOverrideIterator(parent, @base, @override, sourceProvider);
+        public override JtIterator<IJtNodeCollectionSourceChild> Clone() => new JtNodeSourceCollectionOverrideIterator(parent, @base, @override);
         public override bool MoveNext()
         {
             sourceEnumerator ??= @base.nodeEnumerable.Enumerate().GetEnumerator();
@@ -35,18 +33,14 @@ namespace Aadev.JTF.JtEnumerable
                 }
                 else
                 {
-                    Current = new CustomSourceBaseDeclaration(@override[index], sourceProvider).Value;
+                    Current = new CustomSourceBaseDeclaration(@override[index], parent.SourceProvider).Value;
                     return true;
                 }
             }
             else if (@override.Count <= index)
             {
-                if (sourceEnumerator.Current is IJtNodeCollectionSourceChild child)
-                {
-                    Current = child;
-                    return true;
-                }
-                throw new InternalException();
+                Current = sourceEnumerator.Current;
+                return true;
             }
             else if (@override[index]?.Type is JTokenType.Null)
             {
@@ -54,17 +48,8 @@ namespace Aadev.JTF.JtEnumerable
             }
             else
             {
-                if (sourceEnumerator.Current is JtNodeSource ns)
-                {
-                    Current = ns.CreateOverride(parent, (JObject?)@override[index]);
-                    return true;
-                }
-                if (sourceEnumerator.Current is JtNodeCollectionSource ncs)
-                {
-                    Current = ncs.CreateOverride(parent, (JArray?)@override[index]);
-                    return true;
-                }
-                throw new InternalException();
+                Current =  sourceEnumerator.Current.CreateOverride(parent, @override[index]);
+                return true;
             }
 
         }

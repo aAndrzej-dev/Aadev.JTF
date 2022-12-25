@@ -11,7 +11,7 @@ namespace Aadev.JTF
         bool IsEmpty { get; }
 
 
-        void BuildJson(StringBuilder sb);
+        internal void BuildJson(StringBuilder sb);
         IJtSuggestionCollectionSource CreateSource(ICustomSourceParent parent);
         IEnumerable<IJtSuggestion> GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource);
     }

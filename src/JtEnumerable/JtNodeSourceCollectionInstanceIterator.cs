@@ -5,38 +5,26 @@ namespace Aadev.JTF.JtEnumerable
 {
     internal sealed class JtNodeSourceCollectionInstanceIterator : JtIterator<IJtNodeCollectionSourceChild>
     {
-        private readonly JtNodeCollection collection;
+        private readonly JtNodeCollection instance;
         private IEnumerator<IJtNodeCollectionChild>? sourceEnumerator;
-        private readonly ICustomSourceProvider sourceProvider;
 
-        public JtNodeSourceCollectionInstanceIterator(JtNodeCollection collection, ICustomSourceProvider sourceProvider)
+        public JtNodeSourceCollectionInstanceIterator(JtNodeCollection instance)
         {
-            this.collection = collection;
-            this.sourceProvider = sourceProvider;
+            this.instance = instance;
         }
 
-        public override JtIterator<IJtNodeCollectionSourceChild> Clone() => new JtNodeSourceCollectionInstanceIterator(collection, sourceProvider);
+        public override JtIterator<IJtNodeCollectionSourceChild> Clone() => new JtNodeSourceCollectionInstanceIterator(instance);
         public override bool MoveNext()
         {
-            sourceEnumerator ??= collection.nodeEnumerable.GetEnumerator();
+            sourceEnumerator ??= instance.nodeEnumerable.Enumerate().GetEnumerator();
 
             if (!sourceEnumerator.MoveNext())
             {
                 Current = null!;
                 return false;
             }
-
-            if (sourceEnumerator.Current is JtNode n)
-            {
-                Current = n.CreateSource();
-                return true;
-            }
-            if (sourceEnumerator.Current is JtNodeCollection nc)
-            {
-                Current = nc.CreateSource(sourceProvider);
-                return true;
-            }
-            throw new InternalException();
+            Current = sourceEnumerator.Current.CreateSource();
+            return true;
         }
     }
 }

@@ -15,7 +15,7 @@ namespace Aadev.JTF.JtEnumerable
         public override JtIterator<IJtSuggestionCollectionChild<T>> Clone() => new JtSuggestionCollectionInstanceIterator<T>(source);
         public override bool MoveNext()
         {
-            suggestionEnumerator ??= source.suggestionEnumerable.GetEnumerator();
+            suggestionEnumerator ??= source.suggestionEnumerable.Enumerate().GetEnumerator();
             if (!suggestionEnumerator.MoveNext())
             {
                 Current = null!;

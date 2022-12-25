@@ -8,13 +8,17 @@ namespace Aadev.JTF.CustomSources
     {
         public CustomSourceBaseDeclaration(JToken source, ICustomSourceProvider sourceProvider)
         {
-            Value = JtNodeSourceCollectionIterator.CreateChildItem(this, source, sourceProvider);
-           
+            SourceProvider = sourceProvider;
+            Value = JtNodeSourceCollectionIterator.CreateChildItem(this, source);
         }
 
         public IJtNodeCollectionSourceChild Value { get; }
 
         public bool IsDeclaratingSource => Value != null;
+
+        public ICustomSourceProvider SourceProvider { get; }
+
+        ICustomSourceDeclaration ICustomSourceParent.Declaration => this;
 
         void ICustomSourceDeclaration.BuildJson(StringBuilder sb) => ((CustomSource)Value).BuildJsonDeclaration(sb);
     }

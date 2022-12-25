@@ -2,5 +2,7 @@
 {
     public interface ICustomSourceParent
     {
+        ICustomSourceDeclaration Declaration { get; }
+        ICustomSourceProvider SourceProvider { get; }
     }
 }

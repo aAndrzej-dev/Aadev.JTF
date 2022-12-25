@@ -18,11 +18,12 @@ namespace Aadev.JTF
 
         public bool RegisterNode(JtIdentifier id, JtNode node)
         {
-            if (registeredNodes.ContainsKey(id))
-                return false;
-            NodeRegistered?.Invoke(this, new NodeIdentifierEventArgs(node, id));
-            registeredNodes.Add(id, node);
-            return true;
+            if (registeredNodes.TryAdd(id, node))
+            {
+                NodeRegistered?.Invoke(this, new NodeIdentifierEventArgs(node, id));
+                return true;
+            }
+            return false;
         }
         public bool UnregisterNode(JtIdentifier id)
         {
@@ -34,7 +35,7 @@ namespace Aadev.JTF
             return false;
         }
 
-        public JtNode? GetNodeById(JtIdentifier id) => registeredNodes.ContainsKey(id) ? registeredNodes[id] : null;
+        public JtNode? GetNodeById(JtIdentifier id) => registeredNodes.TryGetValue(id, out JtNode? value) ? value : null;
 
         public bool ContainsNode(JtIdentifier id) => registeredNodes.ContainsKey(id);
         public JtNode[] GetRegisteredNodes() => registeredNodes.Values.ToArray();

@@ -12,18 +12,17 @@ namespace Aadev.JTF.Types
         private int? minLength;
         private string? @default;
 
-        /// <inheritdoc/>
-        public override JTokenType JsonType => JTokenType.String;
-        /// <inheritdoc/>
-        public override JtNodeType Type => JtNodeType.String;
+
         public new JtStringNodeSource? Base => (JtStringNodeSource?)base.Base;
+        public override JTokenType JsonType => JTokenType.String;
+        public override JtNodeType Type => JtNodeType.String;
+
 
         [DefaultValue(0), RefreshProperties(RefreshProperties.All)] public int MinLength { get => minLength ?? Base?.MinLength ?? 0; set { minLength = value.Max(0); maxLength = maxLength.Max(value); } }
         [DefaultValue(-1), RefreshProperties(RefreshProperties.All)] public int MaxLength { get => maxLength ?? Base?.MaxLength ?? -1; set { maxLength = value.Max(-1); minLength = minLength.Min(value).Max(0); } }
         public string Default { get => @default ?? Base?.Default ?? string.Empty; set => @default = value; }
-        public override Type ValueType => typeof(string);
-
         public override IJtSuggestionCollection Suggestions { get; }
+
 
         public JtString(IJtNodeParent parent) : base(parent)
         {
@@ -32,15 +31,15 @@ namespace Aadev.JTF.Types
             MaxLength = -1;
             Default = string.Empty;
         }
-        internal JtString(JObject obj, IJtNodeParent parent) : base(obj, parent)
+        internal JtString(IJtNodeParent parent, JObject source) : base(parent, source)
         {
-            MinLength = (int)(obj["minLength"] ?? 0);
-            MaxLength = (int)(obj["maxLength"] ?? -1);
-            Default = (string?)obj["default"] ?? string.Empty;
+            MinLength = (int)(source["minLength"] ?? 0);
+            MaxLength = (int)(source["maxLength"] ?? -1);
+            Default = (string?)source["default"] ?? string.Empty;
 
-            Suggestions = JtSuggestionCollection<string>.Create(obj["suggestions"], this);
+            Suggestions = JtSuggestionCollection<string>.Create(this, source["suggestions"]);
         }
-        internal JtString(JtStringNodeSource source, JToken? @override, IJtNodeParent parent) : base(source,@override, parent)
+        internal JtString(IJtNodeParent parent, JtStringNodeSource source, JToken? @override) : base(parent, source, @override)
         {
             Suggestions = source.Suggestions.CreateInstance();
             if (@override is null)
@@ -53,6 +52,7 @@ namespace Aadev.JTF.Types
         internal override void BuildJson(StringBuilder sb)
         {
             BuildCommonJson(sb);
+
             if (MinLength != 0)
                 sb.Append($", \"minLength\": {MinLength}");
             if (MaxLength != -1)
@@ -62,12 +62,8 @@ namespace Aadev.JTF.Types
 
             sb.Append('}');
         }
-
-
-        /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
-
         public override object GetDefaultValue() => Default;
-        public override JtNodeSource CreateSource() => currentSource ??= new JtStringNodeSource(this, this);
+        public override JtNodeSource CreateSource() => currentSource ??= new JtStringNodeSource(this);
     }
 }

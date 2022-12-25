@@ -1,5 +1,8 @@
 ﻿using Aadev.JTF.JtEnumerable;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Aadev.JTF.CustomSources
@@ -8,56 +11,71 @@ namespace Aadev.JTF.CustomSources
     {
         internal readonly IJtEnumerable<IJtNodeCollectionSourceChild> nodeEnumerable;
 
-        private JtNodeCollectionSource(ICustomSourceParent parent, ICustomSourceProvider sourceProvider) : base(parent, sourceProvider)
+        private JtNodeCollectionSource(ICustomSourceParent parent) : base(parent)
         {
             nodeEnumerable = JtEnumerable.JtEnumerable.CreateEmpty<IJtNodeCollectionSourceChild>();
         }
 
-        private JtNodeCollectionSource(JtNodeCollection instance, ICustomSourceProvider sourceProvider) : base(new CustomSourceFormInstanceDeclaration(instance.Owner), sourceProvider)
+        private JtNodeCollectionSource(JtNodeCollection instance) : base(new CustomSourceFormInstanceDeclaration(instance.Owner))
         {
-            nodeEnumerable = JtEnumerable.JtEnumerable.CreateJtNodeSourceCollection(instance, sourceProvider);
+            nodeEnumerable = JtEnumerable.JtEnumerable.CreateJtNodeSourceCollection(instance);
         }
 
-        private JtNodeCollectionSource(ICustomSourceParent parent, JtNodeCollectionSource @base, JArray? @override, ICustomSourceProvider sourceProvider) : base(parent, sourceProvider)
+        private JtNodeCollectionSource(ICustomSourceParent parent, JtNodeCollectionSource @base, JArray? @override) : base(parent)
         {
-            nodeEnumerable = JtEnumerable.JtEnumerable.CreateJtNodeSourceCollection(this, @base, @override, sourceProvider);
+            nodeEnumerable = JtEnumerable.JtEnumerable.CreateJtNodeSourceCollection(this, @base, @override);
         }
 
-        private JtNodeCollectionSource(ICustomSourceParent parent, JArray jArray, ICustomSourceProvider sourceProvider) : base(parent, sourceProvider)
+        private JtNodeCollectionSource(ICustomSourceParent parent, JArray jArray) : base(parent)
         {
-            nodeEnumerable = JtEnumerable.JtEnumerable.CreateJtNodeSourceCollection(this, jArray, sourceProvider);
+            nodeEnumerable = JtEnumerable.JtEnumerable.CreateJtNodeSourceCollection(this, jArray);
         }
 
         internal override void BuildJsonDeclaration(StringBuilder sb)
         {
             sb.Append('[');
             bool isFirst = true;
-            foreach (IJtNodeCollectionSourceChild item in nodeEnumerable.Enumerate())
+            List<IJtNodeCollectionSourceChild> list = nodeEnumerable.Enumerate();
+
+#if NET5_0_OR_GREATER
+            Span<IJtNodeCollectionSourceChild> listSpan = CollectionsMarshal.AsSpan(list);
+            for (int i = 0; i < listSpan.Length; i++)
             {
                 if (!isFirst)
                     sb.Append(',');
                 else
                     isFirst = false;
-                item.BuildJson(sb);
+                listSpan[i].BuildJson(sb);
             }
+#else
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (!isFirst)
+                    sb.Append(',');
+                else
+                    isFirst = false;
+                 list[i].BuildJson(sb);
+            }
+#endif
             sb.Append(']');
         }
-
-        internal static JtNodeCollectionSource Create(ICustomSourceParent parent, JToken? source, ICustomSourceProvider sourceProvider)
+        internal static JtNodeCollectionSource Create(ICustomSourceParent parent) => new JtNodeCollectionSource(parent);
+        internal static JtNodeCollectionSource Create(ICustomSourceParent parent, JToken? source)
         {
             if (source?.Type is JTokenType.String)
             {
-                return sourceProvider.GetCustomSource<JtNodeCollectionSource>((string)source!) ?? new JtNodeCollectionSource(parent, sourceProvider);
+                return parent.SourceProvider.GetCustomSource<JtNodeCollectionSource>((string)source!) ?? new JtNodeCollectionSource(parent);
             }
-            return new JtNodeCollectionSource(parent, (JArray)source!, sourceProvider);
+            return new JtNodeCollectionSource(parent, (JArray)source!);
 
         }
 
-        internal static JtNodeCollectionSource Create(JtNodeCollection instance, ICustomSourceProvider sourceProvider) => new JtNodeCollectionSource(instance, sourceProvider);
-        internal JtNodeCollectionSource CreateOverride(ICustomSourceParent parent, JArray? @override) => new JtNodeCollectionSource(parent, this, @override, SourceProvider!);
+        internal static JtNodeCollectionSource Create(JtNodeCollection instance) => new JtNodeCollectionSource(instance);
+        internal JtNodeCollectionSource CreateOverride(ICustomSourceParent parent, JArray? @override) => new JtNodeCollectionSource(parent, this, @override);
         IJtNodeCollectionChild IJtNodeCollectionSourceChild.CreateInstance(IJtNodeParent parent, JToken? @override) => CreateInstance(parent, @override);
-        public JtNodeCollection CreateInstance(IJtNodeParent parent, JToken? @override) => new JtNodeCollection(parent, this, @override as JArray, SourceProvider!);
-        internal JtNodeCollection CreateInstance(IJtNodeParent parent, JtCustomResourceIdentifier id) => new JtNodeCollection(parent, this, id, SourceProvider!);
+        public JtNodeCollection CreateInstance(IJtNodeParent parent, JToken? @override) => new JtNodeCollection(parent, this, @override as JArray);
+        IJtNodeCollectionSourceChild IJtNodeCollectionSourceChild.CreateOverride(ICustomSourceParent parent, JToken? @override) => CreateOverride(parent, (JArray?)@override);
+        //internal JtNodeCollection CreateInstance(IJtNodeParent parent, JtCustomResourceIdentifier id) => new JtNodeCollection(parent, this, id);
         void IJtNodeCollectionSourceChild.BuildJson(StringBuilder sb) => BuildJson(sb);
     }
 }

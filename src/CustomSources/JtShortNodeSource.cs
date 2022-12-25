@@ -6,14 +6,27 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtShortNodeSource : JtValueNodeSource
     {
-        internal JtShortNodeSource(JtShort node, ICustomSourceProvider sourceProvider) : base(node, sourceProvider)
+        public override JtNodeType Type => JtNodeType.Short;
+
+        public short Max { get; set; }
+        public short Min { get; set; }
+        public short Default { get; set; }
+        public override IJtSuggestionCollectionSource Suggestions { get; }
+
+
+        public JtShortNodeSource(ICustomSourceParent parent) : base(parent)
+        {
+            Max = short.MaxValue;
+            Min = short.MinValue;
+            Suggestions = JtSuggestionCollectionSource<short>.Create(this);
+        }
+        internal JtShortNodeSource(JtShort node) : base(node)
         {
             Max = node.Max;
             Min = node.Min;
             Default = node.Default;
             Suggestions = node.Suggestions.CreateSource(this);
         }
-
         internal JtShortNodeSource(ICustomSourceParent parent, JtShortNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             Min = (short)(@override?["minLength"] ?? @base.Min);
@@ -21,24 +34,15 @@ namespace Aadev.JTF.CustomSources
             Default = (short)(@override?["default"] ?? @base.Default);
             Suggestions = @base.Suggestions;
         }
-
-        internal JtShortNodeSource(ICustomSourceParent parent, JObject source, ICustomSourceProvider sourceProvider) : base(parent, source, sourceProvider)
+        internal JtShortNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
         {
-            Suggestions = JtSuggestionCollectionSource<short>.Create(this, source["suggestions"], sourceProvider);
+            Suggestions = JtSuggestionCollectionSource<short>.Create(this, source["suggestions"]);
             Min = (short)(source["min"] ?? short.MinValue);
             Max = (short)(source["max"] ?? short.MaxValue);
             Default = (short)(source["default"] ?? 0);
         }
 
 
-
-        public short Max { get; internal set; }
-        public short Min { get; internal set; }
-        public short Default { get; internal set; }
-        public override IJtSuggestionCollectionSource Suggestions { get; }
-
-        public override JtNodeType Type => JtNodeType.Short;
-        public override JtNode CreateInstance(JToken? @override, IJtNodeParent parent) => new JtShort(this, @override, parent);
         internal override void BuildJsonDeclaration(StringBuilder sb)
         {
             BuildCommonJson(sb);
@@ -55,6 +59,7 @@ namespace Aadev.JTF.CustomSources
             }
             sb.Append('}');
         }
-        internal override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? item) => new JtShortNodeSource(parent, this, item);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtShort(parent, this, @override);
+        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtShortNodeSource(parent, this, @override);
     }
 }

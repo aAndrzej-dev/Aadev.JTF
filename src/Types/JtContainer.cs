@@ -11,28 +11,28 @@ namespace Aadev.JTF.Types
         private bool? disableCollapse;
 
         public new JtContainerNodeSource? Base => (JtContainerNodeSource?)base.Base;
-        [Browsable(false)] public abstract JtNodeCollection Children { get; }
+        public override JTokenType JsonType => ContainerJsonType is JtContainerType.Array ? JTokenType.Array : JTokenType.Object;
 
+        [Browsable(false)] public abstract JtNodeCollection Children { get; }
         [Browsable(false)] public abstract JtContainerType ContainerDisplayType { get; }
 
         [DefaultValue(false)] public bool DisableCollapse { get => disableCollapse ?? Base?.DisableCollapse ?? false; set => disableCollapse = value; }
         public JtContainerType ContainerJsonType { get; set; }
 
 
-        public override JTokenType JsonType => ContainerJsonType is JtContainerType.Array ? JTokenType.Array : JTokenType.Object;
 
-        JtContainer IJtNodeParent.Owner => this;
+
 
         public bool HasExternalChildren => Children.HasExternalChildren;
 
-        protected internal JtContainer(IJtNodeParent parent) : base(parent)
+        private protected JtContainer(IJtNodeParent parent) : base(parent)
         {
             ContainerJsonType = ContainerDisplayType;
         }
-        protected internal JtContainer(JObject obj, IJtNodeParent parent) : base(obj, parent)
+        private protected JtContainer(IJtNodeParent parent, JObject source) : base(parent, source)
         {
-            DisableCollapse = (bool?)obj["disableCollapse"] ?? false;
-            if (obj["jsonType"] is JValue jt)
+            DisableCollapse = (bool?)source["disableCollapse"] ?? false;
+            if (source["jsonType"] is JValue jt)
             {
                 ContainerJsonType = (string?)jt.Value switch
                 {
@@ -44,12 +44,11 @@ namespace Aadev.JTF.Types
             else
                 ContainerJsonType = ContainerDisplayType;
         }
-
-        protected internal JtContainer(JtContainerNodeSource source, JToken? @override, IJtNodeParent parent) : base(source, @override, parent)
+        private protected JtContainer(IJtNodeParent parent, JtContainerNodeSource source, JToken? @override) : base(parent, source, @override)
         {
             if (@override?["jsonType"] is JValue jt)
             {
-               ContainerJsonType = (string?)jt.Value switch
+                ContainerJsonType = (string?)jt.Value switch
                 {
                     "array" => JtContainerType.Array,
                     "block" => JtContainerType.Block,
@@ -69,7 +68,7 @@ namespace Aadev.JTF.Types
                 return new JObject();
         }
 
-        protected internal override void BuildCommonJson(StringBuilder sb)
+        private protected override void BuildCommonJson(StringBuilder sb)
         {
             base.BuildCommonJson(sb);
             if (ContainerJsonType != ContainerDisplayType)
@@ -77,9 +76,10 @@ namespace Aadev.JTF.Types
             if (DisableCollapse)
                 sb.Append(", \"disableCollapse\": true");
         }
+
         IIdentifiersManager IJtNodeParent.GetIdentifiersManagerForChild() => IdentifiersManager;
-
-
+        ICustomSourceProvider IJtNodeParent.SourceProvider => this;
+        JtContainer IJtNodeParent.Owner => this;
     }
     public enum JtContainerType
     {

@@ -6,28 +6,30 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtBoolNodeSource : JtNodeSource
     {
-        internal JtBoolNodeSource(JtBool node, ICustomSourceProvider sourceProvider) : base(node, sourceProvider)
+        public override JtNodeType Type => JtNodeType.Bool;
+
+        public bool Default { get; set; }
+        public bool Constant { get; set; }
+        public JtBoolNodeSource(ICustomSourceParent parent) : base(parent) { }
+        internal JtBoolNodeSource(JtBool node) : base(node)
         {
             Default = node.Default;
             Constant = node.Constant;
         }
-
-        internal JtBoolNodeSource(ICustomSourceParent parent, JtNodeSource @base, JObject? @override) : base(parent, @base, @override)
-        {
-        }
-
-        internal JtBoolNodeSource(ICustomSourceParent parent, JObject source, ICustomSourceProvider sourceProvider) : base(parent, source, sourceProvider)
+        internal JtBoolNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
         {
             Default = (bool?)source["default"] ?? false;
             Constant = (bool?)source["constant"] ?? false;
         }
+        internal JtBoolNodeSource(ICustomSourceParent parent, JtBoolNodeSource @base, JObject? @override) : base(parent, @base, @override)
+        {
+            Default = (bool)(@override?["default"] ?? @base.Default);
+            Constant = (bool)(@override?["constant"] ?? @base.Constant);
+        }
 
-        public bool Default { get; internal set; }
-        public bool Constant { get; internal set; }
 
-        public override JtNodeType Type => JtNodeType.Bool;
 
-        public override JtNode CreateInstance(JToken? @override, IJtNodeParent parent) => new JtBool(this, @override, parent);
+
 
         internal override void BuildJsonDeclaration(StringBuilder sb)
         {
@@ -38,6 +40,7 @@ namespace Aadev.JTF.CustomSources
                 sb.Append(", \"constant\": true");
             sb.Append('}');
         }
-        internal override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? item) => new JtBoolNodeSource(parent, this, item);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtBool(parent, this, @override);
+        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtBoolNodeSource(parent, this, @override);
     }
 }

@@ -5,16 +5,32 @@ namespace Aadev.JTF.CustomSources
 {
     public abstract class JtNodeSource : CustomSource, IJtNodeCollectionSourceChild
     {
-        private readonly JtNode? node;
-
+        public abstract JtNodeType Type { get; }
         public string? Name { get; set; }
         public string? Description { get; set; }
         public string? DisplayName { get; set; }
         public string? Condition { get; set; }
         public JtIdentifier Id { get; set; }
         public bool Required { get; set; }
-        public abstract JtNodeType Type { get; }
-        protected internal JtNodeSource(ICustomSourceParent parent, JObject? source, ICustomSourceProvider sourceProvider) : base(parent, sourceProvider)
+
+        public bool IsArrayPrefab => Parent is JtArrayNodeSource;
+
+        public bool IsDynamicName => Parent is JtArrayNodeSource { ContainerJsonType: Types.JtContainerType.Block };
+
+        public bool IsInArrayPrefab => Parent is JtNodeSource { IsInArrayPrefab: true };
+
+        public JtNodeSource(ICustomSourceParent parent) : base(parent) { }
+
+        private protected JtNodeSource(JtNode node) : base(new CustomSourceFormInstanceDeclaration(node))
+        {
+            Name = node.Name;
+            Description = node.Description;
+            Required = node.Required;
+            DisplayName = node.DisplayName;
+            Id = node.Id;
+            Condition = node.Condition;
+        }
+        private protected JtNodeSource(ICustomSourceParent parent, JObject? source) : base(parent)
         {
             if (source is null)
                 return;
@@ -25,17 +41,7 @@ namespace Aadev.JTF.CustomSources
             Id = (string?)source["id"];
             Condition = (string?)source["condition"];
         }
-        protected internal JtNodeSource(JtNode node, ICustomSourceProvider sourceProvider) : base(new CustomSourceFormInstanceDeclaration(node), sourceProvider)
-        {
-            Name = node.Name;
-            Description = node.Description;
-            Required = node.Required;
-            DisplayName = node.DisplayName;
-            Id = node.Id;
-            Condition = node.Condition;
-            this.node = node;
-        }
-        protected internal JtNodeSource(ICustomSourceParent parent, JtNodeSource @base, JObject? @override) : base(parent, @base.SourceProvider)
+        private protected JtNodeSource(ICustomSourceParent parent, JtNodeSource @base, JObject? @override) : base(parent)
         {
             Name = (string?)(@override?["name"] ?? @base.Name);
             Description = (string?)(@override?["description"] ?? @base.Description);
@@ -44,14 +50,8 @@ namespace Aadev.JTF.CustomSources
             Id = (string?)(@override?["id"] ?? @base.Id.Identifier);
             Condition = (string?)(@override?["condition"] ?? @base.Condition);
         }
-        internal override void BuildJson(StringBuilder sb)
-        {
-            if (node is null)
-                base.BuildJson(sb);
-            else
-                sb.Append($"#{node.Id}");
-        }
-        protected virtual void BuildCommonJson(StringBuilder sb)
+
+        private protected virtual void BuildCommonJson(StringBuilder sb)
         {
             sb.Append('{');
             sb.Append($"\"name\": \"{Name}\",");
@@ -67,33 +67,37 @@ namespace Aadev.JTF.CustomSources
             if (!string.IsNullOrEmpty(Condition))
                 sb.Append($", \"condition\": \"{Condition}\"");
         }
-        internal static JtNodeSource Create(ICustomSourceParent parent, JToken item, ICustomSourceProvider sourceProvider)
+        public abstract JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override);
+        public abstract JtNode CreateInstance(IJtNodeParent parent, JToken? @override);
+
+        internal static JtNodeSource Create(ICustomSourceParent parent, JToken source)
         {
-            if (item.Type is JTokenType.String)
+            if (source.Type is JTokenType.String)
             {
-                return sourceProvider.GetCustomSource<JtNodeSource>((string)item!) ?? new JtUnknownNodeSource(parent, null, sourceProvider);
+                return parent.SourceProvider.GetCustomSource<JtNodeSource>((string)source!) ?? new JtUnknownNodeSource(parent, null);
             }
 
-            string? id = ((string?)item["type"])?.ToLowerInvariant();
+            string? id = ((string?)source["type"])?.ToLowerInvariant();
 
             return id switch
             {
-                "bool" => new JtBoolNodeSource(parent, (JObject)item, sourceProvider),
-                "byte" => new JtByteNodeSource(parent, (JObject)item, sourceProvider),
-                "short" => new JtShortNodeSource(parent, (JObject)item, sourceProvider),
-                "int" => new JtIntNodeSource(parent, (JObject)item, sourceProvider),
-                "long" => new JtLongNodeSource(parent, (JObject)item, sourceProvider),
-                "float" => new JtFloatNodeSource(parent, (JObject)item, sourceProvider),
-                "double" => new JtDoubleNodeSource(parent, (JObject)item, sourceProvider),
-                "string" => new JtStringNodeSource(parent, (JObject)item, sourceProvider),
-                "block" => new JtBlockNodeSource(parent, (JObject)item, sourceProvider),
-                "array" => new JtArrayNodeSource(parent, (JObject)item, sourceProvider),
-                _ => new JtUnknownNodeSource(parent, (JObject)item, sourceProvider),
+                "bool" => new JtBoolNodeSource(parent, (JObject)source),
+                "byte" => new JtByteNodeSource(parent, (JObject)source),
+                "short" => new JtShortNodeSource(parent, (JObject)source),
+                "int" => new JtIntNodeSource(parent, (JObject)source),
+                "long" => new JtLongNodeSource(parent, (JObject)source),
+                "float" => new JtFloatNodeSource(parent, (JObject)source),
+                "double" => new JtDoubleNodeSource(parent, (JObject)source),
+                "string" => new JtStringNodeSource(parent, (JObject)source),
+                "block" => new JtBlockNodeSource(parent, (JObject)source),
+                "array" => new JtArrayNodeSource(parent, (JObject)source),
+                _ => new JtUnknownNodeSource(parent, (JObject)source),
             };
         }
-        internal abstract JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override);
-        public abstract JtNode CreateInstance(JToken? @override, IJtNodeParent parent);
-        IJtNodeCollectionChild IJtNodeCollectionSourceChild.CreateInstance(IJtNodeParent parent, JToken? @override) => CreateInstance(@override, parent);
+
+
+        IJtNodeCollectionChild IJtNodeCollectionSourceChild.CreateInstance(IJtNodeParent parent, JToken? @override) => CreateInstance(parent, @override);
+        IJtNodeCollectionSourceChild IJtNodeCollectionSourceChild.CreateOverride(ICustomSourceParent parent, JToken? @override) => CreateOverride(parent, (JObject?)@override);
         void IJtNodeCollectionSourceChild.BuildJson(StringBuilder sb) => BuildJson(sb);
     }
 }

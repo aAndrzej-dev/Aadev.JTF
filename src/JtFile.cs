@@ -25,7 +25,7 @@ namespace Aadev.JTF
         public static readonly JtFileType CustomSource = new JtFileType("customsource", nameof(CustomSource));
         public static readonly JtFileType CustomValueDictionary = new JtFileType("valuesdictionary", nameof(CustomValueDictionary));
         [DebuggerStepThrough]
-        public bool IsValidType([NotNullWhen(true)] string? type) => type != null && Name == type.ToLowerInvariant();
+        public bool IsValidType([NotNullWhen(true)] string? type) => type != null && Name.Equals(type, System.StringComparison.OrdinalIgnoreCase);
         [DebuggerStepThrough]
         public void ThorwIfInvalidType([NotNull]string? type, string filename)
         {

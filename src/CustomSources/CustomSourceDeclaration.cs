@@ -2,11 +2,8 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace Aadev.JTF.CustomSources
@@ -22,31 +19,35 @@ namespace Aadev.JTF.CustomSources
         public CustomSource Value { get; }
         public CustomSourceType Type { get; }
         public string Filename { get; }
+        public ICustomSourceProvider SourceProvider { get; }
+        public bool ReadOnly { get; }
 
 
         public bool IsDeclaratingSource => Value != null;
 
-        private CustomSourceDeclaration(JObject obj, string filename, ICustomSourceProvider sourceProvider)
+        ICustomSourceDeclaration ICustomSourceParent.Declaration => this;
+        private CustomSourceDeclaration(JObject obj, string filename, bool readOnly, ICustomSourceProvider sourceProvider)
         {
             Id = (string)obj["id"]!;
             Filename = filename;
+            SourceProvider = sourceProvider;
             if (obj["globalId"] != null)
             {
                 IsGlobal = true;
                 GlobalGuid = Guid.Parse((string)obj["globalId"]!);
             }
-           
+
             string valueType = ((string)obj["valueType"])!.ToLowerInvariant();
 
             switch (valueType)
             {
                 case "node":
                     Type = CustomSourceType.Node;
-                    Value = JtNodeSource.Create(this, obj["content"]!, sourceProvider);
+                    Value = JtNodeSource.Create(this, obj["content"]!);
                     break;
                 case "nodecollection":
                     Type = CustomSourceType.NodeCollection;
-                    Value = JtNodeCollectionSource.Create(this, obj["content"], sourceProvider);
+                    Value = JtNodeCollectionSource.Create(this, obj["content"]);
                     break;
                 case "suggestioncollection":
                 {
@@ -59,37 +60,37 @@ namespace Aadev.JTF.CustomSources
                     {
                         case "byte":
                         {
-                            Value = JtSuggestionCollectionSource<byte>.Create(this, obj["content"], sourceProvider);
+                            Value = JtSuggestionCollectionSource<byte>.Create(this, obj["content"]);
                             break;
                         }
                         case "short":
                         {
-                            Value = JtSuggestionCollectionSource<short>.Create(this, obj["content"], sourceProvider);
+                            Value = JtSuggestionCollectionSource<short>.Create(this, obj["content"]);
                             break;
                         }
                         case "int":
                         {
-                            Value = JtSuggestionCollectionSource<int>.Create(this, obj["content"], sourceProvider);
+                            Value = JtSuggestionCollectionSource<int>.Create(this, obj["content"]);
                             break;
                         }
                         case "long":
                         {
-                            Value = JtSuggestionCollectionSource<long>.Create(this, obj["content"], sourceProvider);
+                            Value = JtSuggestionCollectionSource<long>.Create(this, obj["content"]);
                             break;
                         }
                         case "float":
                         {
-                            Value = JtSuggestionCollectionSource<float>.Create(this, obj["content"], sourceProvider);
+                            Value = JtSuggestionCollectionSource<float>.Create(this, obj["content"]);
                             break;
                         }
                         case "double":
                         {
-                            Value = JtSuggestionCollectionSource<double>.Create(this, obj["content"], sourceProvider);
+                            Value = JtSuggestionCollectionSource<double>.Create(this, obj["content"]);
                             break;
                         }
                         case "string":
                         {
-                            Value = JtSuggestionCollectionSource<string>.Create(this, obj["content"], sourceProvider);
+                            Value = JtSuggestionCollectionSource<string>.Create(this, obj["content"]);
                             break;
                         }
                         default:
@@ -101,10 +102,11 @@ namespace Aadev.JTF.CustomSources
                 default:
                     throw new JtfException($"Invalid value type: {valueType}");
             }
+            ReadOnly = readOnly;
         }
 
 
-        public static CustomSourceDeclaration Create(string filename, ICustomSourceProvider sourceProvider)
+        public static CustomSourceDeclaration Create(string filename, bool readOnly, ICustomSourceProvider sourceProvider)
         {
             using TextReader tr = File.OpenText(filename);
             using JsonTextReader jr = new JsonTextReader(tr);
@@ -117,11 +119,11 @@ namespace Aadev.JTF.CustomSources
                     {
                         jr.Read();
                         Guid id = Guid.Parse((string?)jr.Value!);
-                        if (globalDeclarations.ContainsKey(id))
-                            return globalDeclarations[id];
+                        if (globalDeclarations.TryGetValue(id, out CustomSourceDeclaration? value))
+                            return value;
                         jr.Close();
                         JObject o = JObject.Parse(File.ReadAllText(filename));
-                        CustomSourceDeclaration element = new CustomSourceDeclaration(o, filename, sourceProvider);
+                        CustomSourceDeclaration element = new CustomSourceDeclaration(o, filename, readOnly, sourceProvider);
                         globalDeclarations.TryAdd(id, element);
                         return element;
 
@@ -134,19 +136,19 @@ namespace Aadev.JTF.CustomSources
             JObject obj = JObject.Parse(File.ReadAllText(filename));
             JtFileType.CustomSource.ThorwIfInvalidType((string?)obj["type"], filename);
 
-            return new CustomSourceDeclaration(obj, filename, sourceProvider);
+            return new CustomSourceDeclaration(obj, filename, readOnly, sourceProvider);
         }
         public string GetJson()
         {
             StringBuilder sb = new StringBuilder();
-           
+
             sb.Append('{');
             sb.Append("\"type\": \"CustomSource\"");
-            sb.Append($", \"version\": {JTemplate.JTFVERSION}");
+            sb.Append($", \"version\": {JTemplate.JTF_VERSION}");
             if (IsGlobal)
-                sb.Append( $", \"globalId\": \"{GlobalGuid}\"");
-            sb.Append( $", \"id\": \"{Id}\"");
-            sb.Append( $", \"valueType\": \"{Type}\"");
+                sb.Append($", \"globalId\": \"{GlobalGuid}\"");
+            sb.Append($", \"id\": \"{Id}\"");
+            sb.Append($", \"valueType\": \"{Type}\"");
             if (Type is CustomSourceType.SuggestionCollection)
             {
 
@@ -167,7 +169,7 @@ namespace Aadev.JTF.CustomSources
                     suggestionType = "double";
                 else if (element == typeof(string))
                     suggestionType = "string";
-                sb.Append( $", \"suggestionType\": \"{suggestionType}\"");
+                sb.Append($", \"suggestionType\": \"{suggestionType}\"");
 
             }
             sb.Append($", \"content\": ");
@@ -179,7 +181,7 @@ namespace Aadev.JTF.CustomSources
         internal static void RemoveGlobalCache() => globalDeclarations.Clear();
         void ICustomSourceDeclaration.BuildJson(StringBuilder sb)
         {
-            sb.Append( $"\"@{Id}\"");
+            sb.Append($"\"@{Id}\"");
         }
     }
 }

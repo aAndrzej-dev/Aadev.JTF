@@ -6,23 +6,33 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtArrayNodeSource : JtContainerNodeSource
     {
+        public override JtContainerType ContainerDisplayType => JtContainerType.Array;
+        public override JtNodeCollectionSource Children => Prefabs;
+        public override JtNodeType Type => JtNodeType.Array;
+
+
+        public bool SingleType { get; set; }
+        public int MaxSize { get; set; }
         public JtNodeCollectionSource Prefabs { get; }
 
-        internal JtArrayNodeSource(ICustomSourceParent parent, JObject source, ICustomSourceProvider sourceProvider) : base(parent, source, sourceProvider)
+
+        public JtArrayNodeSource(ICustomSourceParent parent) : base(parent)
         {
-            Prefabs = JtNodeCollectionSource.Create(this, source["prefabs"]!, sourceProvider);
-            SingleType = (bool?)source["singleType"] ?? false;
-            MaxSize = (int?)source["maxSize"] ?? -1;
+            Prefabs = JtNodeCollectionSource.Create(this);
+            MaxSize = -1;
         }
-
-
-        internal JtArrayNodeSource(JtArray node, ICustomSourceProvider sourceProvider) : base(node, sourceProvider)
+        internal JtArrayNodeSource(JtArray node) : base(node)
         {
-            Prefabs = node.Prefabs.CreateSource(sourceProvider);
+            Prefabs = node.Prefabs.CreateSource();
             MaxSize = node.MaxSize;
             SingleType = node.SingleType;
         }
-
+        internal JtArrayNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
+        {
+            Prefabs = JtNodeCollectionSource.Create(this, source["prefabs"]);
+            SingleType = (bool?)source["singleType"] ?? false;
+            MaxSize = (int?)source["maxSize"] ?? -1;
+        }
         internal JtArrayNodeSource(ICustomSourceParent parent, JtArrayNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             SingleType = (bool)(@override?["singleType"] ?? @base.SingleType);
@@ -30,15 +40,9 @@ namespace Aadev.JTF.CustomSources
             Prefabs = @base.Prefabs.CreateOverride(this, (JArray?)@override?["prefabs"]);
         }
 
-        public override JtNodeType Type => JtNodeType.Array;
 
-        public bool SingleType { get; set; }
-        public int MaxSize { get; set; }
 
-        public override JtContainerType ContainerDisplayType => JtContainerType.Array;
 
-        public override JtNodeCollectionSource Children => Prefabs;
-       public override JtNode CreateInstance(JToken? @override, IJtNodeParent parent) => new JtArray(this, @override, parent);
         internal override void BuildJsonDeclaration(StringBuilder sb)
         {
             BuildCommonJson(sb);
@@ -46,6 +50,7 @@ namespace Aadev.JTF.CustomSources
             Children.BuildJson(sb);
             sb.Append('}');
         }
-        internal override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? item) => new JtArrayNodeSource(parent, this, item);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtArray(parent, this, @override);
+        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtArrayNodeSource(parent, this, @override);
     }
 }

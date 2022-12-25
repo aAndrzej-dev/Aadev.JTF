@@ -6,14 +6,33 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtLongNodeSource : JtValueNodeSource
     {
-        internal JtLongNodeSource(JtLong node, ICustomSourceProvider sourceProvider) : base(node, sourceProvider)
+        public override JtNodeType Type => JtNodeType.Long;
+
+        public long Max { get; set; }
+        public long Min { get; set; }
+        public long Default { get; set; }
+        public override IJtSuggestionCollectionSource Suggestions { get; }
+
+        public JtLongNodeSource(ICustomSourceParent parent) : base(parent)
+        {
+            Max = long.MaxValue;
+            Min = long.MinValue;
+            Suggestions = JtSuggestionCollectionSource<long>.Create(this);
+        }
+        internal JtLongNodeSource(JtLong node) : base(node)
         {
             Max = node.Max;
             Min = node.Min;
             Default = node.Default;
             Suggestions = node.Suggestions.CreateSource(this);
         }
-
+        internal JtLongNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
+        {
+            Suggestions = JtSuggestionCollectionSource<long>.Create(this, source["suggestions"]);
+            Min = (long)(source["min"] ?? long.MinValue);
+            Max = (long)(source["max"] ?? long.MaxValue);
+            Default = (long)(source["default"] ?? 0);
+        }
         internal JtLongNodeSource(ICustomSourceParent parent, JtLongNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             Min = (long)(@override?["minLength"] ?? @base.Min);
@@ -22,24 +41,10 @@ namespace Aadev.JTF.CustomSources
             Suggestions = @base.Suggestions;
         }
 
-        internal JtLongNodeSource(ICustomSourceParent parent, JObject source, ICustomSourceProvider sourceProvider) : base(parent, source, sourceProvider)
-        {
-            Suggestions = JtSuggestionCollectionSource<long>.Create(this, source["suggestions"], sourceProvider);
-            Min = (long)(source["min"] ?? long.MinValue);
-            Max = (long)(source["max"] ?? long.MaxValue);
-            Default = (long)(source["default"] ?? 0);
-        }
 
 
 
-        public long Max { get; internal set; }
-        public long Min { get; internal set; }
-        public long Default { get; internal set; }
-        public override IJtSuggestionCollectionSource Suggestions { get; }
 
-        public override JtNodeType Type => JtNodeType.Long;
-
-        public override JtNode CreateInstance(JToken? @override, IJtNodeParent parent) => new JtLong(this, @override, parent);
         internal override void BuildJsonDeclaration(StringBuilder sb)
         {
             BuildCommonJson(sb);
@@ -56,6 +61,7 @@ namespace Aadev.JTF.CustomSources
             }
             sb.Append('}');
         }
-        internal override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? item) => new JtLongNodeSource(parent, this, item);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtLong(parent, this, @override);
+        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtLongNodeSource(parent, this, @override);
     }
 }

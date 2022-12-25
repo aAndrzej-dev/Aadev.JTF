@@ -6,27 +6,37 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtUnknownNodeSource : JtNodeSource
     {
-        internal JtUnknownNodeSource(JtNode node, ICustomSourceProvider sourceProvider) : base(node, sourceProvider)
-        {
-        }
+        public override JtNodeType Type => JtNodeType.Unknown;
 
+
+
+        public JtUnknownNodeSource(ICustomSourceParent parent) : base(parent) { }
+        internal JtUnknownNodeSource(JtNode node) : base(node)
+        {
+#if DEBUG
+            throw new JtfException();
+#endif
+        }
+        internal JtUnknownNodeSource(ICustomSourceParent parent, JObject? source) : base(parent, source)
+        {
+#if DEBUG
+            throw new JtfException();
+#endif
+        }
         internal JtUnknownNodeSource(ICustomSourceParent parent, JtUnknownNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
+#if DEBUG
+            throw new JtfException();
+#endif
         }
 
-        internal JtUnknownNodeSource(ICustomSourceParent parent, JObject? source, ICustomSourceProvider sourceProvider) : base(parent, source, sourceProvider)
-        {
-        }
-
-        public override JtNodeType Type => JtNodeType.Unknown;
-        public override JtNode CreateInstance(JToken? @override, IJtNodeParent parent) => new JtUnknown(this, @override, parent);
         internal override void BuildJsonDeclaration(StringBuilder sb)
         {
             BuildCommonJson(sb);
             sb.Append('}');
 
         }
-
-        internal override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? item) => new JtUnknownNodeSource(parent, this, item);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtUnknown(parent, this, @override);
+        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtUnknownNodeSource(parent, this, @override);
     }
 }

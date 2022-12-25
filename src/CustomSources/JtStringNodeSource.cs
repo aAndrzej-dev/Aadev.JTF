@@ -6,14 +6,36 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtStringNodeSource : JtValueNodeSource
     {
-        internal JtStringNodeSource(JtString node, ICustomSourceProvider sourceProvider) : base(node, sourceProvider)
+        public override JtNodeType Type => JtNodeType.String;
+
+
+        public string Default { get; set; }
+        public int MaxLength { get; set; }
+        public int MinLength { get; set; }
+        public override IJtSuggestionCollectionSource Suggestions { get; }
+
+
+        public JtStringNodeSource(ICustomSourceParent parent) : base(parent)
+        {
+            Default = string.Empty;
+            MaxLength = -1;
+            MinLength = 0;
+            Suggestions = JtSuggestionCollectionSource<short>.Create(this);
+        }
+        internal JtStringNodeSource(JtString node) : base(node)
         {
             MinLength = node.MinLength;
             MaxLength = node.MaxLength;
             Default = node.Default;
             Suggestions = node.Suggestions.CreateSource(this);
         }
-
+        internal JtStringNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
+        {
+            MinLength = (int)(source["minLength"] ?? 0);
+            MaxLength = (int)(source["maxLength"] ?? -1);
+            Default = (string?)source["default"] ?? string.Empty;
+            Suggestions = JtSuggestionCollectionSource<string>.Create(this, source["suggestions"]);
+        }
         internal JtStringNodeSource(ICustomSourceParent parent, JtStringNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             MinLength = (int)(@override?["minLength"] ?? @base.MinLength);
@@ -22,23 +44,7 @@ namespace Aadev.JTF.CustomSources
             Suggestions = @base.Suggestions;
         }
 
-        internal JtStringNodeSource(ICustomSourceParent parent, JObject source, ICustomSourceProvider sourceProvider) : base(parent, source, sourceProvider)
-        {
-            MinLength = (int)(source["minLength"] ?? 0);
-            MaxLength = (int)(source["maxLength"] ?? -1);
-            Default = (string?)source["default"] ?? string.Empty;
-            Suggestions = JtSuggestionCollectionSource<string>.Create(this, source["suggestions"], sourceProvider);
-        }
 
-
-        public string Default { get; internal set; }
-        public int MaxLength { get; internal set; }
-        public int MinLength { get; internal set; }
-        public override IJtSuggestionCollectionSource Suggestions { get; }
-
-
-        public override JtNodeType Type => JtNodeType.String;
-        public override JtNode CreateInstance(JToken? @override, IJtNodeParent parent) => new JtString(this, @override, parent);
         internal override void BuildJsonDeclaration(StringBuilder sb)
         {
             BuildCommonJson(sb);
@@ -55,6 +61,7 @@ namespace Aadev.JTF.CustomSources
             }
             sb.Append('}');
         }
-        internal override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? item) => new JtStringNodeSource(parent, this, item);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtString(parent, this, @override);
+        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtStringNodeSource(parent, this, @override);
     }
 }

@@ -5,12 +5,12 @@ using System.Text;
 
 namespace Aadev.JTF
 {
-    internal interface IJtSuggestionCollectionChild<in T>
+    internal interface IJtSuggestionCollectionChild<T>
     {
         bool IsEmpty { get; }
         bool IsStatic { get; }
 
-        void BuildJson(StringBuilder sb);
+        internal void BuildJson(StringBuilder sb);
         IEnumerable<IJtSuggestion> GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource);
         IJtSuggestionCollectionSourceChild<T> CreateSource(ICustomSourceParent parent);
     }

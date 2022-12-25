@@ -6,25 +6,29 @@ namespace Aadev.JTF.Types
 {
     public sealed class JtUnknown : JtNode
     {
-        /// <inheritdoc/>
-        public override JTokenType JsonType => JTokenType.None;
-        /// <inheritdoc/>
+        public override JTokenType JsonType => JTokenType.Undefined;
         public override JtNodeType Type => JtNodeType.Unknown;
 
+        public JtUnknown(IJtNodeParent parent) : base(parent)
+        {
 
-        public JtUnknown(IJtNodeParent parent) : base(parent) { }
-        internal JtUnknown(JObject obj, IJtNodeParent parent) : base(obj, parent) { }
+        }
+        internal JtUnknown(IJtNodeParent parent, JObject source) : base(parent, source)
+        {
 
-        internal JtUnknown(JtUnknownNodeSource source, JToken? @override, IJtNodeParent parent) : base(source, @override, parent) { }
+        }
+
+        internal JtUnknown(IJtNodeParent parent, JtUnknownNodeSource source, JToken? @override) : base(parent, source, @override)
+        {
+
+        }
 
         internal override void BuildJson(StringBuilder sb)
         {
             BuildCommonJson(sb);
             sb.Append('}');
         }
-
-        /// <inheritdoc/>
         public override JToken CreateDefaultValue() => JValue.CreateUndefined();
-        public override JtNodeSource CreateSource() => currentSource ??= new JtUnknownNodeSource(this, this);
+        public override JtNodeSource CreateSource() => currentSource ??= new JtUnknownNodeSource(this);
     }
 }

@@ -8,6 +8,7 @@ namespace Aadev.JTF
         public JTemplate Template { get; }
         public bool HasExternalChildren { get; }
         public IIdentifiersManager IdentifiersManager { get; }
+        public ICustomSourceProvider SourceProvider { get; }
         public IIdentifiersManager GetIdentifiersManagerForChild();
     }
 }

@@ -22,7 +22,7 @@ namespace Aadev.JTF.JtEnumerable
 
         public override bool MoveNext()
         {
-            sourceEnumerator ??= source.nodeEnumerable.GetEnumerator();
+            sourceEnumerator ??= source.nodeEnumerable.Enumerate().GetEnumerator();
 
             if (!sourceEnumerator.MoveNext())
             {
@@ -33,6 +33,5 @@ namespace Aadev.JTF.JtEnumerable
             Current = sourceEnumerator.Current.CreateInstance(parent, null);
             return true;
         }
-
     }
 }

@@ -14,22 +14,17 @@ namespace Aadev.JTF.Types
         private short? min;
         private short? max;
 
-        /// <inheritdoc/>
-        public override JTokenType JsonType => JTokenType.Integer;
-        /// <inheritdoc/>
-        public override JtNodeType Type => JtNodeType.Short;
+
         public new JtShortNodeSource? Base => (JtShortNodeSource?)base.Base;
+        public override JTokenType JsonType => JTokenType.Integer;
+        public override JtNodeType Type => JtNodeType.Short;
 
 
         [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public short Min { get => min ?? Base?.Min ?? minValue; set { min = value; max = max.Max(min); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public short Max { get => max ?? Base?.Max ?? maxValue; set { max = value; min = min.Min(max); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(0)] public short Default { get => @default ?? Base?.Default ?? 0; set => @default = value.Clamp(Min, Max); }
-
-
-
-        public override Type ValueType => typeof(short);
-
         public override IJtSuggestionCollection Suggestions { get; }
+
 
         public JtShort(IJtNodeParent parent) : base(parent)
         {
@@ -38,15 +33,15 @@ namespace Aadev.JTF.Types
             Default = 0;
             Suggestions = JtSuggestionCollection<short>.Create();
         }
-        internal JtShort(JObject obj, IJtNodeParent parent) : base(obj, parent)
+        internal JtShort(IJtNodeParent parent, JObject source) : base(parent, source)
         {
-            Min = (short)(obj["min"] ?? minValue);
-            Max = (short)(obj["max"] ?? maxValue);
-            Default = (short)(obj["default"] ?? 0);
+            Min = (short)(source["min"] ?? minValue);
+            Max = (short)(source["max"] ?? maxValue);
+            Default = (short)(source["default"] ?? 0);
 
-            Suggestions = JtSuggestionCollection<short>.Create(obj["suggestions"], this);
+            Suggestions = JtSuggestionCollection<short>.Create(this, source["suggestions"]);
         }
-        internal JtShort(JtShortNodeSource source, JToken? @override, IJtNodeParent parent) : base(source, @override, parent)
+        internal JtShort(IJtNodeParent parent, JtShortNodeSource source, JToken? @override) : base(parent, source, @override)
         {
             Suggestions = source.Suggestions.CreateInstance();
             if (@override is null)
@@ -68,11 +63,8 @@ namespace Aadev.JTF.Types
                 sb.Append($", \"default\": {Default}");
             sb.Append('}');
         }
-
-
-        /// <inheritdoc/>
         public override JToken CreateDefaultValue() => new JValue(Default);
         public override object GetDefaultValue() => Default;
-        public override JtNodeSource CreateSource() => currentSource ??= new JtShortNodeSource(this, this);
+        public override JtNodeSource CreateSource() => currentSource ??= new JtShortNodeSource(this);
     }
 }

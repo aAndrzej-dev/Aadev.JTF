@@ -13,7 +13,11 @@ namespace Aadev.JTF.CustomSources
 
         public bool IsDeclaratingSource => false; //TODO
 
-        public void BuildJson(StringBuilder sb)
+        public ICustomSourceProvider SourceProvider => Instance;
+
+        ICustomSourceDeclaration ICustomSourceParent.Declaration => this;
+
+        void ICustomSourceDeclaration.BuildJson(StringBuilder sb)
         {
             sb.Append($"\"#{Instance.Id}\"");
         }

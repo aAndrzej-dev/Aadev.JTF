@@ -3,10 +3,11 @@ using System.Text;
 
 namespace Aadev.JTF.CustomSources
 {
-    internal interface IJtNodeCollectionSourceChild
+    public interface IJtNodeCollectionSourceChild
     {
-        void BuildJson(StringBuilder sb);
+        internal void BuildJson(StringBuilder sb);
         IJtNodeCollectionChild CreateInstance(IJtNodeParent parent, JToken? @override);
+        IJtNodeCollectionSourceChild CreateOverride(ICustomSourceParent parent, JToken? @override);
     }
 }
 

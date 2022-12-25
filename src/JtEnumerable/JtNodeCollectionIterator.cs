@@ -8,17 +8,15 @@ namespace Aadev.JTF.JtEnumerable
     {
         private readonly IJtNodeParent parent;
         private readonly JArray source;
-        private readonly ICustomSourceProvider sourceProvider;
         private int index = -1;
 
-        public JtNodeCollectionIterator(IJtNodeParent parent, JArray source, ICustomSourceProvider sourceProvider)
+        public JtNodeCollectionIterator(IJtNodeParent parent, JArray source)
         {
             this.parent = parent;
             this.source = source;
-            this.sourceProvider = sourceProvider;
         }
 
-        public override JtIterator<IJtNodeCollectionChild> Clone() => new JtNodeCollectionIterator(parent, source, sourceProvider);
+        public override JtIterator<IJtNodeCollectionChild> Clone() => new JtNodeCollectionIterator(parent, source);
         public override bool MoveNext()
         {
             index++;
@@ -28,12 +26,11 @@ namespace Aadev.JTF.JtEnumerable
                 return false;
             }
 
-            Current = CreateChildItem(source[index], parent, sourceProvider);
-          
+            Current = CreateChildItem(parent, source[index]);
             return true;
         }
 
-        internal static IJtNodeCollectionChild CreateChildItem(JToken source, IJtNodeParent parent, ICustomSourceProvider sourceProvider)
+        internal static IJtNodeCollectionChild CreateChildItem(IJtNodeParent parent, JToken source)
         {
             JtUnknown CreateUnknown() => new JtUnknown(parent);
 
@@ -41,31 +38,24 @@ namespace Aadev.JTF.JtEnumerable
                 return CreateUnknown();
             if (source.Type is JTokenType.Array)
             {
-                return JtNodeCollection.Create(parent, source, sourceProvider);
+                return JtNodeCollection.Create(parent, source);
             }
             if (source.Type is JTokenType.String)
             {
-                JtCustomResourceIdentifier id = (string?)source;
-                if (id.Type is JtCustomResourceIdentifierType.None)
-                    return CreateUnknown();
-                if (id.Type is JtCustomResourceIdentifierType.Dynamic)
-                    return CreateUnknown();
-                if (id.Type is JtCustomResourceIdentifierType.External)
+                JtSourceReference id = (string?)source;
+                switch (id.Type)
                 {
-                    return ((IJtNodeCollectionSourceChild)sourceProvider.GetCustomSource(id)!).CreateInstance(parent, null);
-                }
-                if (id.Type is JtCustomResourceIdentifierType.Direct)
-                {
-                    CustomSource? cs = sourceProvider.GetCustomSource(id);
-                    if (cs is null)
+                    case JtSourceReferenceType.None:
+                    case JtSourceReferenceType.Dynamic:
+                    case JtSourceReferenceType.Local:
+                    default:
                         return CreateUnknown();
-
-                    if (cs is JtContainerNodeSource cns)
+                    case JtSourceReferenceType.External:
+                        return ((IJtNodeCollectionSourceChild)parent.SourceProvider.GetCustomSource(id)!).CreateInstance(parent, null);
+                    case JtSourceReferenceType.Direct:
                     {
-                        return cns.Children.CreateInstance(parent, (JToken?)null);
+                        return parent.SourceProvider.GetCustomSource<JtNodeSource>(id)?.CreateInstance(parent, null) ?? CreateUnknown();
                     }
-
-                    return CreateUnknown();
                 }
             }
             if (source.Type is JTokenType.Object)
@@ -73,9 +63,9 @@ namespace Aadev.JTF.JtEnumerable
                 JToken? @base = source["base"];
                 if (@base is null)
                 {
-                    return JtNode.Create(source, parent, sourceProvider);
+                    return JtNode.Create(parent, source);
                 }
-                IJtNodeCollectionSourceChild child = new CustomSourceBaseDeclaration(@base, sourceProvider).Value;
+                IJtNodeCollectionSourceChild child = new CustomSourceBaseDeclaration(@base, parent.SourceProvider).Value;
     
 
 

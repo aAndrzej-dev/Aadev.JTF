@@ -6,26 +6,29 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtBlockNodeSource : JtContainerNodeSource
     {
+        public override JtContainerType ContainerDisplayType => JtContainerType.Block;
+        public override JtNodeType Type => JtNodeType.Block;
+
+
         public override JtNodeCollectionSource Children { get; }
 
-        internal JtBlockNodeSource(ICustomSourceParent parent, JObject source, ICustomSourceProvider sourceProvider) : base(parent, source, sourceProvider)
+        public JtBlockNodeSource(ICustomSourceParent parent) : base(parent)
         {
-            Children = JtNodeCollectionSource.Create(this, source["children"]!, sourceProvider);
+            Children = JtNodeCollectionSource.Create(this);
         }
-
-        internal JtBlockNodeSource(JtBlock node, ICustomSourceProvider sourceProvider) : base(node, sourceProvider)
+        internal JtBlockNodeSource(JtBlock node) : base(node)
         {
-            Children = node.Children.CreateSource(sourceProvider);
+            Children = node.Children.CreateSource();
         }
-
+        internal JtBlockNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
+        {
+            Children = JtNodeCollectionSource.Create(this, source["children"]);
+        }
         internal JtBlockNodeSource(ICustomSourceParent parent, JtBlockNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             Children = @base.Children.CreateOverride(this, (JArray?)@override?["children"]);
         }
 
-        public override JtNodeType Type => JtNodeType.Block;
-        public override JtContainerType ContainerDisplayType => JtContainerType.Block;
-        public override JtNode CreateInstance(JToken? @override, IJtNodeParent parent) => new JtBlock(this, @override, parent);
         internal override void BuildJsonDeclaration(StringBuilder sb)
         {
             BuildCommonJson(sb);
@@ -33,6 +36,7 @@ namespace Aadev.JTF.CustomSources
             Children.BuildJson(sb);
             sb.Append('}');
         }
-        internal override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? item) => new JtBlockNodeSource(parent, this, item);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtBlock(parent, this, @override);
+        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtBlockNodeSource(parent, this, @override);
     }
 }
