@@ -8,22 +8,22 @@ namespace Aadev.JTF.CustomSources
     {
         public override JtNodeType Type => JtNodeType.Unknown;
 
+        public override JTokenType JsonType => JTokenType.Undefined;
 
-
-        public JtUnknownNodeSource(ICustomSourceParent parent) : base(parent) { }
-        internal JtUnknownNodeSource(JtNode node) : base(node)
+        public JtUnknownNodeSource(IJtNodeSourceParent parent) : base(parent) { }
+        internal JtUnknownNodeSource(JtUnknownNode node) : base(node)
         {
 #if DEBUG
             throw new JtfException();
 #endif
         }
-        internal JtUnknownNodeSource(ICustomSourceParent parent, JObject? source) : base(parent, source)
+        internal JtUnknownNodeSource(IJtNodeSourceParent parent, JObject? source) : base(parent, source)
         {
 #if DEBUG
             throw new JtfException();
 #endif
         }
-        internal JtUnknownNodeSource(ICustomSourceParent parent, JtUnknownNodeSource @base, JObject? @override) : base(parent, @base, @override)
+        internal JtUnknownNodeSource(IJtNodeSourceParent parent, JtUnknownNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
 #if DEBUG
             throw new JtfException();
@@ -36,7 +36,8 @@ namespace Aadev.JTF.CustomSources
             sb.Append('}');
 
         }
-        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtUnknown(parent, this, @override);
-        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtUnknownNodeSource(parent, this, @override);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtUnknownNode(parent, this, @override);
+        public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtUnknownNodeSource(parent, this, @override);
+        public override JToken CreateDefaultValue() => JValue.CreateUndefined();
     }
 }

@@ -1,37 +1,45 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Aadev.JTF.CustomSources
 {
-    public abstract class CustomSource : ICustomSourceParent
+    public abstract class CustomSource : IJtCustomSourceParent
     {
-        private readonly ICustomSourceDeclaration? declaration;
-
-        public CustomSource? Parent { get; }
-        public ICustomSourceDeclaration Declaration => (declaration ?? Parent?.Declaration)!;
-        public ICustomSourceProvider SourceProvider => Declaration.SourceProvider;
-        private protected CustomSource(ICustomSourceParent parent)
+        private readonly IJtCustomSourceDeclaration? declaration;
+        private IdentifiersManager? identifiersManager;
+        [Browsable(false)]
+        public IJtCustomSourceParent? Parent { get; }
+        [Browsable(false)] public IJtCustomSourceDeclaration Declaration => (declaration ?? Parent?.Declaration)!;
+        [Browsable(false)] public ICustomSourceProvider SourceProvider => Declaration.SourceProvider;
+        private protected CustomSource(IJtCustomSourceParent parent)
         {
-            //SourceProvider = sourceProvider;
-            if (parent is ICustomSourceDeclaration declaration)
+            if (parent is IJtCustomSourceDeclaration declaration)
             {
-                if (declaration.IsDeclaratingSource)
-#if NET7_0_OR_GREATER
+                if (declaration.IsDeclaringSource)
                     throw new UnreachableException();
-#else
-                    throw new InternalException("Declaration cannot declarate multiple custom sources");
-#endif
+
                 this.declaration = declaration;
             }
             else if (parent is CustomSource customSource)
                 Parent = customSource;
         }
-        
-        public bool IsDeclarated => declaration != null;
+
+        [Browsable(false)] public bool IsDeclared => declaration is not null;
+
+        public virtual IJtCustomSourceDeclaration? Base => IsDeclared ? Declaration : null;
+
+        [Browsable(false)] public abstract bool IsExternal { get; }
+        [Browsable(false)] public bool IsRoot => IsDeclared;
+        [MemberNotNull(nameof(identifiersManager))]
+        [DefaultValue(false)]
+        public IIdentifiersManager IdentifiersManager => identifiersManager ??= new IdentifiersManager(null);
+
 
         internal virtual void BuildJson(StringBuilder sb)
         {
-            if (IsDeclarated)
+            if (IsDeclared)
                 Declaration.BuildJson(sb);
             else
                 BuildJsonDeclaration(sb);

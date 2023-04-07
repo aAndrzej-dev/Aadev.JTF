@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -29,11 +30,11 @@ namespace Aadev.JTF.CustomSources
             this.template = template ?? throw new ArgumentNullException(nameof(template));
             this.filename = filename;
 
-            if (workingDirectory != null)
+            if (workingDirectory is not null)
             {
                 if (Path.GetRelativePath(workingDirectory, filename).StartsWith("..", StringComparison.Ordinal))
                 {
-                    throw new Exception($"File: \"{filename}\" is outside working directory: \"{workingDirectory}\"");
+                    throw new OutOfWorkingDirectoryException($"File is outside working directory!\nFile name: \"{filename}\"\nWorking directory: \"{workingDirectory}\"");
                 }
             }
 
@@ -43,8 +44,14 @@ namespace Aadev.JTF.CustomSources
 
 
             list = new List<CustomSourceDeclaration>();
+            using StreamReader sr = new StreamReader(filename);
+            using JsonReader jr = new JsonTextReader(sr);
 
-            JObject root = JObject.Parse(File.ReadAllText(filename));
+
+            JObject root = JObject.Load(jr, JTemplate.jsonLoadSettings);
+
+            jr.Close();
+
 
             foreach (JToken item in root["values"]!)
             {
@@ -57,11 +64,11 @@ namespace Aadev.JTF.CustomSources
 
                 source = Path.GetFullPath(source, Path.GetDirectoryName(filename)!);
 
-                if (workingDirectory != null)
+                if (workingDirectory is not null)
                 {
                     if (Path.GetRelativePath(workingDirectory, source).StartsWith("..", StringComparison.Ordinal))
                     {
-                        throw new Exception($"File: \"{source}\" is outside working directory: \"{workingDirectory}\"");
+                        throw new OutOfWorkingDirectoryException($"File is outside working directory!\nFile name: \"{filename}\"\nWorking directory: \"{workingDirectory}\"");
                     }
                 }
 
@@ -81,9 +88,9 @@ namespace Aadev.JTF.CustomSources
 
         internal void BuildJson(StringBuilder sb)
         {
-            if (filename != null)
+            if (filename is not null)
             {
-                sb.Append($"\"{filename.Replace("\\", "\\\\")}\"");
+                sb.Append($"\"{Path.GetRelativePath(Path.GetDirectoryName(template.Filename)!, filename).Replace("\\", "/", StringComparison.Ordinal)}\"");
             }
             else
             {
@@ -92,12 +99,12 @@ namespace Aadev.JTF.CustomSources
                 Span<CustomSourceDeclaration> listSpan = CollectionsMarshal.AsSpan(list);
                 for (int i = 0; i < listSpan.Length; i++)
                 {
-                    ((ICustomSourceDeclaration)listSpan[i]).BuildJson(sb);
+                    ((IJtCustomSourceDeclaration)listSpan[i]).BuildJson(sb);
                 }
 #else
                 for (int i = 0; i < list.Count; i++)
                 {
-                    ((ICustomSourceDeclaration)list[i]).BuildJson(sb);
+                    ((IJtCustomSourceDeclaration)list[i]).BuildJson(sb);
                 }
 #endif
                 sb.Append(']');

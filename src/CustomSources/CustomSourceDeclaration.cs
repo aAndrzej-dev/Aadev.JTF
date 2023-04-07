@@ -1,37 +1,54 @@
-﻿using Newtonsoft.Json;
+﻿using Aadev.JTF.AbstractStructure;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Aadev.JTF.CustomSources
 {
     [DebuggerDisplay("ID: {Id}; Global ID:{GlobalGuid}")]
-    public sealed class CustomSourceDeclaration : ICustomSourceDeclaration
+    public sealed class CustomSourceDeclaration : IJtCustomSourceDeclaration
     {
         private static readonly ConcurrentDictionary<Guid, CustomSourceDeclaration> globalDeclarations = new ConcurrentDictionary<Guid, CustomSourceDeclaration>();
+        private IdentifiersManager? identifiersManager;
 
-        public JtIdentifier Id { get; }
-        public Guid GlobalGuid { get; }
-        public bool IsGlobal { get; }
-        public CustomSource Value { get; }
-        public CustomSourceType Type { get; }
+        public JtIdentifier Id { get; set; }
+        public Guid GlobalGuid { get; set; }
+        [Browsable(false)] public bool IsGlobal { get; }
+        public CustomSource Value { get; set; }
+        [Browsable(false)] public CustomSourceType Type { get; private set; }
         public string Filename { get; }
-        public ICustomSourceProvider SourceProvider { get; }
-        public bool ReadOnly { get; }
+        [Browsable(false)] public ICustomSourceProvider SourceProvider { get; }
+        [Browsable(false)] public bool ReadOnly { get; }
+
+        [MemberNotNullWhen(true, nameof(Value))]
+        public bool IsDeclaringSource => Value is not null;
+
+        IJtCustomSourceDeclaration IJtCustomSourceParent.Declaration => this;
 
 
-        public bool IsDeclaratingSource => Value != null;
 
-        ICustomSourceDeclaration ICustomSourceParent.Declaration => this;
+        [MemberNotNull(nameof(identifiersManager))]
+        [Browsable(false)]
+        public IIdentifiersManager IdentifiersManager => identifiersManager ??= new IdentifiersManager(null);
+
+        [Browsable(false)] public string Name => $"@{Id}";
+
+        JtNodeSource? IJtNodeSourceParent.Owner => null;
+        public IJtStructureCollectionElement CreateCollectionElement(IJtStructureParentElement parent) => JtNodeCollectionSource.Create((IJtNodeSourceParent)parent);
         private CustomSourceDeclaration(JObject obj, string filename, bool readOnly, ICustomSourceProvider sourceProvider)
         {
             Id = (string)obj["id"]!;
             Filename = filename;
             SourceProvider = sourceProvider;
-            if (obj["globalId"] != null)
+            if (obj["globalId"] is not null)
             {
                 IsGlobal = true;
                 GlobalGuid = Guid.Parse((string)obj["globalId"]!);
@@ -52,7 +69,7 @@ namespace Aadev.JTF.CustomSources
                 case "suggestioncollection":
                 {
                     Type = CustomSourceType.SuggestionCollection;
-                    if (!(obj["content"] is JArray))
+                    if (obj["content"] is not JArray)
                         throw new JtfException("Content is null");
                     string? suggestionType = (string?)obj["suggestionType"] ?? "string";
 
@@ -108,8 +125,8 @@ namespace Aadev.JTF.CustomSources
 
         public static CustomSourceDeclaration Create(string filename, bool readOnly, ICustomSourceProvider sourceProvider)
         {
-            using TextReader tr = File.OpenText(filename);
-            using JsonTextReader jr = new JsonTextReader(tr);
+            using TextReader sr = File.OpenText(filename);
+            using JsonTextReader jr = new JsonTextReader(sr);
 
             while (jr.Read())
             {
@@ -119,22 +136,36 @@ namespace Aadev.JTF.CustomSources
                     {
                         jr.Read();
                         Guid id = Guid.Parse((string?)jr.Value!);
+
                         if (globalDeclarations.TryGetValue(id, out CustomSourceDeclaration? value))
                             return value;
                         jr.Close();
-                        JObject o = JObject.Parse(File.ReadAllText(filename));
+
+
+                        using StreamReader sr3 = new StreamReader(filename);
+                        using JsonReader jr3 = new JsonTextReader(sr3);
+
+
+                        JObject o = JObject.Load(jr3, JTemplate.jsonLoadSettings);
+
+                        jr3.Close();
+
                         CustomSourceDeclaration element = new CustomSourceDeclaration(o, filename, readOnly, sourceProvider);
                         globalDeclarations.TryAdd(id, element);
                         return element;
-
                     }
                 }
                 if (jr.Depth == 2)
                     break;
             }
+            using StreamReader sr2 = new StreamReader(filename);
+            using JsonReader jr2 = new JsonTextReader(sr2);
 
-            JObject obj = JObject.Parse(File.ReadAllText(filename));
-            JtFileType.CustomSource.ThorwIfInvalidType((string?)obj["type"], filename);
+            JObject obj = JObject.Load(jr2, JTemplate.jsonLoadSettings);
+
+            jr2.Close();
+
+            JtFileType.CustomSource.ThrowIfInvalidType((string?)obj["type"], filename);
 
             return new CustomSourceDeclaration(obj, filename, readOnly, sourceProvider);
         }
@@ -144,17 +175,34 @@ namespace Aadev.JTF.CustomSources
 
             sb.Append('{');
             sb.Append("\"type\": \"CustomSource\"");
-            sb.Append($", \"version\": {JTemplate.JTF_VERSION}");
+            sb.Append(
+#if NET6_0_OR_GREATER
+                System.Globalization.CultureInfo.InvariantCulture,
+#endif
+                $", \"version\": {JTemplate.JTF_VERSION}");
             if (IsGlobal)
-                sb.Append($", \"globalId\": \"{GlobalGuid}\"");
-            sb.Append($", \"id\": \"{Id}\"");
-            sb.Append($", \"valueType\": \"{Type}\"");
+                sb.Append(
+#if NET6_0_OR_GREATER
+                System.Globalization.CultureInfo.InvariantCulture,
+#endif
+                    $", \"globalId\": \"{GlobalGuid}\"");
+            sb.Append(
+#if NET6_0_OR_GREATER
+                System.Globalization.CultureInfo.InvariantCulture,
+#endif
+                $", \"id\": \"{Id}\"");
+            sb.Append(
+#if NET6_0_OR_GREATER
+                System.Globalization.CultureInfo.InvariantCulture,
+#endif
+                $", \"valueType\": \"{Type}\"");
             if (Type is CustomSourceType.SuggestionCollection)
             {
+                if (Value is not IJtSuggestionCollectionSource suggestionCollection)
+                    throw new UnreachableException();
 
-
-                string suggestionType = "";
-                Type element = Value.GetType().GetGenericArguments()[0];
+                ReadOnlySpan<char> suggestionType;
+                Type element = suggestionCollection.SuggestionType;
                 if (element == typeof(byte))
                     suggestionType = "byte";
                 else if (element == typeof(short))
@@ -169,7 +217,16 @@ namespace Aadev.JTF.CustomSources
                     suggestionType = "double";
                 else if (element == typeof(string))
                     suggestionType = "string";
-                sb.Append($", \"suggestionType\": \"{suggestionType}\"");
+                else
+                    throw new UnreachableException();
+
+
+#if NET6_0_OR_GREATER
+                sb.Append(System.Globalization.CultureInfo.InvariantCulture, $", \"suggestionType\": \"{suggestionType}\"");
+#else
+                sb.Append($", \"suggestionType\": \"{suggestionType.ToString()}\"");
+#endif
+
 
             }
             sb.Append($", \"content\": ");
@@ -179,9 +236,16 @@ namespace Aadev.JTF.CustomSources
         }
 
         internal static void RemoveGlobalCache() => globalDeclarations.Clear();
-        void ICustomSourceDeclaration.BuildJson(StringBuilder sb)
+        void IJtCustomSourceDeclaration.BuildJson(StringBuilder sb)
         {
-            sb.Append($"\"@{Id}\"");
+            sb.Append($"\"{Name}\"");
+        }
+
+        public override string ToString() => Name;
+        public IJtStructureNodeElement CreateNodeElement(IJtStructureParentElement parent, JtNodeType type) => JtNodeSource.Create((IJtNodeSourceParent)parent, type);
+        public IEnumerable<IJtStructureInnerElement> GetStructureChildren()
+        {
+            yield return (IJtStructureInnerElement)Value;
         }
     }
 }

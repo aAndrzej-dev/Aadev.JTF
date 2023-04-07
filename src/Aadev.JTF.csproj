@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;netstandard2.1;net7.0</TargetFrameworks>
+    <RootNamespace>Aadev.JTF</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Aadev.JTF</AssemblyName>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Authors>aAndrzej-dev</Authors>
+    <DebugType>none</DebugType>
+    <Copyright>Copyright © aAndrzej-dev 2023</Copyright>
+    <RepositoryUrl>https://github.com/aAndrzej-dev/Aadev.JTF.git</RepositoryUrl>
+	<RepositoryType>git</RepositoryType>
+	<RepositoryBranch>main</RepositoryBranch>
+	<RepositoryCommit></RepositoryCommit>
+    <PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.JTF</PackageProjectUrl>
+    <Description>Json Template Format</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Version>2.0.0-beta3</Version>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+	<Deterministic>true</Deterministic>
+	<LangVersion>11.0</LangVersion>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+  <PackageReleaseNotes>Added AbstractStructure interfaces to make easier to edit JTF templates via external editor.
+  Added Design namespace with classes helping editing in external editors.
+  Changed JtEnumerable to CollectionBuilder.
+  CollectionBuilders are now removed form memory after building collection.
+  JtNodeCollection now doesn't use CollectionBuilder to reduce memory usage and increase performance.
+  Bug fixes and improvements.
+  
+  Known issues:
+  In some cases event manegers are not created and editor item use wrong event managers form thier parent.
+  </PackageReleaseNotes>
+  <AnalysisLevel>latest-all</AnalysisLevel>
+
+  </PropertyGroup>
+
+
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+  </ItemGroup>
+</Project>

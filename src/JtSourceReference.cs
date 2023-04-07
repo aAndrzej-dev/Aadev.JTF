@@ -1,7 +1,10 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Diagnostics;
 
 namespace Aadev.JTF
 {
+    [DebuggerDisplay("{this.ToString()}")]
     public readonly struct JtSourceReference : IEquatable<JtSourceReference>
     {
         public readonly JtIdentifier Identifier { get; }
@@ -36,6 +39,12 @@ namespace Aadev.JTF
                 Identifier = identifier;
                 Type = JtSourceReferenceType.Local;
             }
+        }
+
+        public JtSourceReference(JtIdentifier identifier, JtSourceReferenceType type)
+        {
+            Identifier = identifier;
+            Type = type;
         }
 
         public static implicit operator JtSourceReference(string? identifier) => new JtSourceReference(identifier);

@@ -1,65 +1,206 @@
-﻿using Aadev.JTF.CustomSources;
-using Aadev.JTF.JtEnumerable;
+﻿using Aadev.JTF.AbstractStructure;
+using Aadev.JTF.CustomSources;
 using Aadev.JTF.Types;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Aadev.JTF
 {
-    public sealed class JtNodeCollection : IJtNodeCollectionChild, IJtNodeParent, IList<IJtNodeCollectionChild>
+    [DebuggerDisplay("JtNodeCollection in {Owner.Name}, is main: {IsMainCollection}")]
+    public sealed class JtNodeCollection : IJtNodeCollectionChild, IJtNodeParent, IList<IJtNodeCollectionChild>, IJtStructureCollectionElement
     {
-        private readonly JtSourceReference id;
-        internal readonly IJtEnumerable<IJtNodeCollectionChild> nodeEnumerable;
+        private readonly IJtNodeParent parent;
         private readonly JtNodeCollectionSource? @base;
-        private List<JtNode>? nodes;
+        private readonly JArray? @override;
         private List<IJtNodeCollectionChild>? children;
+        private List<JtNode>? nodes; // Nodes cache for main collections
         private IIdentifiersManager? childrenManager;
 
-        public IJtNodeParent Parent { get; }
-        public IIdentifiersManager IdentifiersManager => Parent.IdentifiersManager;
-
-        public JtContainer Owner => Parent.Owner!;
 
 
-        public JTemplate Template => Parent.Template;
-        public bool IsMainCollection => Parent.Owner == Parent;
+        [MemberNotNull(nameof(children))]
+        internal List<IJtNodeCollectionChild> Children
+        {
+            get
+            {
+                if (children is null)
+                {
+                    BuildChildren();
+                }
+                return children;
+            }
+        }
+        [MemberNotNull(nameof(children))]
+        private void BuildChildren()
+        {
+            if (@base is null && @override is null)
+            {
+                children = new List<IJtNodeCollectionChild>();
+            }
+            else if (@base is null && @override is not null)
+            {
+                children = BuildChildrenNormal();
+            }
+            else if (@base is not null && @override is null)
+            {
+                children = BuildChildrenInstance();
+            }
+            else
+            {
+                children = BuildChildrenOverride();
+            }
+        }
+        private List<IJtNodeCollectionChild> BuildChildrenOverride()
+        {
+            List<IJtNodeCollectionChild> list = new List<IJtNodeCollectionChild>();
 
-        public int Count => Children.Count;
+            int baseIndex = -1;
+            int overrideIndex = -1;
 
-        public bool IsReadOnly => false;
+            while (true)
+            {
+                baseIndex++;
+                overrideIndex++;
+                if (@base!.Children.Count <= baseIndex)
+                {
+                    if (@override!.Count <= overrideIndex)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        list.Add(CreateChildItem(this, @override[overrideIndex]));
+                    }
+                }
+                else if (@override!.Count <= overrideIndex)
+                {
+                    list.Add(@base.Children[baseIndex].CreateInstance(this, null));
+                }
+                else if (@override[overrideIndex]?.Type is JTokenType.Null)
+                {
+                    continue;
+                }
+                else
+                {
+                    list.Add(@base.Children[baseIndex].CreateInstance(this, @override[overrideIndex]));
+                }
+            }
 
-        public ICustomSourceProvider SourceProvider => Parent.SourceProvider;
+            return list;
+        }
+        private List<IJtNodeCollectionChild> BuildChildrenInstance()
+        {
+            List<IJtNodeCollectionChild> list = new List<IJtNodeCollectionChild>(@base!.Children.Count);
+
+            for (int i = 0; i < @base.Children.Count; i++)
+            {
+                list.Add(@base.Children[i].CreateInstance(this, null));
+            }
+
+            return list;
+        }
+        private List<IJtNodeCollectionChild> BuildChildrenNormal()
+        {
+            List<IJtNodeCollectionChild> list = new List<IJtNodeCollectionChild>(@override!.Count);
+
+            for (int i = 0; i < @override.Count; i++)
+            {
+                list.Add(CreateChildItem(this, @override[i]));
+            }
+
+            return list;
+        }
+        private static IJtNodeCollectionChild CreateChildItem(IJtNodeParent parent, JToken source)
+        {
+            JtUnknownNode CreateUnknown() => new JtUnknownNode(parent);
+
+            if (source is null)
+                return CreateUnknown();
+            if (source.Type is JTokenType.Array)
+                return Create(parent, source);
+            if (source.Type is JTokenType.String)
+            {
+                JtSourceReference id = (string?)source;
+                return id.Type switch
+                {
+                    JtSourceReferenceType.External => ((IJtNodeCollectionSourceChild?)parent.SourceProvider.GetCustomSource(id))?.CreateInstance(parent, null) ?? CreateUnknown(),
+                    JtSourceReferenceType.Direct => parent.SourceProvider.GetCustomSource<JtNodeSource>(id)?.CreateInstance(parent, null) ?? CreateUnknown(),
+                    _ => CreateUnknown(),
+                };
+            }
+            if (source.Type is JTokenType.Object)
+            {
+                JToken? @base = source["base"];
+                if (@base is null)
+                    return JtNode.Create(parent, source);
+                IJtNodeCollectionSourceChild child = new CustomSourceBaseDeclaration(@base, parent.SourceProvider).Value;
+
+
+
+                if (child is JtNodeCollectionSource)
+                    return child.CreateInstance(parent, source["_"]);
+                if (child is JtNodeSource)
+                    return child.CreateInstance(parent, source);
+
+                return CreateUnknown();
+            }
+            return CreateUnknown();
+        }
+
+
+
+
+
+
+        [Browsable(false)]
+        public IJtNodeParent Parent => parent; 
+        [Browsable(false)] public IIdentifiersManager IdentifiersManager => Parent.GetIdentifiersManagerForChild();
+        [Browsable(false)] public JtContainerNode Owner => Parent.Owner!;
+        [Browsable(false)] public JTemplate Template => Parent.Template;
+        [MemberNotNullWhen(true, nameof(Nodes))]
+        [Browsable(false)] public bool IsMainCollection => Parent.Owner == Parent;
+        [Browsable(false)] public int Count => Children.Count;
+        [Browsable(false)] public bool IsReadOnly => false;
+        [Browsable(false)] public ICustomSourceProvider SourceProvider => Parent.SourceProvider;
+        [Browsable(false)] public List<JtNode>? Nodes => IsMainCollection ? nodes ??= Children.SelectMany(x => x.GetNodes()).ToList() : null;
+
+        [Browsable(false)] public bool HasExternalChildren => IsExternal || Children.Any(x => x.IsExternal);
+
+        [Browsable(false)] public bool IsExternal => @base?.IsDeclared is true;
+
+        bool IJtStructureParentElement.HasExternalChildrenSource => IsExternal;
+
+        IJtStructureCollectionElement IJtStructureParentElement.ChildrenCollection => this;
+
+        bool IJtStructureParentElement.IsRoot => false;
+
+        IJtCustomSourceDeclaration? IJtStructureInnerElement.Base => @base?.IsDeclared is true ? @base.Declaration : null;
+
         public IJtNodeCollectionChild this[int index] { get => Children[index]; set => Children[index] = value; }
 
 
         private JtNodeCollection(IJtNodeParent parent)
         {
-            Parent = parent;
-            nodeEnumerable = JtEnumerable.JtEnumerable.CreateEmpty<IJtNodeCollectionChild>();
-        }
-
-        internal JtNodeCollection(IJtNodeParent parent, JtSourceReference id)
-        {
-            Parent = parent;
-            this.id = id;
-            nodeEnumerable = JtEnumerable.JtEnumerable.CreateEmpty<IJtNodeCollectionChild>();
+            this.parent = parent;
         }
         private JtNodeCollection(IJtNodeParent parent, JArray source)
         {
-            Parent = parent;
-            nodeEnumerable = JtEnumerable.JtEnumerable.CreatJtNodeCollection(this, source);
+            this.parent = parent;
+            @override = source;
         }
         internal JtNodeCollection(IJtNodeParent parent, JtNodeCollectionSource source, JArray? @override)
         {
-            Parent = parent;
+            this.parent = parent;
             @base = source;
-            nodeEnumerable = JtEnumerable.JtEnumerable.CreatJtNodeCollection(this, source, @override);
+            this.@override = @override;
         }
 
         public static JtNodeCollection Create(IJtNodeParent parent) => new JtNodeCollection(parent);
@@ -72,22 +213,18 @@ namespace Aadev.JTF
                 JtSourceReference id = (string?)source;
                 switch (id.Type)
                 {
-                    case JtSourceReferenceType.None:
-                    default:
-                        return new JtNodeCollection(parent);
-                    case JtSourceReferenceType.Local:
-                    case JtSourceReferenceType.Dynamic:
-                        return new JtNodeCollection(parent, id);
                     case JtSourceReferenceType.External:
-                        return parent.SourceProvider.GetCustomSource<JtNodeCollectionSource>(id)?.CreateInstance(parent, null) ?? new JtNodeCollection(parent, id);
+                        return parent.SourceProvider.GetCustomSource<JtNodeCollectionSource>(id)?.CreateInstance(parent, null) ?? new JtNodeCollection(parent);
                     case JtSourceReferenceType.Direct:
                     {
                         JtContainerNodeSource? element = parent.SourceProvider.GetCustomSource<JtContainerNodeSource>(id);
                         if (element is null)
-                            return new JtNodeCollection(parent, id);
+                            return new JtNodeCollection(parent);
                         return element.Children.CreateInstance(parent, null);
 
                     }
+                    default:
+                        return new JtNodeCollection(parent);
                 }
             }
             if (source?.Type is JTokenType.Array)
@@ -99,14 +236,10 @@ namespace Aadev.JTF
                 JToken? @base = source["base"];
                 if (@base is null)
                     return new JtNodeCollection(parent);
-                
-                if(new CustomSourceBaseDeclaration(@base, parent.SourceProvider).Value is JtNodeCollectionSource ncs)
+
+                if (new CustomSourceBaseDeclaration(@base, parent.SourceProvider).Value is JtNodeCollectionSource ncs)
                     return new JtNodeCollection(parent, ncs, (JArray?)source["_"]);
-#if NET7_0_OR_GREATER
                 throw new UnreachableException();
-#else
-                throw new InternalException();
-#endif
 
             }
             return new JtNodeCollection(parent);
@@ -114,28 +247,28 @@ namespace Aadev.JTF
 
         internal void BuildJson(StringBuilder sb)
         {
-            if (@base != null)
+            if (@base is not null)
             {
-                bool isAnyChildOverriden = Children.Any(x => x.IsOverriden());
+                bool isAnyChildOverridden = Children.Any(x => x.IsOverridden());
 
 
-                if (!isAnyChildOverriden && !@base.IsDeclarated)
+                if (!isAnyChildOverridden && !@base.IsDeclared)
                     return;
 
-                if(!isAnyChildOverriden)
+                if (!isAnyChildOverridden)
                 {
                     @base.BuildJson(sb);
                     return;
-                }    
+                }
 
 
                 sb.Append('{');
-                if (@base.IsDeclarated)
+                if (@base.IsDeclared)
                 {
                     sb.Append("\"base\": ");
                     @base.BuildJson(sb);
                 }
-                if (isAnyChildOverriden)
+                if (isAnyChildOverridden)
                 {
                     sb.Append(", \"_\": [");
 #if NET5_0_OR_GREATER
@@ -145,7 +278,7 @@ namespace Aadev.JTF
                         if (i > 0)
                             sb.Append(',');
                         IJtNodeCollectionChild item = listSpan[i];
-                        if (item.IsOverriden())
+                        if (item.IsOverridden())
                             item.BuildJson(sb);
                         else
                         {
@@ -158,7 +291,7 @@ namespace Aadev.JTF
                         if (i > 0)
                             sb.Append(',');
                         IJtNodeCollectionChild item = Children[i];
-                        if (item.IsOverriden())
+                        if (item.IsOverridden())
                             item.BuildJson(sb);
                         else
                         {
@@ -174,7 +307,10 @@ namespace Aadev.JTF
             {
                 sb.Append('[');
                 bool isFirst = true;
-                foreach (IJtNodeCollectionChild item in nodeEnumerable)
+
+#if NET5_0_OR_GREATER
+                Span<IJtNodeCollectionChild> listSpan = CollectionsMarshal.AsSpan(Children);
+                for (int i = 0; i < listSpan.Length; i++)
                 {
                     if (!isFirst)
                     {
@@ -182,32 +318,39 @@ namespace Aadev.JTF
                     }
                     else
                         isFirst = false;
-                    item.BuildJson(sb);
+                    listSpan[i].BuildJson(sb);
                 }
+#else
+
+                for (int i = 0; i < Children.Count; i++)
+                {
+                    if (!isFirst)
+                    {
+                        sb.Append(',');
+                    }
+                    else
+                        isFirst = false;
+                    Children[i].BuildJson(sb);
+                }
+#endif
                 sb.Append(']');
             }
         }
         internal JtNodeCollectionSource CreateSource() => JtNodeCollectionSource.Create(this);
 
-        public List<JtNode>? Nodes => IsMainCollection ? nodes ??= nodeEnumerable.SelectMany(x => x.GetNodes()).ToList() : null;
-        private List<IJtNodeCollectionChild> Children => children ??= nodeEnumerable.Enumerate();
-
-        public bool HasExternalChildren => (@base != null && @base.IsDeclarated) || Children.Any(x => x is JtNodeCollection n && n.HasExternalChildren);
-
-        public bool IsExternal => @base?.IsDeclarated ?? !id.IsEmpty;
 
 
-        public bool IsOverriden() => IsMainCollection ? Nodes!.Any(x => x.IsOverriden()) : nodeEnumerable.Enumerate().Any(x => x.IsOverriden());
+        public bool IsOverridden() => IsMainCollection ? Nodes.Any(x => x.IsOverridden()) : Children.Any(x => x.IsOverridden());
         public int IndexOf(IJtNodeCollectionChild item) => Children.IndexOf(item);
         public void Insert(int index, IJtNodeCollectionChild item) => Children.Insert(index, item);
         public void RemoveAt(int index) => Children.RemoveAt(index);
         public void Add(IJtNodeCollectionChild item)
         {
             Children.Add(item);
-        
-            if(item is JtNode n && Parent is JtNodeCollection c)
+
+            if (item is JtNode node)
             {
-                c.OnItemAddedToChild(n);
+                OnItemAddedToChild(node);
             }
         }
         public void Clear() => Children.Clear();
@@ -216,8 +359,7 @@ namespace Aadev.JTF
         public bool Remove(IJtNodeCollectionChild item) => Children.Remove(item);
         public IEnumerator<IJtNodeCollectionChild> GetEnumerator() => Children.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-        IEnumerable<JtNode> IJtNodeCollectionChild.GetNodes() => nodes ?? nodeEnumerable.SelectMany(x => x.GetNodes());
-
+        IEnumerable<JtNode> IJtNodeCollectionChild.GetNodes() => nodes ?? Children.SelectMany(x => x.GetNodes());
 
         internal void OnItemAddedToChild(JtNode item)
         {
@@ -229,14 +371,9 @@ namespace Aadev.JTF
             {
                 if (!IsMainCollection)
                 {
-#if NET7_0_OR_GREATER
                     throw new UnreachableException();
-#else
-                    throw new InternalException();
-#endif
                 }
-                nodes ??= nodeEnumerable.SelectMany(x => x.GetNodes()).ToList();
-                nodes.Add(item);
+                Nodes.Add(item);
             }
         }
 
@@ -244,12 +381,13 @@ namespace Aadev.JTF
         {
             if (Owner.ContainerDisplayType is JtContainerType.Array)
                 return new IdentifiersManager(IdentifiersManager);
-            if ((@base is null || !@base.IsDeclarated)&& id.IsEmpty)
-                return IdentifiersManager;
-            return childrenManager ??= new IdentifiersManager(IdentifiersManager);
+            if (@base?.IsDeclared is true)
+                return childrenManager ??= new IdentifiersManager(IdentifiersManager);
+            return IdentifiersManager;
         }
-
         IJtNodeCollectionSourceChild IJtNodeCollectionChild.CreateSource() => CreateSource();
         void IJtNodeCollectionChild.BuildJson(StringBuilder sb) => BuildJson(sb);
+        void IJtStructureCollectionElement.Add(IJtStructureInnerElement item) => Add((IJtNodeCollectionChild)item);
+        IEnumerable<IJtStructureInnerElement> IJtStructureParentElement.GetStructureChildren() => Children;
     }
 }

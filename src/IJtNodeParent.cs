@@ -2,13 +2,13 @@
 
 namespace Aadev.JTF
 {
-    public interface IJtNodeParent 
+    public interface IJtNodeParent
     {
-        public JtContainer? Owner { get; }
-        public JTemplate Template { get; }
-        public bool HasExternalChildren { get; }
-        public IIdentifiersManager IdentifiersManager { get; }
-        public ICustomSourceProvider SourceProvider { get; }
-        public IIdentifiersManager GetIdentifiersManagerForChild();
+        JtContainerNode? Owner { get; }
+        JTemplate Template { get; }
+        bool HasExternalChildren { get; }
+        IIdentifiersManager IdentifiersManager { get; }
+        ICustomSourceProvider SourceProvider { get; }
+        IIdentifiersManager GetIdentifiersManagerForChild();
     }
 }

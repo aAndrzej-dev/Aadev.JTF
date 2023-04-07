@@ -12,19 +12,19 @@ namespace Aadev.JTF.CustomSources
 
         public override JtNodeCollectionSource Children { get; }
 
-        public JtBlockNodeSource(ICustomSourceParent parent) : base(parent)
+        public JtBlockNodeSource(IJtNodeSourceParent parent) : base(parent)
         {
             Children = JtNodeCollectionSource.Create(this);
         }
-        internal JtBlockNodeSource(JtBlock node) : base(node)
+        internal JtBlockNodeSource(JtBlockNode node) : base(node)
         {
             Children = node.Children.CreateSource();
         }
-        internal JtBlockNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
+        internal JtBlockNodeSource(IJtNodeSourceParent parent, JObject source) : base(parent, source)
         {
             Children = JtNodeCollectionSource.Create(this, source["children"]);
         }
-        internal JtBlockNodeSource(ICustomSourceParent parent, JtBlockNodeSource @base, JObject? @override) : base(parent, @base, @override)
+        internal JtBlockNodeSource(IJtNodeSourceParent parent, JtBlockNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             Children = @base.Children.CreateOverride(this, (JArray?)@override?["children"]);
         }
@@ -36,7 +36,7 @@ namespace Aadev.JTF.CustomSources
             Children.BuildJson(sb);
             sb.Append('}');
         }
-        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtBlock(parent, this, @override);
-        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtBlockNodeSource(parent, this, @override);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtBlockNode(parent, this, @override);
+        public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtBlockNodeSource(parent, this, @override);
     }
 }

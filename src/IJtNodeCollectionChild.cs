@@ -1,17 +1,16 @@
-﻿using Aadev.JTF.CustomSources;
+﻿using Aadev.JTF.AbstractStructure;
+using Aadev.JTF.CustomSources;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Aadev.JTF
 {
-    public interface IJtNodeCollectionChild
+    public interface IJtNodeCollectionChild : IJtStructureInnerElement
     {
         internal void BuildJson(StringBuilder sb);
         IEnumerable<JtNode> GetNodes();
-        bool IsOverriden();
+        bool IsOverridden();
 
         IJtNodeCollectionSourceChild CreateSource();
-        
-        bool IsExternal { get; }
     }
 }

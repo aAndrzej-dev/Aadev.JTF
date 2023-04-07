@@ -16,24 +16,24 @@ namespace Aadev.JTF.CustomSources
         public JtNodeCollectionSource Prefabs { get; }
 
 
-        public JtArrayNodeSource(ICustomSourceParent parent) : base(parent)
+        public JtArrayNodeSource(IJtNodeSourceParent parent) : base(parent)
         {
             Prefabs = JtNodeCollectionSource.Create(this);
             MaxSize = -1;
         }
-        internal JtArrayNodeSource(JtArray node) : base(node)
+        internal JtArrayNodeSource(JtArrayNode node) : base(node)
         {
             Prefabs = node.Prefabs.CreateSource();
             MaxSize = node.MaxSize;
             SingleType = node.SingleType;
         }
-        internal JtArrayNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
+        internal JtArrayNodeSource(IJtNodeSourceParent parent, JObject source) : base(parent, source)
         {
             Prefabs = JtNodeCollectionSource.Create(this, source["prefabs"]);
             SingleType = (bool?)source["singleType"] ?? false;
             MaxSize = (int?)source["maxSize"] ?? -1;
         }
-        internal JtArrayNodeSource(ICustomSourceParent parent, JtArrayNodeSource @base, JObject? @override) : base(parent, @base, @override)
+        internal JtArrayNodeSource(IJtNodeSourceParent parent, JtArrayNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             SingleType = (bool)(@override?["singleType"] ?? @base.SingleType);
             MaxSize = (int)(@override?["maxSize"] ?? @base.MaxSize);
@@ -50,7 +50,7 @@ namespace Aadev.JTF.CustomSources
             Children.BuildJson(sb);
             sb.Append('}');
         }
-        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtArray(parent, this, @override);
-        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtArrayNodeSource(parent, this, @override);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtArrayNode(parent, this, @override);
+        public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtArrayNodeSource(parent, this, @override);
     }
 }

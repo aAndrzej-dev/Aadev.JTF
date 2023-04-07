@@ -14,29 +14,30 @@ namespace Aadev.JTF.CustomSources
         public int MinLength { get; set; }
         public override IJtSuggestionCollectionSource Suggestions { get; }
 
+        public override JTokenType JsonType => JTokenType.String;
 
-        public JtStringNodeSource(ICustomSourceParent parent) : base(parent)
+        public JtStringNodeSource(IJtNodeSourceParent parent) : base(parent)
         {
             Default = string.Empty;
             MaxLength = -1;
             MinLength = 0;
             Suggestions = JtSuggestionCollectionSource<short>.Create(this);
         }
-        internal JtStringNodeSource(JtString node) : base(node)
+        internal JtStringNodeSource(JtStringNode node) : base(node)
         {
             MinLength = node.MinLength;
             MaxLength = node.MaxLength;
             Default = node.Default;
             Suggestions = node.Suggestions.CreateSource(this);
         }
-        internal JtStringNodeSource(ICustomSourceParent parent, JObject source) : base(parent, source)
+        internal JtStringNodeSource(IJtNodeSourceParent parent, JObject source) : base(parent, source)
         {
             MinLength = (int)(source["minLength"] ?? 0);
             MaxLength = (int)(source["maxLength"] ?? -1);
             Default = (string?)source["default"] ?? string.Empty;
             Suggestions = JtSuggestionCollectionSource<string>.Create(this, source["suggestions"]);
         }
-        internal JtStringNodeSource(ICustomSourceParent parent, JtStringNodeSource @base, JObject? @override) : base(parent, @base, @override)
+        internal JtStringNodeSource(IJtNodeSourceParent parent, JtStringNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             MinLength = (int)(@override?["minLength"] ?? @base.MinLength);
             MaxLength = (int)(@override?["maxLength"] ?? @base.MaxLength);
@@ -54,14 +55,15 @@ namespace Aadev.JTF.CustomSources
                 sb.Append($", \"minLength\": {MinLength}");
             if (!string.IsNullOrEmpty(Default))
                 sb.Append($", \"default\": {Default}");
-            if (Suggestions.IsSaveable)
+            if (Suggestions.IsSavable)
             {
                 sb.Append(", \"suggestions\": ");
                 Suggestions.BuildJson(sb);
             }
             sb.Append('}');
         }
-        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtString(parent, this, @override);
-        public override JtNodeSource CreateOverride(ICustomSourceParent parent, JObject? @override) => new JtStringNodeSource(parent, this, @override);
+        public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtStringNode(parent, this, @override);
+        public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtStringNodeSource(parent, this, @override);
+        public override JToken CreateDefaultValue() => new JValue(Default);
     }
 }

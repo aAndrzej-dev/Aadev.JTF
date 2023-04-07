@@ -5,7 +5,7 @@ namespace Aadev.JTF.CustomSources
 {
     public interface IJtSuggestionCollectionSource
     {
-        bool IsSaveable { get; }
+        bool IsSavable { get; }
         Type SuggestionType { get; }
 
         IJtSuggestionCollection CreateInstance();

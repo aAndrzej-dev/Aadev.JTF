@@ -12,7 +12,10 @@ namespace Aadev.JTF.CustomSources
 
         public Type SuggestionType => typeof(T);
 
-        internal JtSuggestionSource(ICustomSourceParent parent, JObject source) : base(parent)
+        public override bool IsExternal => false;
+
+
+        internal JtSuggestionSource(IJtCustomSourceParent parent, JObject source) : base(parent)
         {
             if (source["name"]?.Type is JTokenType.String && typeof(T) == typeof(string))
                 Value = (T)((JValue?)source["name"])?.Value!;
@@ -39,7 +42,7 @@ namespace Aadev.JTF.CustomSources
             sb.Append('{');
             if (Value is string str)
                 sb.Append( $"\"value\": \"{str}\"");
-            else if (Value is byte || Value is short || Value is int || Value is long || Value is float || Value is double)
+            else if (Value is byte or short or int or long or float or double)
                 sb.Append( $"\"value\": {Value}");
             else if (Value is bool b)
                 sb.Append( $"\"value\": {(b ? "true" : "false")}");

@@ -2,7 +2,7 @@
 
 namespace Aadev.JTF.CustomSources
 {
-    internal interface IJtSuggestionCollectionSourceChild<T>
+    public interface IJtSuggestionCollectionSourceChild<T>
     {
         internal void BuildJson(StringBuilder sb);
         IJtSuggestionCollectionChild<T> CreateInstance();

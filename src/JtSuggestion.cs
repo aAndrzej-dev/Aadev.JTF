@@ -1,5 +1,4 @@
 ﻿using Aadev.JTF.CustomSources;
-using Aadev.JTF.Types;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -18,7 +17,7 @@ namespace Aadev.JTF
             get => value;
             set
             {
-                if (DisplayName?.Equals(Value?.ToString(),StringComparison.Ordinal) is true)
+                if (DisplayName?.Equals(Value?.ToString(), StringComparison.Ordinal) is true)
                     DisplayName = value?.ToString();
                 this.value = value;
             }
@@ -47,6 +46,7 @@ namespace Aadev.JTF
             else
                 value = (T)Convert.ChangeType(((JValue?)source["value"])?.Value, typeof(T), CultureInfo.InvariantCulture)!;
             DisplayName = (string?)source["displayName"] ?? value?.ToString();
+            
         }
         public override string? ToString() => DisplayName ?? Value?.ToString();
 
@@ -55,7 +55,7 @@ namespace Aadev.JTF
             sb.Append('{');
             if (Value is string str)
                 sb.Append($"\"value\": \"{str}\"");
-            else if (Value is byte || Value is short || Value is int || Value is long || Value is float || Value is double)
+            else if (Value is byte or short or int or long or float or double)
                 sb.Append($"\"value\": {Value}");
             else if (Value is bool b)
                 sb.Append($"\"value\": {(b ? "true" : "false")}");
@@ -84,17 +84,18 @@ namespace Aadev.JTF
             throw new InvalidCastException($"Cannot convert {value?.GetType()} to {typeof(T)}");
         }
 
-        IEnumerable<IJtSuggestion> IJtSuggestionCollectionChild<T>.GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource) 
+        IEnumerable<IJtSuggestion> IJtSuggestionCollectionChild<T>.GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource)
         {
             yield return this;
         }
 
         public override bool Equals(object? obj) => Equals(obj as JtSuggestion<T>);
-        public bool Equals(JtSuggestion<T>? other) => !(other is null) && EqualityComparer<T>.Default.Equals(Value, other.Value) && DisplayName == other.DisplayName;
+        public bool Equals(JtSuggestion<T>? other) => other is not null && EqualityComparer<T>.Default.Equals(Value, other.Value) && DisplayName == other.DisplayName;
         public override int GetHashCode() => HashCode.Combine(Value, DisplayName);
 
         public JtSuggestionSource<T> CreateSource() => new JtSuggestionSource<T>(this);
-        IJtSuggestionCollectionSourceChild<T> IJtSuggestionCollectionChild<T>.CreateSource(ICustomSourceParent parent) => CreateSource();
+        IJtSuggestionCollectionSourceChild<T> IJtSuggestionCollectionChild<T>.CreateSource(IJtCustomSourceParent parent) => CreateSource();
+
 
         public static bool operator ==(JtSuggestion<T>? left, JtSuggestion<T>? right) => !(left is null || right is null) && EqualityComparer<JtSuggestion<T>>.Default.Equals(left, right);
         public static bool operator !=(JtSuggestion<T>? left, JtSuggestion<T>? right) => !(left == right);
