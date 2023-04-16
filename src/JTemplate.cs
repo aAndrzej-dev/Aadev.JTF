@@ -15,16 +15,23 @@ namespace Aadev.JTF
 {
     public sealed class JTemplate : IJtFile, ICustomSourceProvider, IJtNodeParent, IJtStructureTemplateElement
     {
-        internal static JsonLoadSettings jsonLoadSettings = new JsonLoadSettings()
+        private string name;
+        private int version;
+        private string? description;
+
+
+        internal static readonly JsonLoadSettings jsonLoadSettings = new JsonLoadSettings()
         {
             CommentHandling = CommentHandling.Ignore,
             LineInfoHandling = LineInfoHandling.Ignore
         };
 
         internal static readonly Regex identifierRegex = new Regex("^[a-z]+[a-z0-9_]*$", RegexOptions.Compiled);
-        private string name;
-        private int version;
-        private string? description;
+        internal static void ThrowIfNotSupportedVersion(int version, IJtFile jtFile)
+        {
+            if (version > JTF_VERSION)
+                throw new JtfException($"JTF file is not supported. Las supported version is: {JTF_VERSION} and file version is: {version}.", jtFile);
+        }
 
         public static void RemoveCustomSourcesCache() => CustomSourceDeclaration.RemoveGlobalCache();
 
@@ -37,12 +44,15 @@ namespace Aadev.JTF
         /// Absolute path to jtf file
         /// </summary>
         [Category("General")] public string Filename { get; }
-        [Browsable(false)] public bool ReadOnly { get; }
+        /// <summary>
+        /// If <see cref="false"/> the jtf template is loaded in edit mode, otherwise the template is loaded only needed components to create and edit json files with this template.
+        /// </summary>
+        [Browsable(false)] public bool IsReadOnly { get; }
 
         /// <summary>
         /// Version of template
         /// </summary>
-        [Category("General")] public int Version { get => version; set { ThrowIfReadOnly(); version = value; } }
+        [Category("General")] public int Version { get => version; set { ThrowIfReadOnly(); version = Math.Clamp(value, 0, JTemplate.JTF_VERSION); } }
         /// <summary>
         /// Description of template
         /// </summary>
@@ -54,14 +64,9 @@ namespace Aadev.JTF
 
 
 
-        [Browsable(false)]
-        public bool Debug { get; set; }
-#if DEBUG
-        = true;
-#endif
 
         [Browsable(false)]
-        public JtFileType Type => JtFileType.Template;
+        public JtFileType FileType => JtFileType.Template;
 
 
         [Browsable(false)] public CustomSourceDeclarationCollection CustomSources { get; }
@@ -109,7 +114,7 @@ namespace Aadev.JTF
         }
         internal void ThrowIfReadOnly()
         {
-            if (ReadOnly)
+            if (IsReadOnly)
                 throw new ReadOnlyException("Cannot change items in read-only template.");
         }
 
@@ -167,7 +172,7 @@ namespace Aadev.JTF
         private JTemplate(string filename, string? workingDirectory = null, bool readOnly = true)
         {
             Filename = filename ?? throw new ArgumentNullException(nameof(filename));
-            ReadOnly = readOnly;
+            IsReadOnly = readOnly;
             if (!File.Exists(filename))
                 throw new FileNotFoundException(filename);
             if (workingDirectory is not null)
@@ -182,17 +187,17 @@ namespace Aadev.JTF
             {
                 using StreamReader sr = new StreamReader(filename);
                 using JsonReader jr = new JsonTextReader(sr);
-                
-                
+
+
                 root = JObject.Load(jr, jsonLoadSettings);
 
                 jr.Close();
             }
             catch (Exception ex)
             {
-                throw new JtfException($"Cannot convert file `{filename}` to json", ex);
+                throw new JtfException($"Cannot convert file `{filename}` to json", ex, this);
             }
-            JtFileType.Template.ThrowIfInvalidType((string?)root["type"], Filename);
+            JtFileType.Template.ThrowIfInvalidType((string?)root["type"], this);
 
             name = (string?)root["name"] ?? Path.GetFileNameWithoutExtension(Filename);
             description = (string?)root["description"];
@@ -201,8 +206,10 @@ namespace Aadev.JTF
 
             if (!int.TryParse((string?)root["version"], out version))
             {
-                throw new JtfException($"Parameter 'version' in file `{filename}` must by integer type.");
+                throw new JtfException($"Parameter 'version' in file `{filename}` must by integer type.", this);
             }
+            ThrowIfNotSupportedVersion(version, this);
+
             string? customSourcesDictionaryFile = (string?)root["customSources"] ?? (string?)root["valuesDictionaryFile"];
 
 

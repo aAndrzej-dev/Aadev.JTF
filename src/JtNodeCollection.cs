@@ -161,20 +161,20 @@ namespace Aadev.JTF
 
 
         [Browsable(false)]
-        public IJtNodeParent Parent => parent; 
+        public IJtNodeParent Parent => parent;
         [Browsable(false)] public IIdentifiersManager IdentifiersManager => Parent.GetIdentifiersManagerForChild();
         [Browsable(false)] public JtContainerNode Owner => Parent.Owner!;
         [Browsable(false)] public JTemplate Template => Parent.Template;
         [MemberNotNullWhen(true, nameof(Nodes))]
         [Browsable(false)] public bool IsMainCollection => Parent.Owner == Parent;
         [Browsable(false)] public int Count => Children.Count;
-        [Browsable(false)] public bool IsReadOnly => false;
+        [Browsable(false)] public bool IsReadOnly => Template.IsReadOnly;
         [Browsable(false)] public ICustomSourceProvider SourceProvider => Parent.SourceProvider;
         [Browsable(false)] public List<JtNode>? Nodes => IsMainCollection ? nodes ??= Children.SelectMany(x => x.GetNodes()).ToList() : null;
 
         [Browsable(false)] public bool HasExternalChildren => IsExternal || Children.Any(x => x.IsExternal);
 
-        [Browsable(false)] public bool IsExternal => @base?.IsDeclared is true;
+        [Browsable(false)] public bool IsExternal => @base?.IsExternal is true;
 
         bool IJtStructureParentElement.HasExternalChildrenSource => IsExternal;
 
@@ -356,11 +356,36 @@ namespace Aadev.JTF
         public void Clear() => Children.Clear();
         public bool Contains(IJtNodeCollectionChild item) => Children.Contains(item);
         public void CopyTo(IJtNodeCollectionChild[] array, int arrayIndex) => Children.CopyTo(array, arrayIndex);
-        public bool Remove(IJtNodeCollectionChild item) => Children.Remove(item);
+        public bool Remove(IJtNodeCollectionChild item)
+        {
+            if (Children.Remove(item))
+            {
+                if (item is JtNode node)
+                {
+                    OnItemRemovedFromChild(node);
+                }
+                return true;
+            }
+            return false;
+        }
         public IEnumerator<IJtNodeCollectionChild> GetEnumerator() => Children.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         IEnumerable<JtNode> IJtNodeCollectionChild.GetNodes() => nodes ?? Children.SelectMany(x => x.GetNodes());
-
+        internal void OnItemRemovedFromChild(JtNode item)
+        {
+            if (Parent is JtNodeCollection c)
+            {
+                c.OnItemRemovedFromChild(item);
+            }
+            else
+            {
+                if (!IsMainCollection)
+                {
+                    throw new UnreachableException();
+                }
+                Nodes.Remove(item);
+            }
+        }
         internal void OnItemAddedToChild(JtNode item)
         {
             if (Parent is JtNodeCollection c)

@@ -1,38 +1,35 @@
 ﻿using Aadev.JTF.CustomSources;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Aadev.JTF.CollectionBuilders
 {
-    internal sealed class JtSuggestionCollectionSourceBuilder<T> : IJtCollectionBuilder<IJtSuggestionCollectionSourceChild<T>>
+    internal sealed class JtSuggestionCollectionSourceBuilder<TSuggestion> : IJtSuggestionCollectionSourceBuilder<TSuggestion>
     {
-        private readonly JtSuggestionCollectionSource<T> parent;
         private readonly JArray source;
 
-        public JtSuggestionCollectionSourceBuilder(JtSuggestionCollectionSource<T> parent, JArray source)
+        public JtSuggestionCollectionSourceBuilder(JArray source)
         {
-            this.parent = parent;
             this.source = source;
         }
-        public List<IJtSuggestionCollectionSourceChild<T>> Build()
+        public List<IJtSuggestionCollectionSourceChild<TSuggestion>> Build(JtSuggestionCollectionSource<TSuggestion> owner)
         {
-            List<IJtSuggestionCollectionSourceChild<T>> list = new List<IJtSuggestionCollectionSourceChild<T>>(source.Count);
+            List<IJtSuggestionCollectionSourceChild<TSuggestion>> list = new List<IJtSuggestionCollectionSourceChild<TSuggestion>>(source.Count);
 
             for (int i = 0; i < source.Count; i++)
             {
-                list.Add(CreateSuggestionItem(source[i]));
+                list.Add(CreateSuggestionItem(owner, source[i]));
             }
             return list;
         }
 
-        private IJtSuggestionCollectionSourceChild<T> CreateSuggestionItem(JToken source)
+        private static IJtSuggestionCollectionSourceChild<TSuggestion> CreateSuggestionItem(JtSuggestionCollectionSource<TSuggestion> owner, JToken source)
         {
             if (source?.Type is JTokenType.Array || source?.Type is JTokenType.String)
-                return JtSuggestionCollectionSource<T>.Create(parent, source);
+                return JtSuggestionCollectionSource<TSuggestion>.Create(owner, source);
             if (source?.Type is JTokenType.Object)
-                return new JtSuggestionSource<T>(parent, (JObject)source);
-            return new JtSuggestionSource<T>(parent, default!, "Unknown");
+                return new JtSuggestionSource<TSuggestion>(owner, (JObject)source);
+            return new JtSuggestionSource<TSuggestion>(owner, default!, "Unknown");
         }
     }
 }

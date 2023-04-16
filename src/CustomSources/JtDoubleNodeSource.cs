@@ -6,12 +6,13 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtDoubleNodeSource : JtValueNodeSource
     {
+        private IJtSuggestionCollectionSource? suggestions;
         public override JtNodeType Type => JtNodeType.Double;
 
         public double Max { get; set; }
         public double Min { get; set; }
         public double Default { get; set; }
-        public override IJtSuggestionCollectionSource Suggestions { get; }
+        public override IJtSuggestionCollectionSource Suggestions => suggestions ??= JtSuggestionCollectionSource<double>.Create(this);
 
 
         public override JTokenType JsonType => JTokenType.Float;
@@ -19,28 +20,27 @@ namespace Aadev.JTF.CustomSources
         {
             Max = double.MaxValue;
             Min = double.MinValue;
-            Suggestions = JtSuggestionCollectionSource<double>.Create(this);
         }
         internal JtDoubleNodeSource(JtDoubleNode node) : base(node)
         {
             Max = node.Max;
             Min = node.Min;
             Default = node.Default;
-            Suggestions = node.Suggestions.CreateSource(this);
+            suggestions = node.TryGetSuggestions()?.CreateSource(this);
         }
         internal JtDoubleNodeSource(IJtNodeSourceParent parent, JObject source) : base(parent, source)
         {
-            Suggestions = JtSuggestionCollectionSource<double>.Create(this, source["suggestions"]);
             Min = (double)(source["min"] ?? double.MinValue);
             Max = (double)(source["max"] ?? double.MaxValue);
             Default = (double)(source["default"] ?? 0);
+            suggestions = JtSuggestionCollectionSource<double>.TryCreate(this, source["suggestions"]);
         }
         internal JtDoubleNodeSource(IJtNodeSourceParent parent, JtDoubleNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             Min = (double)(@override?["minLength"] ?? @base.Min);
             Max = (double)(@override?["maxLength"] ?? @base.Max);
             Default = (double)(@override?["default"] ?? @base.Default);
-            Suggestions = @base.Suggestions;
+            suggestions = @base.Suggestions;
         }
 
 
@@ -63,5 +63,6 @@ namespace Aadev.JTF.CustomSources
         public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtDoubleNode(parent, this, @override);
         public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtDoubleNodeSource(parent, this, @override);
         public override JToken CreateDefaultValue() => new JValue(Default);
+        internal override IJtSuggestionCollectionSource? TryGetSuggestions() => suggestions;
     }
 }

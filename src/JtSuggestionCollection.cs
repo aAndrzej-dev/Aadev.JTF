@@ -12,11 +12,12 @@ using System.Text;
 
 namespace Aadev.JTF
 {
-    public sealed class JtSuggestionCollection<T> : IJtSuggestionCollectionChild<T>, IJtSuggestionCollection, IList<IJtSuggestionCollectionChild<T>>
+    public sealed class JtSuggestionCollection<TSuggestion> : IJtSuggestionCollection<TSuggestion>
     {
-        private IJtCollectionBuilder<IJtSuggestionCollectionChild<T>>? suggestionsBuilder;
-        private List<IJtSuggestionCollectionChild<T>>? suggestions;
+        private IJtCollectionBuilder<IJtSuggestionCollectionChild<TSuggestion>>? suggestionsBuilder;
+        private List<IJtSuggestionCollectionChild<TSuggestion>>? suggestions;
         private JtSourceReference id;
+        private readonly JtSuggestionCollectionSource<TSuggestion>? @base;
 
         internal JtSourceReference Id
         {
@@ -36,47 +37,54 @@ namespace Aadev.JTF
 
 
         [MemberNotNull(nameof(suggestions))]
-        internal List<IJtSuggestionCollectionChild<T>> Suggestions
+        internal List<IJtSuggestionCollectionChild<TSuggestion>> Suggestions
         {
             get
             {
                 if (suggestions is null)
                 {
-                    suggestions = suggestionsBuilder!.Build();
-                    suggestionsBuilder = null;
+                    if (@base is not null)
+                    {
+                        suggestions = new List<IJtSuggestionCollectionChild<TSuggestion>>(@base.Count);
+
+                        for (int i = 0; i < @base.Count; i++)
+                        {
+                            suggestions.Add(@base[i].CreateInstance());
+                        }
+                    }
+                    else if (suggestionsBuilder is not null)
+                    {
+                        suggestions = suggestionsBuilder.Build();
+                        suggestionsBuilder = null;
+                    }
+                    else
+                        suggestions = new List<IJtSuggestionCollectionChild<TSuggestion>>();
                 }
                 return suggestions;
             }
         }
 
 
-        public Type SuggestionType => typeof(T);
+        public Type SuggestionType => typeof(TSuggestion);
 
-        private JtSuggestionCollection()
-        {
-            suggestionsBuilder = JtCollectionBuilder.CreateEmpty<IJtSuggestionCollectionChild<T>>();
-        }
+        private JtSuggestionCollection() { }
         private JtSuggestionCollection(JtValueNode owner, JArray? source)
         {
-            suggestionsBuilder = JtCollectionBuilder.CreateJtSuggestionCollection<T>(owner, source);
+            suggestionsBuilder = JtCollectionBuilder.CreateJtSuggestionCollection<TSuggestion>(owner, source);
         }
         private JtSuggestionCollection(JtSourceReference id)
         {
-            suggestionsBuilder = JtCollectionBuilder.CreateEmpty<IJtSuggestionCollectionChild<T>>();
             Id = id;
         }
-        private JtSuggestionCollection(JtSuggestionCollectionSource<T> source)
+        private JtSuggestionCollection(JtSuggestionCollectionSource<TSuggestion> source)
         {
-            suggestionsBuilder = JtCollectionBuilder.CreateJtSuggestionCollection<T>(source);
-            if(source.IsDeclared && source.Declaration is CustomSourceDeclaration csd)
-            {
-                id = new JtSourceReference(csd.Id, JtSourceReferenceType.External);
-            }
+            @base = source;
         }
         public bool IsStatic => Id.IsEmpty && Suggestions.All(x => x.IsStatic);
 
-        public static JtSuggestionCollection<T> Create() => new JtSuggestionCollection<T>();
-        public static JtSuggestionCollection<T> Create(JtValueNode owner, JToken? value)
+        public static JtSuggestionCollection<TSuggestion> Create() => new JtSuggestionCollection<TSuggestion>();
+
+        internal static JtSuggestionCollection<TSuggestion>? TryCreate(JtValueNode owner, JToken? value)
         {
             if (owner is null)
                 throw new ArgumentNullException(nameof(owner));
@@ -87,45 +95,53 @@ namespace Aadev.JTF
                 {
 
                     case JtSourceReferenceType.Dynamic:
-                        return new JtSuggestionCollection<T>(id);
+                        return new JtSuggestionCollection<TSuggestion>(id);
                     case JtSourceReferenceType.External:
-                        return owner.GetCustomSource<JtSuggestionCollectionSource<T>>(id)?.CreateInstance() ?? new JtSuggestionCollection<T>(id);
+                        return owner.GetCustomSource<JtSuggestionCollectionSource<TSuggestion>>(id)?.CreateInstance() ?? new JtSuggestionCollection<TSuggestion>(id);
                     case JtSourceReferenceType.Direct:
                     {
                         JtValueNodeSource? element = owner.GetCustomSource<JtValueNodeSource>(id);
-                        if (element is null || element.Suggestions.SuggestionType != typeof(T))
-                            return new JtSuggestionCollection<T>(id);
+                        if (element is null || element.Suggestions.SuggestionType != typeof(TSuggestion))
+                            return new JtSuggestionCollection<TSuggestion>(id);
 
-                        return (JtSuggestionCollection<T>)element.Suggestions.CreateInstance();
+                        return (JtSuggestionCollection<TSuggestion>)element.Suggestions.CreateInstance();
                     }
                     default:
-                        return new JtSuggestionCollection<T>();
+                        return null;
                 }
             }
             if (value?.Type is JTokenType.Array)
             {
-                return new JtSuggestionCollection<T>(owner, (JArray)value);
+                return new JtSuggestionCollection<TSuggestion>(owner, (JArray)value);
             }
-            return new JtSuggestionCollection<T>();
+            return null;
         }
-        internal static JtSuggestionCollection<T> Create(JtSuggestionCollectionSource<T> source) => new JtSuggestionCollection<T>(source);
-        internal static JtSuggestionCollection<T> Create(JtSourceReference id) => new JtSuggestionCollection<T>(id);
+        public static JtSuggestionCollection<TSuggestion> Create(JtValueNode owner, JToken? value)
+        {
+            return TryCreate(owner, value) ?? new JtSuggestionCollection<TSuggestion>();
+        }
+        internal static JtSuggestionCollection<TSuggestion> Create(JtSuggestionCollectionSource<TSuggestion> source) => new JtSuggestionCollection<TSuggestion>(source);
+        internal static JtSuggestionCollection<TSuggestion> Create(JtSourceReference id) => new JtSuggestionCollection<TSuggestion>(id);
 
 
         public IEnumerable<IJtSuggestion> GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource)
         {
             if (!Id.IsEmpty)
-                return dynamicSuggestionsSource?.Invoke(Id.Identifier)?.Select(x => (JtSuggestion<T>)x) ?? Enumerable.Empty<IJtSuggestion>();
+                return dynamicSuggestionsSource?.Invoke(Id.Identifier)?.Select(x => (JtSuggestion<TSuggestion>)x) ?? Enumerable.Empty<IJtSuggestion>();
 
             return Suggestions.SelectMany(x => x.GetSuggestions(dynamicSuggestionsSource)).Distinct();
         }
         internal void BuildJson(StringBuilder sb)
         {
-            if (Id.IsEmpty)
+            if (@base?.IsDeclared is true)
+            {
+                sb.Append($"\"{@base.Declaration.Name}\"");
+            }
+            else if (Id.IsEmpty)
             {
                 sb.Append('[');
 #if NET5_0_OR_GREATER
-                Span<IJtSuggestionCollectionChild<T>> listSpan = CollectionsMarshal.AsSpan(Suggestions);
+                Span<IJtSuggestionCollectionChild<TSuggestion>> listSpan = CollectionsMarshal.AsSpan(Suggestions);
                 for (int i = 0; i < listSpan.Length; i++)
                 {
                     if (i > 0)
@@ -150,28 +166,51 @@ namespace Aadev.JTF
 
 
 
-        internal JtSuggestionCollectionSource<T> CreateSource(IJtCustomSourceParent parent) => JtSuggestionCollectionSource<T>.Create(parent, this);
-        IJtSuggestionCollectionSourceChild<T> IJtSuggestionCollectionChild<T>.CreateSource(IJtCustomSourceParent parent) => CreateSource(parent);
+        internal JtSuggestionCollectionSource<TSuggestion> CreateSource(IJtCustomSourceParent parent) => @base is null ? JtSuggestionCollectionSource<TSuggestion>.Create(parent, this) : @base;
+        IJtSuggestionCollectionSourceChild<TSuggestion> IJtSuggestionCollectionChild<TSuggestion>.CreateSource(IJtCustomSourceParent parent) => CreateSource(parent);
         IJtSuggestionCollectionSource IJtSuggestionCollection.CreateSource(IJtCustomSourceParent parent) => CreateSource(parent);
-        void IJtSuggestionCollectionChild<T>.BuildJson(StringBuilder sb) => BuildJson(sb);
+        void IJtSuggestionCollectionChild<TSuggestion>.BuildJson(StringBuilder sb) => BuildJson(sb);
         void IJtSuggestionCollection.BuildJson(StringBuilder sb) => BuildJson(sb);
-        public int IndexOf(IJtSuggestionCollectionChild<T> item) => ((IList<IJtSuggestionCollectionChild<T>>)Suggestions).IndexOf(item);
-        public void Insert(int index, IJtSuggestionCollectionChild<T> item) => ((IList<IJtSuggestionCollectionChild<T>>)Suggestions).Insert(index, item);
-        public void RemoveAt(int index) => ((IList<IJtSuggestionCollectionChild<T>>)Suggestions).RemoveAt(index);
-        public void Add(IJtSuggestionCollectionChild<T> item) => ((ICollection<IJtSuggestionCollectionChild<T>>)Suggestions).Add(item);
-        public void Clear() => ((ICollection<IJtSuggestionCollectionChild<T>>)Suggestions).Clear();
-        public bool Contains(IJtSuggestionCollectionChild<T> item) => ((ICollection<IJtSuggestionCollectionChild<T>>)Suggestions).Contains(item);
-        public void CopyTo(IJtSuggestionCollectionChild<T>[] array, int arrayIndex) => ((ICollection<IJtSuggestionCollectionChild<T>>)Suggestions).CopyTo(array, arrayIndex);
-        public bool Remove(IJtSuggestionCollectionChild<T> item) => ((ICollection<IJtSuggestionCollectionChild<T>>)Suggestions).Remove(item);
-        public IEnumerator<IJtSuggestionCollectionChild<T>> GetEnumerator() => ((IEnumerable<IJtSuggestionCollectionChild<T>>)Suggestions).GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)Suggestions).GetEnumerator();
 
         public bool IsEmpty => Suggestions.Count == 0 && Id.IsEmpty;
 
-        public int Count => ((ICollection<IJtSuggestionCollectionChild<T>>)Suggestions).Count;
 
-        public bool IsReadOnly => ((ICollection<IJtSuggestionCollectionChild<T>>)Suggestions).IsReadOnly;
+        public int IndexOf(IJtSuggestionCollectionChild<TSuggestion> item) => Suggestions.IndexOf(item);
+        public void Insert(int index, IJtSuggestionCollectionChild<TSuggestion> item) { ThrowIfReadOnly(); Suggestions.Insert(index, item); }
+        public void RemoveAt(int index) { ThrowIfReadOnly(); Suggestions.RemoveAt(index); }
+        public void Add(IJtSuggestionCollectionChild<TSuggestion> item) { ThrowIfReadOnly(); Suggestions.Add(item); }
+        public void Clear()
+        {
+            ThrowIfReadOnly();
 
-        public IJtSuggestionCollectionChild<T> this[int index] { get => ((IList<IJtSuggestionCollectionChild<T>>)Suggestions)[index]; set => ((IList<IJtSuggestionCollectionChild<T>>)Suggestions)[index] = value; }
+            if (suggestions is null)
+            {
+                suggestionsBuilder = null;
+                return;
+            }
+
+            Suggestions.Clear();
+        }
+        public bool Contains(IJtSuggestionCollectionChild<TSuggestion> item) => Suggestions.Contains(item);
+        public void CopyTo(IJtSuggestionCollectionChild<TSuggestion>[] array, int arrayIndex) => Suggestions.CopyTo(array, arrayIndex);
+        public bool Remove(IJtSuggestionCollectionChild<TSuggestion> item) { ThrowIfReadOnly(); return Suggestions.Remove(item); }
+        public IEnumerator<IJtSuggestionCollectionChild<TSuggestion>> GetEnumerator() => Suggestions.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => Suggestions.GetEnumerator();
+
+
+
+        public int Count => Suggestions.Count;
+
+        public bool IsReadOnly => @base is not null && !id.IsEmpty;
+
+
+        private void ThrowIfReadOnly()
+        {
+            if (IsReadOnly)
+                throw new ReadOnlyException("Suggestion collection based on suggestion collection source can not be edited.");
+        }
+
+        public IJtSuggestionCollectionChild<TSuggestion> this[int index] { get => Suggestions[index]; set { ThrowIfReadOnly(); Suggestions[index] = value; } }
+
     }
 }

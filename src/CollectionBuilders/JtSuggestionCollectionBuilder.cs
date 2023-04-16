@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Aadev.JTF.CollectionBuilders
 {
-    internal sealed class JtSuggestionCollectionBuilder<T> : IJtCollectionBuilder<IJtSuggestionCollectionChild<T>>
+    internal sealed class JtSuggestionCollectionBuilder<TSuggestion> : IJtCollectionBuilder<IJtSuggestionCollectionChild<TSuggestion>>
     {
         private readonly JtValueNode owner;
         private readonly JArray source;
@@ -15,9 +15,9 @@ namespace Aadev.JTF.CollectionBuilders
         }
 
 
-        public List<IJtSuggestionCollectionChild<T>> Build()
+        public List<IJtSuggestionCollectionChild<TSuggestion>> Build()
         {
-            List<IJtSuggestionCollectionChild<T>> list = new List<IJtSuggestionCollectionChild<T>>(source.Count);
+            List<IJtSuggestionCollectionChild<TSuggestion>> list = new List<IJtSuggestionCollectionChild<TSuggestion>>(source.Count);
 
             for (int i = 0; i < source.Count; i++)
             {
@@ -26,13 +26,13 @@ namespace Aadev.JTF.CollectionBuilders
             return list;
         }
 
-        private IJtSuggestionCollectionChild<T> CreateSuggestionItem(JToken source)
+        private IJtSuggestionCollectionChild<TSuggestion> CreateSuggestionItem(JToken source)
         {
             if (source?.Type is JTokenType.Array || source?.Type is JTokenType.String)
-                return JtSuggestionCollection<T>.Create(owner, source);
+                return JtSuggestionCollection<TSuggestion>.Create(owner, source);
             if (source?.Type is JTokenType.Object)
-                return new JtSuggestion<T>((JObject)source);
-            return new JtSuggestion<T>(default!, "Unknown");
+                return new JtSuggestion<TSuggestion>((JObject)source);
+            return new JtSuggestion<TSuggestion>(default!, "Unknown");
         }
     }
 }

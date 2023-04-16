@@ -1,6 +1,5 @@
 ﻿using Aadev.JTF.CustomSources;
 using Newtonsoft.Json.Linq;
-using System;
 using System.ComponentModel;
 using System.Text;
 
@@ -10,6 +9,7 @@ namespace Aadev.JTF.Types
     {
         private const float minValue = float.MinValue;
         private const float maxValue = float.MaxValue;
+        private IJtSuggestionCollection? suggestions;
         private float? @default;
         private float? min;
         private float? max;
@@ -24,8 +24,7 @@ namespace Aadev.JTF.Types
         [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public float Min { get => min ?? Base?.Min ?? minValue; set { min = value; max = max.Max(min); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public float Max { get => max ?? Base?.Max ?? maxValue; set { max = value; min = min.Min(max); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(0)] public float Default { get => @default ?? Base?.Default ?? 0; set => @default = value.Clamp(Min, Max); }
-        public override IJtSuggestionCollection Suggestions { get; }
-
+        public override IJtSuggestionCollection Suggestions => suggestions ??= JtSuggestionCollection<float>.Create();
 
 
         public JtFloatNode(IJtNodeParent parent) : base(parent)
@@ -33,7 +32,6 @@ namespace Aadev.JTF.Types
             Min = minValue;
             Max = maxValue;
             Default = 0;
-            Suggestions = JtSuggestionCollection<float>.Create();
         }
         internal JtFloatNode(IJtNodeParent parent, JObject source) : base(parent, source)
         {
@@ -41,11 +39,11 @@ namespace Aadev.JTF.Types
             Max = (float)(source["max"] ?? maxValue);
             Default = (float)(source["default"] ?? 0);
 
-            Suggestions = JtSuggestionCollection<float>.Create(this, source["suggestions"]);
+            suggestions = JtSuggestionCollection<float>.TryCreate(this, source["suggestions"]);
         }
         internal JtFloatNode(IJtNodeParent parent, JtFloatNodeSource source, JToken? @override) : base(parent, source, @override)
         {
-            Suggestions = source.Suggestions.CreateInstance();
+            suggestions = source.TryGetSuggestions()?.CreateInstance();
             if (@override is null)
                 return;
             min = (float?)@override["min"];
@@ -91,5 +89,7 @@ namespace Aadev.JTF.Types
         public override JToken CreateDefaultValue() => new JValue(Default);
         public override object GetDefaultValue() => Default;
         public override JtNodeSource CreateSource() => currentSource ??= new JtFloatNodeSource(this);
+
+        public override IJtSuggestionCollection? TryGetSuggestions() => suggestions;
     }
 }

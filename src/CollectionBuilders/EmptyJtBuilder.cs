@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Aadev.JTF.CollectionBuilders
 {
-    internal sealed class EmptyJtBuilder<T> : IJtCollectionBuilder<T>
+    internal sealed class EmptyJtBuilder<TResult> : IJtCollectionBuilder<TResult>
     {
-        public static EmptyJtBuilder<T> Instance = new EmptyJtBuilder<T>();
+        public static EmptyJtBuilder<TResult> Instance = new EmptyJtBuilder<TResult>();
 
-        public List<T> Build() => new List<T>();
+        public List<TResult> Build() => new List<TResult>();
 
         private EmptyJtBuilder() { }
     }

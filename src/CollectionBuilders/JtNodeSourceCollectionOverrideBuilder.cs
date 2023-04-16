@@ -1,23 +1,20 @@
 ﻿using Aadev.JTF.CustomSources;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 namespace Aadev.JTF.CollectionBuilders
 {
     internal sealed class JtNodeSourceCollectionOverrideBuilder : IJtCollectionBuilder<IJtNodeCollectionSourceChild>
     {
-        private readonly IJtNodeSourceParent parent;
+        private readonly JtNodeCollectionSource owner;
         private readonly JArray @override;
         private readonly JtNodeCollectionSource @base;
 
-        public JtNodeSourceCollectionOverrideBuilder(IJtNodeSourceParent parent, JtNodeCollectionSource @base, JArray @override)
+        public JtNodeSourceCollectionOverrideBuilder(JtNodeCollectionSource owner, JtNodeCollectionSource @base, JArray @override)
         {
             this.@override = @override;
             this.@base = @base;
-            this.parent = parent;
+            this.owner = owner;
         }
         public List<IJtNodeCollectionSourceChild> Build()
         {
@@ -26,7 +23,7 @@ namespace Aadev.JTF.CollectionBuilders
             int baseIndex = -1;
             int overrideIndex = -1;
 
-            while(true)
+            while (true)
             {
                 baseIndex++;
                 overrideIndex++;
@@ -38,7 +35,7 @@ namespace Aadev.JTF.CollectionBuilders
                     }
                     else
                     {
-                        list.Add(new CustomSourceBaseDeclaration(@override[overrideIndex], parent.SourceProvider).Value);
+                        list.Add(new CustomSourceBaseDeclaration(@override[overrideIndex], owner.SourceProvider).Value);
                     }
                 }
                 else if (@override.Count <= overrideIndex)
@@ -51,7 +48,7 @@ namespace Aadev.JTF.CollectionBuilders
                 }
                 else
                 {
-                    list.Add(@base.Children[baseIndex].CreateOverride(parent, @override[overrideIndex]));
+                    list.Add(@base.Children[baseIndex].CreateOverride(owner, @override[overrideIndex]));
                 }
             }
             return list;

@@ -2,8 +2,8 @@
 
 namespace Aadev.JTF.CollectionBuilders
 {
-    internal interface IJtCollectionBuilder<T>
+    internal interface IJtCollectionBuilder<TResult>
     {
-        List<T> Build();
+        List<TResult> Build();
     }
 }

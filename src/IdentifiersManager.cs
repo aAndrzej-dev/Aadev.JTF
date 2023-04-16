@@ -39,6 +39,5 @@ namespace Aadev.JTF
 
         public bool ContainsNode(JtIdentifier id) => registeredNodes.ContainsKey(id);
         public JtNode[] GetRegisteredNodes() => registeredNodes.Values.ToArray();
-
     }
 }

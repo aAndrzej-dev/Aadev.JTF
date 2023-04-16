@@ -7,48 +7,37 @@ namespace Aadev.JTF.CollectionBuilders
     internal static class JtCollectionBuilder
     {
         internal static IJtCollectionBuilder<T> CreateEmpty<T>() => EmptyJtBuilder<T>.Instance;
-        public static IJtCollectionBuilder<IJtNodeCollectionSourceChild> CreateJtNodeSourceCollection(IJtNodeSourceParent parent, JArray? source)
+        public static IJtCollectionBuilder<IJtNodeCollectionSourceChild> CreateJtNodeSourceCollection(JtNodeCollectionSource owner, JArray? source)
         {
             if (source is null)
                 return CreateEmpty<IJtNodeCollectionSourceChild>();
-            return new JtNodeSourceCollectionBuilder(parent, source);
+            return new JtNodeSourceCollectionBuilder(owner, source);
         }
-        public static IJtCollectionBuilder<IJtNodeCollectionSourceChild> CreateJtNodeSourceCollection(IJtNodeSourceParent parent, JtNodeCollectionSource @base, JArray? @override)
+        public static IJtCollectionBuilder<IJtNodeCollectionSourceChild> CreateJtNodeSourceCollection(JtNodeCollectionSource owner, JtNodeCollectionSource @base, JArray? @override)
         {
             if (@override is null)
                 return new JtNodeSourceCopyBuilder(@base);
-            return new JtNodeSourceCollectionOverrideBuilder(parent, @base, @override);
+            return new JtNodeSourceCollectionOverrideBuilder(owner, @base, @override);
         }
-        public static IJtCollectionBuilder<IJtNodeCollectionSourceChild> CreateJtNodeSourceCollection(JtNodeCollection sourceCollection)
+        public static IJtCollectionBuilder<IJtNodeCollectionSourceChild> CreateJtNodeSourceCollection(JtNodeCollection source)
         {
-            if (sourceCollection is null)
+            if (source is null)
                 return CreateEmpty<IJtNodeCollectionSourceChild>();
-            return new JtNodeSourceCollectionInstanceBuilder(sourceCollection);
+            return new JtNodeSourceCollectionInstanceBuilder(source);
         }
-        internal static IJtCollectionBuilder<IJtSuggestionCollectionChild<T>> CreateJtSuggestionCollection<T>(JtValueNode owner, JArray? source)
+        internal static IJtCollectionBuilder<IJtSuggestionCollectionChild<TSuggestion>> CreateJtSuggestionCollection<TSuggestion>(JtValueNode owner, JArray? source)
         {
             if (source is null)
-                return CreateEmpty<IJtSuggestionCollectionChild<T>>();
-            return new JtSuggestionCollectionBuilder<T>(owner, source);
+                return CreateEmpty<IJtSuggestionCollectionChild<TSuggestion>>();
+            return new JtSuggestionCollectionBuilder<TSuggestion>(owner, source);
         }
-        internal static IJtCollectionBuilder<IJtSuggestionCollectionChild<T>> CreateJtSuggestionCollection<T>(JtSuggestionCollectionSource<T>? source)
+        internal static IJtSuggestionCollectionSourceBuilder<TSuggestion> CreateJtSuggestionCollectionSource<TSuggestion>(JArray source)
         {
-            if (source is null)
-                return CreateEmpty<IJtSuggestionCollectionChild<T>>();
-            return new JtSuggestionCollectionInstanceBuilder<T>(source);
+            return new JtSuggestionCollectionSourceBuilder<TSuggestion>(source);
         }
-        internal static IJtCollectionBuilder<IJtSuggestionCollectionSourceChild<T>> CreateJtSuggestionCollectionSource<T>(JtSuggestionCollectionSource<T> parent, JArray? source)
+        internal static IJtSuggestionCollectionSourceBuilder<TSuggestion> CreateJtSuggestionCollectionSource<TSuggestion>(JtSuggestionCollection<TSuggestion> source)
         {
-            if (source is null)
-                return CreateEmpty<IJtSuggestionCollectionSourceChild<T>>();
-
-            return new JtSuggestionCollectionSourceBuilder<T>(parent, source);
-        }
-        internal static IJtCollectionBuilder<IJtSuggestionCollectionSourceChild<T>> CreateJtSuggestionCollectionSource<T>(IJtCustomSourceParent parent, JtSuggestionCollection<T>? source)
-        {
-            if (source is null)
-                return CreateEmpty<IJtSuggestionCollectionSourceChild<T>>();
-            return new JtSuggestionCollectionSourceInstanceBuilder<T>(parent, source);
+            return new JtSuggestionCollectionSourceInstanceBuilder<TSuggestion>(source);
         }
     }
 }

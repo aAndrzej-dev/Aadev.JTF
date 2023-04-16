@@ -1,22 +1,20 @@
 ﻿using System;
 
-namespace Aadev.JTF
+namespace Aadev.JTF.CustomSources
 {
-    public interface IJtSuggestion
+    public interface IJtSuggestionSource
     {
         Type SuggestionType { get; }
         string? DisplayName { get; set; }
         string? StringValue { get; }
-
-        bool IsReadOnly { get; }
 
         T GetValue<T>();
         void SetValue<T>(T value);
         object? GetValue();
         void SetValue(object? value);
     }
-    public interface IJtSuggestion<TSuggestion> : IJtSuggestion, IJtSuggestionCollectionChild<TSuggestion>
+    public interface IJtSuggestionSource<TSuggestion> : IJtSuggestionSource, IJtSuggestionCollectionSourceChild<TSuggestion>
     {
-        public TSuggestion Value { get; set; }
+        TSuggestion Value { get; set; }
     }
 }

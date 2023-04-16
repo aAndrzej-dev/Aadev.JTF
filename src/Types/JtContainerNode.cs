@@ -92,7 +92,7 @@ namespace Aadev.JTF.Types
         [Browsable(false)] public IJtStructureCollectionElement ChildrenCollection => Children;
     }
 
-    public enum JtContainerType 
+    public enum JtContainerType
     {
         Array,
         Block

@@ -15,4 +15,8 @@ namespace Aadev.JTF
         IJtSuggestionCollectionSource CreateSource(IJtCustomSourceParent parent);
         IEnumerable<IJtSuggestion> GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource);
     }
+    public interface IJtSuggestionCollection<TSuggestion> : IJtSuggestionCollection, IJtSuggestionCollectionChild<TSuggestion>, IList<IJtSuggestionCollectionChild<TSuggestion>>
+    {
+
+    }
 }

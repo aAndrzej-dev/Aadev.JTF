@@ -9,26 +9,30 @@ using System.Text;
 
 namespace Aadev.JTF.CustomSources
 {
-    public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>, ICustomSourceProvider
+    public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>, ICustomSourceProvider, IJtFile
     {
         private readonly List<CustomSourceDeclaration> list;
         private readonly JTemplate template;
-        private readonly string? filename;
+        private int version;
 
         public CustomSourceDeclaration this[int index] { get => ((IList<CustomSourceDeclaration>)list)[index]; set => ((IList<CustomSourceDeclaration>)list)[index] = value; }
 
-        public int Count => ((ICollection<CustomSourceDeclaration>)list).Count;
+        public int Count => list.Count;
 
-        public bool IsReadOnly => ((ICollection<CustomSourceDeclaration>)list).IsReadOnly;
+        public bool IsReadOnly => false;
 
+        public int Version { get => version; set => version = Math.Clamp(value, 0, JTemplate.JTF_VERSION); }
 
+        public JtFileType FileType => JtFileType.CustomValueDictionary;
+
+        public string Filename { get; }
 
         private CustomSourceDeclarationCollection(JTemplate template, string filename, string? workingDirectory, bool readOnly)
         {
             if (string.IsNullOrEmpty(filename))
                 throw new ArgumentException($"'{nameof(filename)}' cannot be null or empty.", nameof(filename));
             this.template = template ?? throw new ArgumentNullException(nameof(template));
-            this.filename = filename;
+            Filename = filename;
 
             if (workingDirectory is not null)
             {
@@ -52,6 +56,12 @@ namespace Aadev.JTF.CustomSources
 
             jr.Close();
 
+            FileType.ThrowIfInvalidType((string?)root["type"], this);
+            if (!int.TryParse((string?)root["version"], out version))
+            {
+                throw new JtfException($"Parameter 'version' in file `{filename}` must by integer type.", this);
+            }
+            JTemplate.ThrowIfNotSupportedVersion(version, this);
 
             foreach (JToken item in root["values"]!)
             {
@@ -84,13 +94,14 @@ namespace Aadev.JTF.CustomSources
         {
             list = new List<CustomSourceDeclaration>();
             this.template = template;
+            Filename = template.Filename;
         }
 
         internal void BuildJson(StringBuilder sb)
         {
-            if (filename is not null)
+            if (Filename is not null)
             {
-                sb.Append($"\"{Path.GetRelativePath(Path.GetDirectoryName(template.Filename)!, filename).Replace("\\", "/", StringComparison.Ordinal)}\"");
+                sb.Append($"\"{Path.GetRelativePath(Path.GetDirectoryName(template.Filename)!, Filename).Replace("\\", "/", StringComparison.Ordinal)}\"");
             }
             else
             {
@@ -115,16 +126,16 @@ namespace Aadev.JTF.CustomSources
         public static CustomSourceDeclarationCollection LoadFormFile(JTemplate template, string filename, string? workingDirectory, bool readOnly) => new CustomSourceDeclarationCollection(template, filename, workingDirectory, readOnly);
 
 
-        public void Add(CustomSourceDeclaration item) => ((ICollection<CustomSourceDeclaration>)list).Add(item);
-        public void Clear() => ((ICollection<CustomSourceDeclaration>)list).Clear();
-        public bool Contains(CustomSourceDeclaration item) => ((ICollection<CustomSourceDeclaration>)list).Contains(item);
-        public void CopyTo(CustomSourceDeclaration[] array, int arrayIndex) => ((ICollection<CustomSourceDeclaration>)list).CopyTo(array, arrayIndex);
-        public IEnumerator<CustomSourceDeclaration> GetEnumerator() => ((IEnumerable<CustomSourceDeclaration>)list).GetEnumerator();
-        public int IndexOf(CustomSourceDeclaration item) => ((IList<CustomSourceDeclaration>)list).IndexOf(item);
-        public void Insert(int index, CustomSourceDeclaration item) => ((IList<CustomSourceDeclaration>)list).Insert(index, item);
-        public bool Remove(CustomSourceDeclaration item) => ((ICollection<CustomSourceDeclaration>)list).Remove(item);
-        public void RemoveAt(int index) => ((IList<CustomSourceDeclaration>)list).RemoveAt(index);
-        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)list).GetEnumerator();
+        public void Add(CustomSourceDeclaration item) => list.Add(item);
+        public void Clear() => list.Clear();
+        public bool Contains(CustomSourceDeclaration item) => list.Contains(item);
+        public void CopyTo(CustomSourceDeclaration[] array, int arrayIndex) => list.CopyTo(array, arrayIndex);
+        public IEnumerator<CustomSourceDeclaration> GetEnumerator() => list.GetEnumerator();
+        public int IndexOf(CustomSourceDeclaration item) => list.IndexOf(item);
+        public void Insert(int index, CustomSourceDeclaration item) => list.Insert(index, item);
+        public bool Remove(CustomSourceDeclaration item) => list.Remove(item);
+        public void RemoveAt(int index) => list.RemoveAt(index);
+        IEnumerator IEnumerable.GetEnumerator() => list.GetEnumerator();
         public T? GetCustomSource<T>(JtSourceReference identifier) where T : CustomSource
         {
             if (identifier.Type is JtSourceReferenceType.External)

@@ -1,6 +1,5 @@
 ﻿using Aadev.JTF.CustomSources;
 using Newtonsoft.Json.Linq;
-using System;
 using System.ComponentModel;
 using System.Text;
 
@@ -10,6 +9,7 @@ namespace Aadev.JTF.Types
     {
         private const byte minValue = byte.MinValue;
         private const byte maxValue = byte.MaxValue;
+        private IJtSuggestionCollection? suggestions;
         private byte? @default;
         private byte? min;
         private byte? max;
@@ -25,7 +25,7 @@ namespace Aadev.JTF.Types
         [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public byte Max { get => max ?? Base?.Max ?? maxValue; set { max = value; min = min.Min(max); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(0)] public byte Default { get => @default ?? Base?.Default ?? 0; set => @default = value.Clamp(Min, Max); }
 
-        public override IJtSuggestionCollection Suggestions { get; }
+        public override IJtSuggestionCollection Suggestions => suggestions ??= JtSuggestionCollection<byte>.Create();
 
 
         public JtByteNode(IJtNodeParent parent) : base(parent)
@@ -33,7 +33,6 @@ namespace Aadev.JTF.Types
             Min = minValue;
             Max = maxValue;
             Default = 0;
-            Suggestions = JtSuggestionCollection<byte>.Create();
         }
         internal JtByteNode(IJtNodeParent parent, JObject source) : base(parent, source)
         {
@@ -41,12 +40,11 @@ namespace Aadev.JTF.Types
             Max = (byte)(source["max"] ?? maxValue);
             Default = (byte)(source["default"] ?? 0);
 
-
-            Suggestions = JtSuggestionCollection<byte>.Create(this, source["suggestions"]);
+            suggestions = JtSuggestionCollection<byte>.TryCreate(this, source["suggestions"]);
         }
         internal JtByteNode(IJtNodeParent parent, JtByteNodeSource source, JToken? @override) : base(parent, source, @override)
         {
-            Suggestions = source.Suggestions.CreateInstance();
+            suggestions = source.TryGetSuggestions()?.CreateInstance();
             if (@override is null)
                 return;
             min = (byte?)@override["min"];
@@ -91,5 +89,7 @@ namespace Aadev.JTF.Types
             }
             return val.ToString();
         }
+
+        public override IJtSuggestionCollection? TryGetSuggestions() => suggestions;
     }
 }

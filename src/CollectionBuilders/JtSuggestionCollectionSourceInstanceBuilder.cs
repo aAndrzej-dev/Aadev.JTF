@@ -3,25 +3,23 @@ using System.Collections.Generic;
 
 namespace Aadev.JTF.CollectionBuilders
 {
-    internal sealed class JtSuggestionCollectionSourceInstanceBuilder<T> : IJtCollectionBuilder<IJtSuggestionCollectionSourceChild<T>>
+    internal sealed class JtSuggestionCollectionSourceInstanceBuilder<TSuggestion> : IJtSuggestionCollectionSourceBuilder<TSuggestion>
     {
-        private readonly JtSuggestionCollection<T> source;
-        private readonly IJtCustomSourceParent parent;
-        public JtSuggestionCollectionSourceInstanceBuilder(IJtCustomSourceParent parent, JtSuggestionCollection<T> source)
+        private readonly JtSuggestionCollection<TSuggestion> source;
+        public JtSuggestionCollectionSourceInstanceBuilder(JtSuggestionCollection<TSuggestion> source)
         {
             this.source = source;
-            this.parent = parent;
         }
 
 
 
-        public List<IJtSuggestionCollectionSourceChild<T>> Build()
+        public List<IJtSuggestionCollectionSourceChild<TSuggestion>> Build(JtSuggestionCollectionSource<TSuggestion> owner)
         {
-            List<IJtSuggestionCollectionSourceChild<T>> list = new List<IJtSuggestionCollectionSourceChild<T>>(source.Count);
+            List<IJtSuggestionCollectionSourceChild<TSuggestion>> list = new List<IJtSuggestionCollectionSourceChild<TSuggestion>>(source.Count);
 
             for (int i = 0; i < source.Count; i++)
             {
-                list.Add(source[i].CreateSource(parent));
+                list.Add(source[i].CreateSource(owner));
             }
             return list;
         }

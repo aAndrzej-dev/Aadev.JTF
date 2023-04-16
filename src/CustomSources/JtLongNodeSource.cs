@@ -6,12 +6,13 @@ namespace Aadev.JTF.CustomSources
 {
     public sealed class JtLongNodeSource : JtValueNodeSource
     {
+        private IJtSuggestionCollectionSource? suggestions;
         public override JtNodeType Type => JtNodeType.Long;
 
         public long Max { get; set; }
         public long Min { get; set; }
         public long Default { get; set; }
-        public override IJtSuggestionCollectionSource Suggestions { get; }
+        public override IJtSuggestionCollectionSource Suggestions => suggestions ??= JtSuggestionCollectionSource<long>.Create(this);
 
         public override JTokenType JsonType => JTokenType.Integer;
 
@@ -19,28 +20,27 @@ namespace Aadev.JTF.CustomSources
         {
             Max = long.MaxValue;
             Min = long.MinValue;
-            Suggestions = JtSuggestionCollectionSource<long>.Create(this);
         }
         internal JtLongNodeSource(JtLongNode node) : base(node)
         {
             Max = node.Max;
             Min = node.Min;
             Default = node.Default;
-            Suggestions = node.Suggestions.CreateSource(this);
+            suggestions = node.TryGetSuggestions()?.CreateSource(this);
         }
         internal JtLongNodeSource(IJtNodeSourceParent parent, JObject source) : base(parent, source)
         {
-            Suggestions = JtSuggestionCollectionSource<long>.Create(this, source["suggestions"]);
             Min = (long)(source["min"] ?? long.MinValue);
             Max = (long)(source["max"] ?? long.MaxValue);
             Default = (long)(source["default"] ?? 0);
+            suggestions = JtSuggestionCollectionSource<long>.TryCreate(this, source["suggestions"]);
         }
         internal JtLongNodeSource(IJtNodeSourceParent parent, JtLongNodeSource @base, JObject? @override) : base(parent, @base, @override)
         {
             Min = (long)(@override?["minLength"] ?? @base.Min);
             Max = (long)(@override?["maxLength"] ?? @base.Max);
             Default = (long)(@override?["default"] ?? @base.Default);
-            Suggestions = @base.Suggestions;
+            suggestions = @base.Suggestions;
         }
 
 
@@ -66,5 +66,6 @@ namespace Aadev.JTF.CustomSources
         public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtLongNode(parent, this, @override);
         public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtLongNodeSource(parent, this, @override);
         public override JToken CreateDefaultValue() => new JValue(Default);
+        internal override IJtSuggestionCollectionSource? TryGetSuggestions() => suggestions;
     }
 }

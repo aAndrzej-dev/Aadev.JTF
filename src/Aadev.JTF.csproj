@@ -12,25 +12,20 @@
     <RepositoryUrl>https://github.com/aAndrzej-dev/Aadev.JTF.git</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
 	<RepositoryBranch>main</RepositoryBranch>
-	<RepositoryCommit></RepositoryCommit>
     <PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.JTF</PackageProjectUrl>
     <Description>Json Template Format</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>2.0.0-beta3</Version>
+    <Version>2.0.0-beta4</Version>
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
     <FileVersion>2.0.0.0</FileVersion>
 	<Deterministic>true</Deterministic>
 	<LangVersion>11.0</LangVersion>
     <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
-  <PackageReleaseNotes>Added AbstractStructure interfaces to make easier to edit JTF templates via external editor.
-  Added Design namespace with classes helping editing in external editors.
-  Changed JtEnumerable to CollectionBuilder.
-  CollectionBuilders are now removed form memory after building collection.
-  JtNodeCollection now doesn't use CollectionBuilder to reduce memory usage and increase performance.
-  Bug fixes and improvements.
-  
-  Known issues:
-  In some cases event manegers are not created and editor item use wrong event managers form thier parent.
+  <PackageReleaseNotes>Added JtSuggestionInstance to save memory when many JtValueNodes use the same source of suggestions.
+Added JtSuggestionsDisplayType to select if suggestions have to be displayed as dropdown or in window.
+JtSuggestionCollections are now not created if the all sources are empty to prevent creating empty collections.
+Fixed bug when event managers aren't created in some cases.
+Bug fixes and improvements.
   </PackageReleaseNotes>
   <AnalysisLevel>latest-all</AnalysisLevel>
 
@@ -39,6 +34,6 @@
 
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 </Project>

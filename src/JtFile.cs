@@ -7,7 +7,8 @@ namespace Aadev.JTF
     public interface IJtFile
     {
         int Version { get; }
-        JtFileType Type { get; }
+        JtFileType FileType { get; }
+        string Filename { get; }
     }
 
     public sealed class JtFileType
@@ -27,10 +28,10 @@ namespace Aadev.JTF
         [DebuggerStepThrough]
         public bool IsValidType([NotNullWhen(true)] string? type) => type is not null && Name.Equals(type, StringComparison.OrdinalIgnoreCase);
         [DebuggerStepThrough]
-        public void ThrowIfInvalidType([NotNull] string? type, string filename)
+        public void ThrowIfInvalidType([NotNull] string? type, IJtFile jtfFile)
         {
             if (!IsValidType(type))
-                throw new JtfException($"Invalid jtf file type: '{type}' (required: '{Name}') in {filename}; ");
+                throw new JtfException($"Invalid jtf file type: '{type}' (required: '{Name}') in {jtfFile?.Filename}; ", jtfFile);
         }
     }
 }

@@ -9,6 +9,7 @@ namespace Aadev.JTF.Types
     {
         private const double minValue = double.MinValue;
         private const double maxValue = double.MaxValue;
+        private IJtSuggestionCollection? suggestions;
         private double? @default;
         private double? min;
         private double? max;
@@ -23,7 +24,7 @@ namespace Aadev.JTF.Types
         [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public double Min { get => min ?? Base?.Min ?? minValue; set { min = value; max = max.Max(min); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public double Max { get => max ?? Base?.Max ?? maxValue; set { max = value; min = min.Min(max); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(0)] public double Default { get => @default ?? Base?.Default ?? 0; set => @default = value.Clamp(Min, Max); }
-        public override IJtSuggestionCollection Suggestions { get; }
+        public override IJtSuggestionCollection Suggestions => suggestions ??= JtSuggestionCollection<double>.Create();
 
 
         public JtDoubleNode(IJtNodeParent parent) : base(parent)
@@ -31,7 +32,6 @@ namespace Aadev.JTF.Types
             Min = minValue;
             Max = maxValue;
             Default = 0;
-            Suggestions = JtSuggestionCollection<double>.Create();
         }
         internal JtDoubleNode(IJtNodeParent parent, JObject source) : base(parent, source)
         {
@@ -39,13 +39,11 @@ namespace Aadev.JTF.Types
             Max = (double)(source["max"] ?? maxValue);
             Default = (double)(source["default"] ?? 0);
 
-
-
-            Suggestions = JtSuggestionCollection<double>.Create(this, source["suggestions"]);
+            suggestions = JtSuggestionCollection<double>.TryCreate(this, source["suggestions"]);
         }
         internal JtDoubleNode(IJtNodeParent parent, JtDoubleNodeSource source, JToken? @override) : base(parent, source, @override)
         {
-            Suggestions = source.Suggestions.CreateInstance();
+            suggestions = source.TryGetSuggestions()?.CreateInstance();
             if (@override is null)
                 return;
             min = (double?)@override["min"];
@@ -89,5 +87,7 @@ namespace Aadev.JTF.Types
         public override JToken CreateDefaultValue() => new JValue(Default);
         public override object GetDefaultValue() => Default;
         public override JtNodeSource CreateSource() => currentSource ??= new JtDoubleNodeSource(this);
+
+        public override IJtSuggestionCollection? TryGetSuggestions() => suggestions;
     }
 }

@@ -43,7 +43,7 @@ namespace Aadev.JTF.CustomSources
             else
                 ContainerJsonType = ContainerDisplayType;
 
-            if(ContainerJsonType == ContainerDisplayType && ContainerDisplayType == JtContainerType.Array && (bool?)source["makeObject"] is bool)
+            if (ContainerJsonType == ContainerDisplayType && ContainerDisplayType == JtContainerType.Array && (bool?)source["makeObject"] is bool)
             {
                 ContainerJsonType = JtContainerType.Block;
             }

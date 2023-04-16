@@ -19,7 +19,7 @@ namespace Aadev.JTF
         private JTemplate template;
         private IIdentifiersManager? identifiersManager;
         internal JtNodeSource? currentSource;
-        
+
         private string? name;
         private string? displayName;
         private JtIdentifier id;
@@ -101,7 +101,7 @@ namespace Aadev.JTF
                 }
                 else
                 {
-                    throw new JtfException($"Invalid identifier: {value}");
+                    throw new JtfException($"Invalid identifier: {value}", Template);
                 }
 
             }
@@ -131,6 +131,9 @@ namespace Aadev.JTF
         {
             this.parent = parent ?? throw new ArgumentNullException(nameof(parent));
             template = parent.Template;
+
+            if (source is null)
+                return;
 
             Name = (string?)source["name"];
             Description = (string?)source["description"];
@@ -180,7 +183,6 @@ namespace Aadev.JTF
             {
                 IdentifiersManager.RegisterNode(Id, this);
             }
-
         }
 
         public IEnumerable<JtNode> GetTwinFamily()
@@ -329,7 +331,7 @@ namespace Aadev.JTF
 
                 return JtNodeType.GetById(typeId).CreateInstance(parent, (JObject)source);
             }
-            string typeString = (string?)source["type"] ?? throw new JtfException($"Item '{source["name"]}' doesn't have type");
+            string typeString = (string?)source["type"] ?? throw new JtfException($"Item '{source["name"]}' doesn't have type", parent.Template);
 
             if (typeString.Equals("enum", StringComparison.OrdinalIgnoreCase))
             {

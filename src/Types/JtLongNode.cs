@@ -1,6 +1,5 @@
 ﻿using Aadev.JTF.CustomSources;
 using Newtonsoft.Json.Linq;
-using System;
 using System.ComponentModel;
 using System.Text;
 
@@ -10,6 +9,7 @@ namespace Aadev.JTF.Types
     {
         private const long minValue = long.MinValue;
         private const long maxValue = long.MaxValue;
+        private IJtSuggestionCollection? suggestions;
         private long? @default;
         private long? min;
         private long? max;
@@ -22,15 +22,13 @@ namespace Aadev.JTF.Types
         [DefaultValue(minValue), RefreshProperties(RefreshProperties.All)] public long Min { get => min ?? Base?.Min ?? minValue; set { min = value; max = max.Max(min); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(maxValue), RefreshProperties(RefreshProperties.All)] public long Max { get => max ?? Base?.Max ?? maxValue; set { max = value; min = min.Min(max); @default = @default.Clamp(Min, Max); } }
         [DefaultValue(0)] public long Default { get => @default ?? Base?.Default ?? 0; set => @default = value.Clamp(Min, Max); }
-        public override IJtSuggestionCollection Suggestions { get; }
+        public override IJtSuggestionCollection Suggestions => suggestions ??= JtSuggestionCollection<long>.Create();
 
         public JtLongNode(IJtNodeParent parent) : base(parent)
         {
             Min = minValue;
             Max = maxValue;
             Default = 0;
-
-            Suggestions = JtSuggestionCollection<long>.Create();
         }
         internal JtLongNode(IJtNodeParent parent, JObject source) : base(parent, source)
         {
@@ -38,11 +36,11 @@ namespace Aadev.JTF.Types
             Max = (long)(source["max"] ?? maxValue);
             Default = (long)(source["default"] ?? 0);
 
-            Suggestions = JtSuggestionCollection<long>.Create(this, source["suggestions"]);
+            suggestions = JtSuggestionCollection<long>.TryCreate(this, source["suggestions"]);
         }
         internal JtLongNode(IJtNodeParent parent, JtLongNodeSource source, JToken? @override) : base(parent, source, @override)
         {
-            Suggestions = source.Suggestions.CreateInstance();
+            suggestions = source.TryGetSuggestions()?.CreateInstance();
             if (@override is null)
                 return;
             min = (long?)@override["min"];
@@ -86,5 +84,7 @@ namespace Aadev.JTF.Types
         public override JToken CreateDefaultValue() => new JValue(Default);
         public override object GetDefaultValue() => Default;
         public override JtNodeSource CreateSource() => currentSource ??= new JtLongNodeSource(this);
+
+        public override IJtSuggestionCollection? TryGetSuggestions() => suggestions;
     }
 }

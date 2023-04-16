@@ -4,7 +4,7 @@ namespace Aadev.JTF
 {
     public interface ICustomSourceProvider
     {
-       T? GetCustomSource<T>(JtSourceReference identifier) where T : CustomSource;
-       CustomSource? GetCustomSource(JtSourceReference identifier);
+        T? GetCustomSource<T>(JtSourceReference identifier) where T : CustomSource;
+        CustomSource? GetCustomSource(JtSourceReference identifier);
     }
 }

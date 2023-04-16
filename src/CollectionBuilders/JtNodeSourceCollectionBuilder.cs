@@ -1,18 +1,16 @@
 ﻿using Aadev.JTF.CustomSources;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
-using System;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Aadev.JTF.CollectionBuilders
 {
     internal sealed class JtNodeSourceCollectionBuilder : IJtCollectionBuilder<IJtNodeCollectionSourceChild>
     {
-        private readonly IJtNodeSourceParent parent;
+        private readonly JtNodeCollectionSource owner;
         private readonly JArray source;
-        public JtNodeSourceCollectionBuilder(IJtNodeSourceParent parent, JArray source)
+        public JtNodeSourceCollectionBuilder(JtNodeCollectionSource owner, JArray source)
         {
-            this.parent = parent;
+            this.owner = owner;
             this.source = source;
         }
 
@@ -22,7 +20,7 @@ namespace Aadev.JTF.CollectionBuilders
 
             for (int i = 0; i < source.Count; i++)
             {
-                list.Add(CreateChildItem(parent, source[i]));
+                list.Add(CreateChildItem(owner, source[i]));
             }
             return list;
         }

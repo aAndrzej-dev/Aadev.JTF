@@ -34,7 +34,7 @@ namespace Aadev.JTF.CustomSources
         JtNodeSource? IJtNodeSourceParent.Owner => null;
 
         [MemberNotNull(nameof(identifiersManager))]
-        public IIdentifiersManager IdentifiersManager => identifiersManager ??= new IdentifiersManager(null); 
+        public IIdentifiersManager IdentifiersManager => identifiersManager ??= new IdentifiersManager(null);
         public IJtStructureCollectionElement CreateCollectionElement(IJtStructureParentElement parent) => JtNodeCollectionSource.Create((IJtNodeSourceParent)parent);
     }
 }

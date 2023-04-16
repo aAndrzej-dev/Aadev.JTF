@@ -8,16 +8,16 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Aadev.JTF.CustomSources
 {
     [DebuggerDisplay("ID: {Id}; Global ID:{GlobalGuid}")]
-    public sealed class CustomSourceDeclaration : IJtCustomSourceDeclaration
+    public sealed class CustomSourceDeclaration : IJtCustomSourceDeclaration, IJtFile
     {
         private static readonly ConcurrentDictionary<Guid, CustomSourceDeclaration> globalDeclarations = new ConcurrentDictionary<Guid, CustomSourceDeclaration>();
         private IdentifiersManager? identifiersManager;
+        private int version;
 
         public JtIdentifier Id { get; set; }
         public Guid GlobalGuid { get; set; }
@@ -42,83 +42,102 @@ namespace Aadev.JTF.CustomSources
         [Browsable(false)] public string Name => $"@{Id}";
 
         JtNodeSource? IJtNodeSourceParent.Owner => null;
+
+        public int Version { get => version; set => version = Math.Clamp(value, 0, JTemplate.JTF_VERSION); }
+
+        public JtFileType FileType => JtFileType.CustomSource;
+
         public IJtStructureCollectionElement CreateCollectionElement(IJtStructureParentElement parent) => JtNodeCollectionSource.Create((IJtNodeSourceParent)parent);
-        private CustomSourceDeclaration(JObject obj, string filename, bool readOnly, ICustomSourceProvider sourceProvider)
+        private CustomSourceDeclaration(JObject root, string filename, bool readOnly, ICustomSourceProvider sourceProvider)
         {
-            Id = (string)obj["id"]!;
+            Id = (string)root["id"]!;
             Filename = filename;
             SourceProvider = sourceProvider;
-            if (obj["globalId"] is not null)
+            if (root["globalId"] is not null)
             {
                 IsGlobal = true;
-                GlobalGuid = Guid.Parse((string)obj["globalId"]!);
+                GlobalGuid = Guid.Parse((string)root["globalId"]!);
             }
 
-            string valueType = ((string)obj["valueType"])!.ToLowerInvariant();
+            string? valueType = (string?)root["valueType"];
 
-            switch (valueType)
+
+
+            FileType.ThrowIfInvalidType((string?)root["type"], this);
+            if (!int.TryParse((string?)root["version"], out version))
             {
-                case "node":
-                    Type = CustomSourceType.Node;
-                    Value = JtNodeSource.Create(this, obj["content"]!);
-                    break;
-                case "nodecollection":
-                    Type = CustomSourceType.NodeCollection;
-                    Value = JtNodeCollectionSource.Create(this, obj["content"]);
-                    break;
-                case "suggestioncollection":
-                {
-                    Type = CustomSourceType.SuggestionCollection;
-                    if (obj["content"] is not JArray)
-                        throw new JtfException("Content is null");
-                    string? suggestionType = (string?)obj["suggestionType"] ?? "string";
-
-                    switch (suggestionType)
-                    {
-                        case "byte":
-                        {
-                            Value = JtSuggestionCollectionSource<byte>.Create(this, obj["content"]);
-                            break;
-                        }
-                        case "short":
-                        {
-                            Value = JtSuggestionCollectionSource<short>.Create(this, obj["content"]);
-                            break;
-                        }
-                        case "int":
-                        {
-                            Value = JtSuggestionCollectionSource<int>.Create(this, obj["content"]);
-                            break;
-                        }
-                        case "long":
-                        {
-                            Value = JtSuggestionCollectionSource<long>.Create(this, obj["content"]);
-                            break;
-                        }
-                        case "float":
-                        {
-                            Value = JtSuggestionCollectionSource<float>.Create(this, obj["content"]);
-                            break;
-                        }
-                        case "double":
-                        {
-                            Value = JtSuggestionCollectionSource<double>.Create(this, obj["content"]);
-                            break;
-                        }
-                        case "string":
-                        {
-                            Value = JtSuggestionCollectionSource<string>.Create(this, obj["content"]);
-                            break;
-                        }
-                        default:
-                            throw new JtfException($"Invalid suggestion type: {suggestionType}");
-                    }
-                }
-
-                break;
-                default:
-                    throw new JtfException($"Invalid value type: {valueType}");
+                throw new JtfException($"Parameter 'version' in file `{filename}` must by integer type.", this);
             }
+            JTemplate.ThrowIfNotSupportedVersion(version, this);
+
+            if (valueType is null)
+            {
+                throw new JtfException($"Value type is not specified in file: {filename}", this);
+            }
+            else if (valueType.Length == 4 && valueType.Equals("node", StringComparison.OrdinalIgnoreCase))
+            {
+                Type = CustomSourceType.Node;
+                Value = JtNodeSource.Create(this, root["content"]!);
+            }
+            else if (valueType.Length == 14 && valueType.Equals("nodecollection", StringComparison.OrdinalIgnoreCase))
+            {
+                Type = CustomSourceType.NodeCollection;
+                Value = JtNodeCollectionSource.Create(this, root["content"]);
+            }
+            else if (valueType.Length == 20 && valueType.Equals("suggestioncollection", StringComparison.OrdinalIgnoreCase))
+            {
+                Type = CustomSourceType.SuggestionCollection;
+                if (root["content"] is not JArray)
+                    throw new JtfException("Content is null", this);
+                string? suggestionType = (string?)root["suggestionType"] ?? "string";
+
+                switch (suggestionType)
+                {
+                    case "byte":
+                    {
+                        Value = JtSuggestionCollectionSource<byte>.Create(this, root["content"]);
+                        break;
+                    }
+                    case "short":
+                    {
+                        Value = JtSuggestionCollectionSource<short>.Create(this, root["content"]);
+                        break;
+                    }
+                    case "int":
+                    {
+                        Value = JtSuggestionCollectionSource<int>.Create(this, root["content"]);
+                        break;
+                    }
+                    case "long":
+                    {
+                        Value = JtSuggestionCollectionSource<long>.Create(this, root["content"]);
+                        break;
+                    }
+                    case "float":
+                    {
+                        Value = JtSuggestionCollectionSource<float>.Create(this, root["content"]);
+                        break;
+                    }
+                    case "double":
+                    {
+                        Value = JtSuggestionCollectionSource<double>.Create(this, root["content"]);
+                        break;
+                    }
+                    case "string":
+                    {
+                        Value = JtSuggestionCollectionSource<string>.Create(this, root["content"]);
+                        break;
+                    }
+                    default:
+                        throw new JtfException($"Invalid suggestion type: {suggestionType}", this);
+                }
+            }
+            else
+            {
+                throw new JtfException($"Invalid value type: \"{valueType}\" in file {filename}", this);
+            }
+
+
             ReadOnly = readOnly;
         }
 
@@ -165,7 +184,6 @@ namespace Aadev.JTF.CustomSources
 
             jr2.Close();
 
-            JtFileType.CustomSource.ThrowIfInvalidType((string?)obj["type"], filename);
 
             return new CustomSourceDeclaration(obj, filename, readOnly, sourceProvider);
         }
@@ -242,7 +260,15 @@ namespace Aadev.JTF.CustomSources
         }
 
         public override string ToString() => Name;
-        public IJtStructureNodeElement CreateNodeElement(IJtStructureParentElement parent, JtNodeType type) => JtNodeSource.Create((IJtNodeSourceParent)parent, type);
+        public IJtStructureNodeElement CreateNodeElement(IJtStructureParentElement parent, JtNodeType type)
+        {
+            if (parent is null)
+                throw new ArgumentNullException(nameof(parent));
+            if (type is null)
+                throw new ArgumentNullException(nameof(type));
+            return JtNodeSource.Create((IJtNodeSourceParent)parent, type);
+        }
+
         public IEnumerable<IJtStructureInnerElement> GetStructureChildren()
         {
             yield return (IJtStructureInnerElement)Value;
