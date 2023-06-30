@@ -6,7 +6,7 @@ Advanced json schematic format
 
 ## Features
 - Support for [arrays](https://github.com/aAndrzej-dev/Aadev.JTF/blob/main/src/Types/JtArray.cs), [integers](https://github.com/aAndrzej-dev/Aadev.JTF/blob/main/src/Types/JtInt.cs), [floating point](https://github.com/aAndrzej-dev/Aadev.JTF/blob/main/src/Types/JtFloat.cs), [json blocks](https://github.com/aAndrzej-dev/Aadev.JTF/blob/main/src/Types/JtBlock.cs) and [strings](https://github.com/aAndrzej-dev/Aadev.JTF/blob/main/src/Types/JtString.cs)
-- External sources for array's prefabs, block's children and enum's values
+- External sources for array's prefabs, block's children and suggestions' values
 - Custom display name and description of nodes
 - Conditional nodes
 - Multiple array prefabs

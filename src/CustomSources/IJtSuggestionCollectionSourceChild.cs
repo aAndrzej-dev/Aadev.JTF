@@ -1,10 +1,9 @@
-﻿using System.Text;
+﻿using Aadev.JTF.Common;
+using Aadev.JTF.Types;
 
-namespace Aadev.JTF.CustomSources
+namespace Aadev.JTF.CustomSources;
+
+public interface IJtSuggestionCollectionSourceChild<TSuggestion> : IJtCommonSuggestionCollectionChild
 {
-    public interface IJtSuggestionCollectionSourceChild<TSuggestion>
-    {
-        internal void BuildJson(StringBuilder sb);
-        IJtSuggestionCollectionChild<TSuggestion> CreateInstance();
-    }
+    IJtSuggestionCollectionChild<TSuggestion> CreateInstance(JtValueNode owner);
 }

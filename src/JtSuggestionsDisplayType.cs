@@ -1,9 +1,8 @@
-﻿namespace Aadev.JTF
+﻿namespace Aadev.JTF;
+
+public enum JtSuggestionsDisplayType
 {
-    public enum JtSuggestionsDisplayType
-    {
-        Auto,
-        DropDown,
-        Window
-    }
+    Auto,
+    DropDown,
+    Window
 }

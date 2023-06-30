@@ -1,8 +1,6 @@
-﻿namespace Aadev.JTF.CustomSources
+﻿namespace Aadev.JTF.CustomSources;
+
+public interface IJtCustomSourceParent : IHaveCustomSourceProvider
 {
-    public interface IJtCustomSourceParent
-    {
-        IJtCustomSourceDeclaration Declaration { get; }
-        ICustomSourceProvider SourceProvider { get; }
-    }
+    IJtCustomSourceDeclaration Declaration { get; }
 }

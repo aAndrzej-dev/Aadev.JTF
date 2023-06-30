@@ -1,10 +1,9 @@
-﻿using Aadev.JTF.CustomSources;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Aadev.JTF.CustomSources;
 
-namespace Aadev.JTF.CollectionBuilders
+namespace Aadev.JTF.CollectionBuilders;
+
+internal interface IJtSuggestionCollectionSourceBuilder<TSuggestion>
 {
-    internal interface IJtSuggestionCollectionSourceBuilder<TSuggestion>
-    {
-        List<IJtSuggestionCollectionSourceChild<TSuggestion>> Build(JtSuggestionCollectionSource<TSuggestion> owner);
-    }
+    List<IJtSuggestionCollectionSourceChild<TSuggestion>> Build(JtSuggestionCollectionSource<TSuggestion> owner);
 }

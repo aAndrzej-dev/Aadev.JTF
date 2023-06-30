@@ -1,26 +1,26 @@
-﻿using Aadev.JTF.CustomSources;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Aadev.JTF.CustomSources;
 
-namespace Aadev.JTF.CollectionBuilders
+namespace Aadev.JTF.CollectionBuilders;
+
+internal sealed class JtNodeSourceCopyBuilder : IJtNodeCollectionSourceBuilder
 {
-    internal sealed class JtNodeSourceCopyBuilder : IJtCollectionBuilder<IJtNodeCollectionSourceChild>
+    private readonly JtNodeCollectionSource source;
+
+    public JtNodeSourceCopyBuilder(JtNodeCollectionSource source)
     {
-        private readonly JtNodeCollectionSource source;
+        this.source = source;
+    }
 
-        public JtNodeSourceCopyBuilder(JtNodeCollectionSource source)
+    public List<IJtSourceStructureElement> Build(JtNodeCollectionSource @this)
+    {
+        List<IJtSourceStructureElement> list = new List<IJtSourceStructureElement>(source.Children.Count);
+
+        for (int i = 0; i < source.Children.Count; i++)
         {
-            this.source = source;
+            list.Add(source.Children[i]);
         }
 
-        public List<IJtNodeCollectionSourceChild> Build()
-        {
-            List<IJtNodeCollectionSourceChild> list = new List<IJtNodeCollectionSourceChild>(source.Children.Count);
-
-            for (int i = 0; i < source.Children.Count; i++)
-            {
-                list.Add(source.Children[i]);
-            }
-            return list;
-        }
+        return list;
     }
 }

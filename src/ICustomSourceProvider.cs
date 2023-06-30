@@ -1,10 +1,11 @@
-﻿using Aadev.JTF.CustomSources;
+﻿using System.Collections.Generic;
+using Aadev.JTF.CustomSources;
 
-namespace Aadev.JTF
+namespace Aadev.JTF;
+
+public interface ICustomSourceProvider
 {
-    public interface ICustomSourceProvider
-    {
-        T? GetCustomSource<T>(JtSourceReference identifier) where T : CustomSource;
-        CustomSource? GetCustomSource(JtSourceReference identifier);
-    }
+    IEnumerable<IJtCustomSourceDeclaration> EnumerateCustomSources();
+    T? GetCustomSource<T>(JtSourceReference identifier) where T : CustomSource;
+    CustomSource? GetCustomSource(JtSourceReference identifier);
 }

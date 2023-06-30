@@ -1,12 +1,10 @@
-﻿using Aadev.JTF.AbstractStructure;
-using System.Text;
+﻿using Aadev.JTF.Common;
 
-namespace Aadev.JTF.CustomSources
+namespace Aadev.JTF.CustomSources;
+
+public interface IJtCustomSourceDeclaration : IJtNodeSourceParent, IJtCommonRoot
 {
-    public interface IJtCustomSourceDeclaration : IJtNodeSourceParent, IJtStructureTemplateElement
-    {
-        bool IsDeclaringSource { get; }
-
-        internal void BuildJson(StringBuilder sb);
-    }
+    bool IsDeclaringSource { get; }
+    CustomSource? Value { get; }
+    CustomSourceType Type { get; }
 }

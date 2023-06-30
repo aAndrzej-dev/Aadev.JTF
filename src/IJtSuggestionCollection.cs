@@ -1,22 +1,19 @@
-﻿using Aadev.JTF.CustomSources;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using Aadev.JTF.Common;
+using Aadev.JTF.CustomSources;
+using Aadev.JTF.Types;
 
-namespace Aadev.JTF
+namespace Aadev.JTF;
+
+
+public interface IJtSuggestionCollection : IJtCommonSuggestionCollection
 {
-    public interface IJtSuggestionCollection
-    {
-        Type SuggestionType { get; }
-        bool IsEmpty { get; }
+    JtValueNode Owner { get; }
 
-
-        internal void BuildJson(StringBuilder sb);
-        IJtSuggestionCollectionSource CreateSource(IJtCustomSourceParent parent);
-        IEnumerable<IJtSuggestion> GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource);
-    }
-    public interface IJtSuggestionCollection<TSuggestion> : IJtSuggestionCollection, IJtSuggestionCollectionChild<TSuggestion>, IList<IJtSuggestionCollectionChild<TSuggestion>>
-    {
-
-    }
+    IJtSuggestionCollectionSource CreateSource(IJtCustomSourceParent parent);
+    IEnumerable<IJtSuggestion> GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource);
+}
+public interface IJtSuggestionCollection<TSuggestion> : IJtSuggestionCollection, IJtSuggestionCollectionChild<TSuggestion>, IList<IJtSuggestionCollectionChild<TSuggestion>>
+{
 }

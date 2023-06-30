@@ -1,22 +1,11 @@
-﻿using System;
+﻿using Aadev.JTF.Common;
 
-namespace Aadev.JTF
+namespace Aadev.JTF;
+
+public interface IJtSuggestion : IJtCommonSuggestion
 {
-    public interface IJtSuggestion
-    {
-        Type SuggestionType { get; }
-        string? DisplayName { get; set; }
-        string? StringValue { get; }
-
-        bool IsReadOnly { get; }
-
-        T GetValue<T>();
-        void SetValue<T>(T value);
-        object? GetValue();
-        void SetValue(object? value);
-    }
-    public interface IJtSuggestion<TSuggestion> : IJtSuggestion, IJtSuggestionCollectionChild<TSuggestion>
-    {
-        public TSuggestion Value { get; set; }
-    }
+}
+public interface IJtSuggestion<TSuggestion> : IJtSuggestion, IJtSuggestionCollectionChild<TSuggestion>
+{
+    public TSuggestion Value { get; set; }
 }

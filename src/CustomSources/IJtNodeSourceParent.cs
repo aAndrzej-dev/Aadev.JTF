@@ -1,7 +1,8 @@
-﻿namespace Aadev.JTF.CustomSources
+﻿using Aadev.JTF.Common;
+
+namespace Aadev.JTF.CustomSources;
+
+public interface IJtNodeSourceParent : IJtCustomSourceParent, IJtCommonParent
 {
-    public interface IJtNodeSourceParent : IJtCustomSourceParent
-    {
-        JtNodeSource? Owner { get; }
-    }
+    JtNodeSource? Owner { get; }
 }

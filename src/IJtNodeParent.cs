@@ -1,14 +1,13 @@
-﻿using Aadev.JTF.Types;
+﻿using Aadev.JTF.Common;
+using Aadev.JTF.Types;
 
-namespace Aadev.JTF
+namespace Aadev.JTF;
+
+public interface IJtNodeParent : IJtCommonParent
 {
-    public interface IJtNodeParent
-    {
-        JtContainerNode? Owner { get; }
-        JTemplate Template { get; }
-        bool HasExternalChildren { get; }
-        IIdentifiersManager IdentifiersManager { get; }
-        ICustomSourceProvider SourceProvider { get; }
-        IIdentifiersManager GetIdentifiersManagerForChild();
-    }
+    JtContainerNode? Owner { get; }
+    JtNodeCollection OwnersMainCollection { get; }
+    JTemplate Template { get; }
+    IdentifiersManager IdentifiersManager { get; }
+    IdentifiersManager GetIdentifiersManagerForChild();
 }

@@ -1,14 +1,14 @@
-﻿using System;
-using System.Text;
+﻿using System.Collections.Generic;
+using Aadev.JTF.Common;
+using Aadev.JTF.Types;
 
-namespace Aadev.JTF.CustomSources
+namespace Aadev.JTF.CustomSources;
+
+public interface IJtSuggestionCollectionSource : IJtCommonSuggestionCollection, ICustomSource
 {
-    public interface IJtSuggestionCollectionSource
-    {
-        bool IsSavable { get; }
-        Type SuggestionType { get; }
+    IJtSuggestionCollection CreateInstance(JtValueNode owner);
+}
+public interface IJtSuggestionCollectionSource<TSuggestion> : IJtSuggestionCollectionSource, IJtSuggestionCollectionSourceChild<TSuggestion>, IList<IJtSuggestionCollectionSourceChild<TSuggestion>>
+{
 
-        IJtSuggestionCollection CreateInstance();
-        internal void BuildJson(StringBuilder sb);
-    }
 }

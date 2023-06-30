@@ -1,9 +1,8 @@
-﻿namespace Aadev.JTF.CustomSources
+﻿namespace Aadev.JTF.CustomSources;
+
+public enum CustomSourceType
 {
-    public enum CustomSourceType
-    {
-        Node,
-        NodeCollection,
-        SuggestionCollection
-    }
+    Node,
+    NodeCollection,
+    SuggestionCollection
 }
