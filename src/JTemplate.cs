@@ -3,18 +3,17 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using Aadev.JTF.Common;
 using Aadev.JTF.CustomSources;
 using Aadev.JTF.CustomSources.Declarations;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF;
 
-public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSourceProvider
+public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSourceProvider, IJsonBuildable
 {
     private string name;
     private int version;
@@ -27,7 +26,7 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
         LineInfoHandling = LineInfoHandling.Ignore
     };
 
-    internal static readonly Regex identifierRegex = new Regex("^[a-z]+[a-z0-9_]*$", RegexOptions.Compiled);
+
     internal static void ThrowIfNotSupportedVersion(int version, IJtFile jtFile)
     {
         if (version > JTF_VERSION)
@@ -58,7 +57,7 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
     /// <summary>
     /// Version of template
     /// </summary>
-    [Category("General")] public int Version { get => version; set { ThrowIfReadOnly(); version = Math.Clamp(value, 0, JTemplate.JTF_VERSION); } }
+    [Category("General")] public int Version { get => version; set { ThrowIfReadOnly(); version = MathExtensions.Clamp(value, 0, JTemplate.JTF_VERSION); } }
     /// <summary>
     /// Description of template
     /// </summary>
@@ -75,7 +74,7 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
     public JtFileType FileType => JtFileType.Template;
 
 
-    [Browsable(false)] public CustomSourceDeclarationCollection CustomSources { get; set; }
+    [Browsable(false)] public CustomSourceDeclarationCollection? CustomSources { get; set; }
 
     JtContainerNode? IJtNodeParent.Owner => null;
 
@@ -129,13 +128,11 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
 
     public string GetJson()
     {
-        StringBuilder sb = new StringBuilder();
-        BuildJson(sb);
-        return sb.ToString();
+        JsonBuilder jb = new JsonBuilder();
+        BuildJson(jb);
+        return jb.ToString();
 
     }
-
-
     /// <summary>
     /// 
     /// </summary>
@@ -191,6 +188,7 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
             throw new JtfException($"Parameter 'version' in file `{filename}` must by integer type.", this);
         }
 
+
         ThrowIfNotSupportedVersion(version, this);
 
         string? customSourcesDictionaryFile = (string?)root["customSources"] ?? (string?)root["valuesDictionaryFile"];
@@ -201,10 +199,7 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
             string? absoluteTypeFilename = Path.GetFullPath(customSourcesDictionaryFile, Path.GetDirectoryName(Filename)!);
             CustomSources = CustomSourceDeclarationCollection.LoadFormFile(this, absoluteTypeFilename, workingDirectory, true);
         }
-        else
-        {
-            CustomSources = CustomSourceDeclarationCollection.CreateEmpty(this);
-        }
+
 
 
         if (root["root"] is JToken rootToken)
@@ -229,7 +224,7 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
             JtSourceReferenceType.None => null,
             JtSourceReferenceType.Dynamic => null,
             JtSourceReferenceType.Direct => IdentifiersManager.GetNodeById(identifier.Identifier)?.CreateSource() is T value ? value : null,
-            _ => CustomSources.GetCustomSource<T>(identifier),
+            _ => CustomSources?.GetCustomSource<T>(identifier),
         };
     }
 
@@ -241,54 +236,51 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
             JtSourceReferenceType.None => null,
             JtSourceReferenceType.Dynamic => null,
             JtSourceReferenceType.Direct => IdentifiersManager.GetNodeById(identifier.Identifier)?.CreateSource(),
-            _ => CustomSources.GetCustomSource(identifier),
+            _ => CustomSources?.GetCustomSource(identifier),
         };
     }
 
     public IdentifiersManager GetIdentifiersManagerForChild() => IdentifiersManager;
-    internal void BuildJson(StringBuilder sb)
+    internal void BuildJson(JsonBuilder jb)
     {
-        sb.Append('{');
-        sb.Append($"\"name\": \"{Name}\"");
-        sb.Append($", \"type\": \"main\"");
-        sb.Append($", \"version\": {Version}");
+        jb.StartBlock();
+        jb.AddProperty("name", Name);
+        jb.AddProperty("type", "main");
+        jb.AddProperty("version", Version);
 
         if (Description is not null)
-            sb.Append($", \"description\": \"{Description}\"");
-        if (CustomSources.Count > 0)
+            jb.AddProperty("description", Description);
+        if (CustomSources is not null)
         {
-            sb.Append(", \"customSources\": ");
-            CustomSources.BuildJson(sb);
+            jb.AddProperty("customSources", CustomSources);
         }
 
         if (Roots.Count == 1)
         {
-            sb.Append(", \"root\": ");
-            Roots[0].BuildJson(sb);
+            jb.AddProperty("root", Roots[0]);
         }
         else if (Roots.Count > 1)
         {
-            sb.Append(",\"roots\": [");
+            jb.AddProperty("roots");
+            jb.StartArray();
             for (int i = 0; i < Roots.Count; i++)
             {
-                if (i > 0)
-                    sb.Append(',');
-                Roots[i].BuildJson(sb);
+                jb.AddValue(Roots[i]);
             }
 
-            sb.Append(']');
+            jb.EndArray();
         }
 
-        sb.Append('}');
+        jb.EndBlock();
     }
-
-    void IJtJsonBuildable.BuildJson(StringBuilder sb) => BuildJson(sb);
     IEnumerable<IJtCommonContentElement> IJtCommonParent.EnumerateChildrenElements() => ((IJtCommonParent)Roots).EnumerateChildrenElements();
     IJtCommonNodeCollection IJtCommonParent.GetChildrenElementsCollection() => Roots;
     IJtCommonNode IJtCommonRoot.CreateNodeElement(IJtCommonParent parent, JtNodeType type) => type.CreateEmptyInstance((IJtNodeParent)parent);
     IJtCommonNodeCollection IJtCommonRoot.CreateCollectionElement(IJtCommonParent parent) => JtNodeCollection.Create((IJtNodeParent)parent);
     public IEnumerable<IJtCustomSourceDeclaration> EnumerateCustomSources()
     {
-        return Enumerable.Concat(CustomSources.EnumerateCustomSources(), IdentifiersManager.EnumerateRegisteredNodes().Select(x => x.CreateSource().Declaration));
+        return Enumerable.Concat(CustomSources?.EnumerateCustomSources() ?? Enumerable.Empty<IJtCustomSourceDeclaration>(), IdentifiersManager.EnumerateRegisteredNodes().Select(x => x.CreateSource().Declaration));
     }
+
+    void IJsonBuildable.BuildJson(JsonBuilder jsonBuilder) => throw new NotImplementedException();
 }

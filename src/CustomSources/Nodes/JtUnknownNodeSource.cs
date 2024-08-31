@@ -1,5 +1,5 @@
-﻿using System.Text;
-using Aadev.JTF.Types;
+﻿using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources.Nodes;
@@ -31,10 +31,10 @@ public sealed class JtUnknownNodeSource : JtNodeSource
 #endif
     }
 
-    internal override void BuildJsonDeclaration(StringBuilder sb)
+    internal override void BuildJsonDeclaration(JsonBuilder jb)
     {
-        BuildCommonJson(sb);
-        sb.Append('}');
+        BuildCommonJson(jb);
+        jb.EndBlock();
 
     }
     public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtUnknownNode(parent, this, @override);

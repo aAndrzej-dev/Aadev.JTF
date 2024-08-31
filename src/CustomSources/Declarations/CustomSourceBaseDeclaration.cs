@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using Aadev.JTF.CollectionBuilders;
 using Aadev.JTF.Common;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources.Declarations;
@@ -49,7 +49,6 @@ public sealed class CustomSourceBaseDeclaration : IJtCustomSourceDeclaration
         }
     }
 
-    void IJtJsonBuildable.BuildJson(StringBuilder sb) => ((CustomSource)Value).BuildJsonDeclaration(sb);
 
     public override string ToString() => Name;
     IEnumerable<IJtCommonContentElement> IJtCommonParent.EnumerateChildrenElements()
@@ -59,4 +58,5 @@ public sealed class CustomSourceBaseDeclaration : IJtCustomSourceDeclaration
     IJtCommonNodeCollection IJtCommonParent.GetChildrenElementsCollection() => throw new NotSupportedException();
     IJtCommonNode IJtCommonRoot.CreateNodeElement(IJtCommonParent parent, JtNodeType type) => type.CreateEmptySource((IJtNodeSourceParent)parent);
     IJtCommonNodeCollection IJtCommonRoot.CreateCollectionElement(IJtCommonParent parent) => JtNodeCollectionSource.Create((IJtNodeSourceParent)parent);
+    void IJsonBuildable.BuildJson(JsonBuilder jb) => ((CustomSource)Value).BuildJsonDeclaration(jb);
 }

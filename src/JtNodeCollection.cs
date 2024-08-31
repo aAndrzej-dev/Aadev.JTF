@@ -6,18 +6,18 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using Aadev.JTF.Common;
 using Aadev.JTF.CustomSources;
 using Aadev.JTF.CustomSources.Declarations;
 using Aadev.JTF.CustomSources.Nodes;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF;
 
 [DebuggerDisplay("JtNodeCollection in {Owner.Name}, is main: {IsMainCollection}")]
-public sealed class JtNodeCollection : IJtInstanceStructureElement, IJtNodeParent, IList<IJtInstanceStructureElement>, IJtCommonNodeCollection
+public sealed class JtNodeCollection : IJtInstanceStructureElement, IJtNodeParent, IList<IJtInstanceStructureElement>, IJtCommonNodeCollection, IJsonBuildable
 {
     private readonly IJtNodeParent parent;
     private JtNodeCollectionSource? @base;
@@ -170,7 +170,7 @@ public sealed class JtNodeCollection : IJtInstanceStructureElement, IJtNodeParen
     [Browsable(false)] public int Count => Children.Count;
     [Browsable(false)] public bool IsReadOnly => Template.IsReadOnly;
     [Browsable(false)] public ICustomSourceProvider SourceProvider => Parent.SourceProvider;
-    [Browsable(false)] public List<JtNode>? Nodes => IsMainCollection ? nodes ??= Children.SelectMany(x => x.GetNodes()).ToList() : null;
+    [Browsable(false)] public List<JtNode> Nodes => IsMainCollection ? nodes ??= Children.SelectMany(x => x.GetNodes()).ToList() : throw new Exception("Nodes are only aviable in main collection");
     [MemberNotNullWhen(true, nameof(Base))]
     [Browsable(false)] public bool IsExternal => @base?.IsExternal is true;
 
@@ -259,8 +259,7 @@ public sealed class JtNodeCollection : IJtInstanceStructureElement, IJtNodeParen
 
         return new JtNodeCollection(parent);
     }
-
-    internal void BuildJson(StringBuilder sb)
+    public void BuildJson(JsonBuilder jb)
     {
         if (@base is not null)
         {
@@ -272,87 +271,64 @@ public sealed class JtNodeCollection : IJtInstanceStructureElement, IJtNodeParen
 
             if (!isAnyChildOverridden)
             {
-                @base.BuildJson(sb);
+                jb.AddValue(@base);
                 return;
             }
 
 
-            sb.Append('{');
+            jb.StartBlock();
             if (@base.IsDeclared)
             {
-                sb.Append("\"base\": ");
-                @base.BuildJson(sb);
+                jb.AddProperty("base", @base);
             }
 
-            if (isAnyChildOverridden)
-            {
-                sb.Append(", \"_\": [");
-#if NET5_0_OR_GREATER
-                Span<IJtInstanceStructureElement> listSpan = CollectionsMarshal.AsSpan(Children);
-                for (int i = 0; i < listSpan.Length; i++)
-                {
-                    if (i > 0)
-                        sb.Append(',');
-                    IJtInstanceStructureElement item = listSpan[i];
-                    if (item.IsOverridden())
-                        item.BuildJson(sb);
-                    else
-                    {
-                        sb.Append("{}");
-                    }
-                }
-#else
-                for (int i = 0; i < Children.Count; i++)
-                {
-                    if (i > 0)
-                        sb.Append(',');
-                    IJtInstanceStructureElement item = Children[i];
-                    if (item.IsOverridden())
-                        item.BuildJson(sb);
-                    else
-                    {
-                        sb.Append("{}");
-                    }
-                }
-#endif
-                sb.Append(']');
-            }
-
-            sb.Append('}');
-        }
-        else
-        {
-            sb.Append('[');
-            bool isFirst = true;
+            jb.AddProperty("_");
+            jb.StartArray();
 
 #if NET5_0_OR_GREATER
             Span<IJtInstanceStructureElement> listSpan = CollectionsMarshal.AsSpan(Children);
             for (int i = 0; i < listSpan.Length; i++)
             {
-                if (!isFirst)
-                {
-                    sb.Append(',');
-                }
+                IJtInstanceStructureElement item = listSpan[i];
+                if (item.IsOverridden())
+                    jb.AddValue(item);
                 else
-                    isFirst = false;
-                listSpan[i].BuildJson(sb);
+                    jb.AddValue("{}");
             }
 #else
-
             for (int i = 0; i < Children.Count; i++)
             {
-                if (!isFirst)
-                {
-                    sb.Append(',');
-                }
+                IJtInstanceStructureElement item = Children[i];
+                if (item.IsOverridden())
+                    jb.AddValue(item);
                 else
-                    isFirst = false;
-                Children[i].BuildJson(sb);
+                    jb.AddValue("{}");
             }
 #endif
-            sb.Append(']');
+            jb.EndArray();
+            jb.EndBlock();
+        }
+        else
+        {
+            jb.StartArray();
+
+#if NET5_0_OR_GREATER
+            Span<IJtInstanceStructureElement> listSpan = CollectionsMarshal.AsSpan(Children);
+            for (int i = 0; i < listSpan.Length; i++)
+            {
+                jb.AddValue(listSpan[i]);
+            }
+#else
+            for (int i = 0; i < Children.Count; i++)
+            {
+               jb.AddValue(Children[i]);
+               
+            }
+#endif
+            jb.EndArray();
         }
     }
+
     internal JtNodeCollectionSource CreateSource() => JtNodeCollectionSource.Create(this);
 
 
@@ -419,6 +395,8 @@ public sealed class JtNodeCollection : IJtInstanceStructureElement, IJtNodeParen
                 throw new UnreachableException();
             }
 
+            if (Nodes.Contains(item))
+                return;
             Nodes.Add(item);
         }
     }
@@ -435,8 +413,6 @@ public sealed class JtNodeCollection : IJtInstanceStructureElement, IJtNodeParen
     }
     IJtSourceStructureElement IJtInstanceStructureElement.CreateSource() => CreateSource();
 
-    void IJtJsonBuildable.BuildJson(StringBuilder sb) => BuildJson(sb);
-
     IEnumerable<IJtCommonContentElement> IJtCommonParent.EnumerateChildrenElements() => Children;
     IJtCommonNodeCollection IJtCommonParent.GetChildrenElementsCollection() => this;
 
@@ -444,67 +420,54 @@ public sealed class JtNodeCollection : IJtInstanceStructureElement, IJtNodeParen
     {
         get => this[index]; set
         {
-            if (value is IJtInstanceStructureElement element)
-            {
-                this[index] = element;
-            }
-            else
-                throw new Exception();
+            if (value is not IJtInstanceStructureElement element)
+                throw new InvalidCastException($"Cannot cast '{nameof(value)}' from '{value?.GetType()?.ToString() ?? "null"}' to {typeof(IJtInstanceStructureElement)}");
+
+            this[index] = element;
         }
     }
     int IList<IJtCommonContentElement>.IndexOf(IJtCommonContentElement item)
     {
-        if (item is IJtInstanceStructureElement element)
-        {
-            return IndexOf(element);
-        }
-        else
-            throw new Exception();
+        if (item is not IJtInstanceStructureElement element)
+            throw new InvalidCastException($"Cannot cast '{nameof(item)}' from '{item?.GetType()?.ToString() ?? "null"}' to {typeof(IJtInstanceStructureElement)}");
+
+        return IndexOf(element);
     }
     void IList<IJtCommonContentElement>.Insert(int index, IJtCommonContentElement item)
     {
-        if (item is IJtInstanceStructureElement element)
-        {
-            Insert(index, element);
-        }
-        else
-            throw new Exception();
+        if (item is not IJtInstanceStructureElement element)
+            throw new InvalidCastException($"Cannot cast '{nameof(item)}' from '{item?.GetType()?.ToString() ?? "null"}' to {typeof(IJtInstanceStructureElement)}");
+
+        Insert(index, element);
     }
     void ICollection<IJtCommonContentElement>.Add(IJtCommonContentElement item)
     {
-        if (item is IJtInstanceStructureElement element)
-        {
-            Add(element);
-        }
-        else
-            throw new Exception();
+        if (item is not IJtInstanceStructureElement element)
+            throw new InvalidCastException($"Cannot cast '{nameof(item)}' from '{item?.GetType()?.ToString() ?? "null"}' to {typeof(IJtInstanceStructureElement)}");
+
+        Add(element);
     }
     bool ICollection<IJtCommonContentElement>.Contains(IJtCommonContentElement item)
     {
-        if (item is IJtInstanceStructureElement element)
-        {
-            return Contains(element);
-        }
-        else
-            throw new Exception();
+        if (item is not IJtInstanceStructureElement element)
+            throw new InvalidCastException($"Cannot cast '{nameof(item)}' from '{item?.GetType()?.ToString() ?? "null"}' to {typeof(IJtInstanceStructureElement)}");
+
+        return Contains(element);
     }
     void ICollection<IJtCommonContentElement>.CopyTo(IJtCommonContentElement[] array, int arrayIndex)
     {
-        if (array is IJtInstanceStructureElement[] element)
-        {
-            CopyTo(element, arrayIndex);
-        }
-        else
-            throw new Exception();
+        if (array is not IJtInstanceStructureElement[] element)
+            throw new InvalidCastException($"Cannot cast '{nameof(array)}' from '{array?.GetType()?.ToString() ?? "null"}' to {typeof(IJtInstanceStructureElement[])}");
+
+        CopyTo(element, arrayIndex);
     }
     bool ICollection<IJtCommonContentElement>.Remove(IJtCommonContentElement item)
     {
-        if (item is IJtInstanceStructureElement element)
-        {
-            return Remove(element);
-        }
-        else
-            throw new Exception();
+        if (item is not IJtInstanceStructureElement element)
+            throw new InvalidCastException($"Cannot cast '{nameof(item)}' from '{item?.GetType()?.ToString() ?? "null"}' to {typeof(IJtInstanceStructureElement)}");
+
+        return Remove(element);
     }
     IEnumerator<IJtCommonContentElement> IEnumerable<IJtCommonContentElement>.GetEnumerator() => Children.GetEnumerator();
+
 }

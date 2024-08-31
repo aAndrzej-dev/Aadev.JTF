@@ -1,6 +1,6 @@
 ﻿using System.Linq;
-using System.Text;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources.Nodes;
@@ -45,16 +45,15 @@ public sealed class JtArrayNodeSource : JtContainerNodeSource
 
 
 
-    internal override void BuildJsonDeclaration(StringBuilder sb)
+    internal override void BuildJsonDeclaration(JsonBuilder jb)
     {
-        BuildCommonJson(sb);
+        BuildCommonJson(jb);
         if (Children.Children.Any(x => x.IsOverridden()))
         {
-            sb.Append(", \"prefabs\": ");
-            Children.BuildJson(sb);
+            jb.AddProperty("prefabs", Children);
         }
 
-        sb.Append('}');
+        jb.EndBlock();
     }
     public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtArrayNode(parent, this, @override);
     public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtArrayNodeSource(parent, this, @override);

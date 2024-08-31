@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;net6.0;net7.0;net8.0</TargetFrameworks>
     <RootNamespace>Aadev.JTF</RootNamespace>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -8,24 +8,23 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Authors>aAndrzej-dev</Authors>
     <DebugType>none</DebugType>
-    <Copyright>Copyright © aAndrzej-dev 2023</Copyright>
+    <Copyright>Copyright © aAndrzej-dev 2024</Copyright>
     <RepositoryUrl>https://github.com/aAndrzej-dev/Aadev.JTF.git</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
 	<RepositoryBranch>main</RepositoryBranch>
     <PackageProjectUrl>https://github.com/aAndrzej-dev/Aadev.JTF</PackageProjectUrl>
     <Description>Json Template Format</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>2.0.0-beta5</Version>
-    <AssemblyVersion>2.0.0.5</AssemblyVersion>
-    <FileVersion>2.0.0.5</FileVersion>
+    <Version>2.0.0-beta6</Version>
+    <AssemblyVersion>2.0.0.6</AssemblyVersion>
+    <FileVersion>2.0.0.6</FileVersion>
 	<Deterministic>true</Deterministic>
+	<PackageIcon>JTF.png</PackageIcon>
 	<LangVersion>11.0</LangVersion>
     <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
-  <PackageReleaseNotes>Minor changes to collection builders to save memory
-Created Aadev.JTF.Common namespace for common interface in instace and custom sources
-Some changes in class names and namespaces
-Library is now signed with strong name
-Fixed bug when saving float and double values to json
+  <PackageReleaseNotes>Changed StringBuilder to JsonBuilder when saving to json
+Moved all tools to sub namespace
+Added suport for .NET 8
 Bug fixes and improvements.
   </PackageReleaseNotes>
   <AnalysisLevel>latest-all</AnalysisLevel>

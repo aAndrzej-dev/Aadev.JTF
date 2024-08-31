@@ -5,10 +5,10 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using Aadev.JTF.CollectionBuilders;
 using Aadev.JTF.Common;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources;
@@ -117,36 +117,28 @@ public sealed class JtSuggestionCollectionSource<TSuggestion> : CustomSource, IJ
         }
     }
 
-    internal override void BuildJsonDeclaration(StringBuilder sb)
+    internal override void BuildJsonDeclaration(JsonBuilder jb)
     {
         if (!DynamicSourceId.IsEmpty)
         {
-            sb.Append($"\"{DynamicSourceId}\"");
+            jb.AddValue(DynamicSourceId.ToString());
         }
         else
         {
-            sb.Append('[');
+            jb.StartArray();
 #if NET5_0_OR_GREATER
             Span<IJtSuggestionCollectionSourceChild<TSuggestion>> listSpan = CollectionsMarshal.AsSpan(Suggestions);
             for (int i = 0; i < listSpan.Length; i++)
             {
-                if (i > 0)
-                    sb.Append(',');
-
-                listSpan[i].BuildJson(sb);
-
+                jb.AddValue(listSpan[i]);
             }
 #else
             for (int i = 0; i < Suggestions.Count; i++)
             {
-                if (i > 0)
-                    sb.Append(',');
-
-                Suggestions[i].BuildJson(sb);
-
+                jb.AddValue(Suggestions[i]);
             }
 #endif
-            sb.Append(']');
+            jb.EndArray();
         }
     }
 
@@ -188,7 +180,6 @@ public sealed class JtSuggestionCollectionSource<TSuggestion> : CustomSource, IJ
         return TryCreate(parent, value) ?? new JtSuggestionCollectionSource<TSuggestion>(parent);
     }
     internal static JtSuggestionCollectionSource<TSuggestion> Create(IJtCustomSourceParent parent, JtSuggestionCollection<TSuggestion> source) => new JtSuggestionCollectionSource<TSuggestion>(parent, source);
-    void IJtJsonBuildable.BuildJson(StringBuilder sb) => BuildJson(sb);
     internal JtSuggestionCollection<TSuggestion> CreateInstance(JtValueNode owner)
     {
         if (dynamicSourceId.IsEmpty)
@@ -216,8 +207,7 @@ public sealed class JtSuggestionCollectionSource<TSuggestion> : CustomSource, IJ
             Add(suggestion);
             return suggestion;
         }
-
-        throw new InvalidCastException($"Cannot convert {value?.GetType()} to {typeof(TSuggestion)}");
+        throw new InvalidCastException($"Cannot cast '{nameof(value)}' from '{value?.GetType()?.ToString() ?? "null"}' to {typeof(TSuggestion)}");
 
     }
     public IJtCommonSuggestionCollection AddNewSuggestionCollection()

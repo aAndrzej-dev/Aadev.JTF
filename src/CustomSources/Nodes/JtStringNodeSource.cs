@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
-using System.Text;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources.Nodes;
@@ -48,22 +48,21 @@ public sealed class JtStringNodeSource : JtValueNodeSource
     }
 
 
-    internal override void BuildJsonDeclaration(StringBuilder sb)
+    internal override void BuildJsonDeclaration(JsonBuilder jb)
     {
-        BuildCommonJson(sb);
+        BuildCommonJson(jb);
         if (MaxLength != -1)
-            sb.Append($", \"maxLength\": {MaxLength}");
+            jb.AddProperty("maxLength", MaxLength);
         if (MinLength != 0)
-            sb.Append($", \"minLength\": {MinLength}");
+            jb.AddProperty("minLength", MinLength);
         if (!string.IsNullOrEmpty(Default))
-            sb.Append($", \"default\": \"{Default}\"");
+            jb.AddProperty("default", Default);
         if (!Suggestions.IsEmpty)
         {
-            sb.Append(", \"suggestions\": ");
-            Suggestions.BuildJson(sb);
+            jb.AddProperty("suggestions", Suggestions);
         }
 
-        sb.Append('}');
+        jb.EndBlock();
     }
     public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtStringNode(parent, this, @override);
     public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtStringNodeSource(parent, this, @override);

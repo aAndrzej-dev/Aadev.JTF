@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel;
-using System.Text;
 using Aadev.JTF.CustomSources;
 using Aadev.JTF.CustomSources.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 using ValueType = System.Int16;
-namespace Aadev.JTF.Types;
+namespace Aadev.JTF.Nodes;
 
 public sealed class JtShortNode : JtValueNode
 {
@@ -75,21 +75,22 @@ public sealed class JtShortNode : JtValueNode
 
         return val.ToString();
     }
-    internal override void BuildJson(StringBuilder sb)
-    {
-        BuildCommonJson(sb);
 
-        if (Min != minValue)
-            sb.Append($", \"min\": {Min}");
-        if (Max != maxValue)
-            sb.Append($", \"max\": {Max}");
-        if (Default != 0)
-            sb.Append($", \"default\": {Default}");
-        sb.Append('}');
-    }
     public override JToken CreateDefaultValue() => new JValue(Default);
     public override object GetDefaultValue() => Default;
     public override JtNodeSource CreateSource() => currentSource ??= new JtShortNodeSource(this);
 
     public override IJtSuggestionCollection? TryGetSuggestions() => suggestions;
+    internal override void BuildJson(JsonBuilder jb)
+    {
+        BuildCommonJson(jb);
+
+        if (Min != minValue)
+            jb.AddProperty("min", Min);
+        if (Max != maxValue)
+            jb.AddProperty("max", Max);
+        if (Default != 0)
+            jb.AddProperty("default", Default);
+        jb.EndBlock();
+    }
 }

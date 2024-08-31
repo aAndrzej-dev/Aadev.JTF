@@ -1,9 +1,9 @@
-﻿using System.Text;
-using Aadev.JTF.CustomSources;
+﻿using Aadev.JTF.CustomSources;
 using Aadev.JTF.CustomSources.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
-namespace Aadev.JTF.Types;
+namespace Aadev.JTF.Nodes;
 
 public sealed class JtBlockNode : JtContainerNode
 {
@@ -25,25 +25,22 @@ public sealed class JtBlockNode : JtContainerNode
     {
         Children = source.Children.CreateInstance(this, (JArray?)@override?["children"]);
     }
-
-    internal override void BuildJson(StringBuilder sb)
+    public override JtNodeSource CreateSource() => currentSource ??= new JtBlockNodeSource(this);
+    internal override void BuildJson(JsonBuilder jb)
     {
-        BuildCommonJson(sb);
+        BuildCommonJson(jb);
         if (Base is not null)
         {
             if (Children.IsOverridden())
             {
-                sb.Append(", \"children\": ");
-                Children.BuildJson(sb);
+                jb.AddProperty("children", Children);
             }
 
-            sb.Append('}');
+            jb.EndBlock();
             return;
         }
 
-        sb.Append(", \"children\": ");
-        Children.BuildJson(sb);
-        sb.Append('}');
+        jb.AddProperty("children", Children);
+        jb.EndBlock();
     }
-    public override JtNodeSource CreateSource() => currentSource ??= new JtBlockNodeSource(this);
 }

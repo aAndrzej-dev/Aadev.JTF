@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
-using System.Text;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources.Nodes;
@@ -37,14 +37,14 @@ public sealed class JtBoolNodeSource : JtNodeSource
 
 
 
-    internal override void BuildJsonDeclaration(StringBuilder sb)
+    internal override void BuildJsonDeclaration(JsonBuilder jb)
     {
-        BuildCommonJson(sb);
+        BuildCommonJson(jb);
         if (Default)
-            sb.Append(", \"default\": true");
+            jb.AddProperty("default", true);
         if (Constant)
-            sb.Append(", \"constant\": true");
-        sb.Append('}');
+            jb.AddProperty("constant", true);
+        jb.EndBlock();
     }
     public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtBoolNode(parent, this, @override);
     public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtBoolNodeSource(parent, this, @override);

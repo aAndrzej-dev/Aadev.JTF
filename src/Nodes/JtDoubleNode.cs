@@ -1,9 +1,7 @@
 ﻿using System.ComponentModel;
-using System.Globalization;
-using System.Text;
 using Aadev.JTF.CustomSources;
 using Aadev.JTF.CustomSources.Nodes;
-using Aadev.JTF.Types;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 using ValueType = System.Double;
 namespace Aadev.JTF.Nodes;
@@ -49,31 +47,27 @@ public sealed class JtDoubleNode : JtValueNode
     {
         suggestions = source.TryGetSuggestions()?.CreateInstance(this);
         if (@override is null)
+        {
             return;
+        }
+
         min = (ValueType?)@override["min"];
         max = (ValueType?)@override["max"];
         @default = (ValueType?)@override["default"];
     }
-
-    internal override void BuildJson(StringBuilder sb)
-    {
-        BuildCommonJson(sb);
-
-        if (Min != minValue)
-            sb.Append($", \"min\": {Min.ToString(CultureInfo.InvariantCulture)}");
-        if (Max != maxValue)
-            sb.Append($", \"max\": {Max.ToString(CultureInfo.InvariantCulture)}");
-        if (Default != 0)
-            sb.Append($", \"default\": {Default.ToString(CultureInfo.InvariantCulture)}");
-        sb.Append('}');
-    }
     public override string? GetDisplayString(JToken? value)
     {
         if (value is null or not JValue)
+        {
             return null;
+        }
+
         ValueType? val = (ValueType?)value;
         if (val is null)
+        {
             return null;
+        }
+
         if (val == Default)
         {
             return $"Default ({val})";
@@ -96,4 +90,16 @@ public sealed class JtDoubleNode : JtValueNode
     public override JtNodeSource CreateSource() => currentSource ??= new JtDoubleNodeSource(this);
 
     public override IJtSuggestionCollection? TryGetSuggestions() => suggestions;
+    internal override void BuildJson(JsonBuilder jb)
+    {
+        BuildCommonJson(jb);
+
+        if (Min != minValue)
+            jb.AddProperty("min", Min);
+        if (Max != maxValue)
+            jb.AddProperty("max", Max);
+        if (Default != 0)
+            jb.AddProperty("default", Default);
+        jb.EndBlock();
+    }
 }

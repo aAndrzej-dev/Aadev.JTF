@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Text;
 using Aadev.JTF.Common;
 using Aadev.JTF.CustomSources.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
-namespace Aadev.JTF.Types;
+namespace Aadev.JTF.Nodes;
 
 public abstract class JtContainerNode : JtNode, IJtNodeParent
 {
@@ -65,15 +64,14 @@ public abstract class JtContainerNode : JtNode, IJtNodeParent
             return new JObject();
     }
 
-    private protected override void BuildCommonJson(StringBuilder sb)
+    private protected override void BuildCommonJson(JsonBuilder jb)
     {
-        base.BuildCommonJson(sb);
+        base.BuildCommonJson(jb);
         if (ContainerJsonType != ContainerDisplayType)
-            sb.Append($", \"jsonType\": \"{ContainerJsonType.ToLowerString()}\"");
+            jb.AddProperty("jsonType", ContainerJsonType.ToLowerString());
         if (DisableCollapse)
-            sb.Append(", \"disableCollapse\": true");
+            jb.AddProperty("disableCollapse", true);
     }
-
     IdentifiersManager IJtNodeParent.GetIdentifiersManagerForChild() => IdentifiersManager;
 
 
@@ -91,20 +89,3 @@ public abstract class JtContainerNode : JtNode, IJtNodeParent
     IJtCommonNodeCollection IJtCommonParent.GetChildrenElementsCollection() => Children;
 }
 
-public enum JtContainerType
-{
-    Array,
-    Block
-}
-internal static class JtContainerTypeEx
-{
-    public static string ToLowerString(this JtContainerType containerType)
-    {
-        return containerType switch
-        {
-            JtContainerType.Array => "array",
-            JtContainerType.Block => "block",
-            _ => throw new ArgumentOutOfRangeException(nameof(containerType)),
-        };
-    }
-}

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Aadev.JTF.Common;
 using Aadev.JTF.CustomSources;
+using Aadev.JTF.Tools;
 
 namespace Aadev.JTF;
 
@@ -36,13 +36,13 @@ public sealed class JtSuggestionSourceInstance<TSuggestion> : IJtSuggestion<TSug
     object? IJtCommonSuggestion.GetValue() => ((IJtSuggestionSource)source).GetValue();
     void IJtCommonSuggestion.SetValue<T>(T value) => throw new NotSupportedException();
     void IJtCommonSuggestion.SetValue(object? value) => throw new NotSupportedException();
-    void IJtJsonBuildable.BuildJson(StringBuilder sb) => throw new NotSupportedException();
     IJtSuggestionCollectionSourceChild<TSuggestion> IJtSuggestionCollectionChild<TSuggestion>.CreateSource(IJtCustomSourceParent parent) => source;
     IEnumerable<IJtSuggestion> IJtSuggestionCollectionChild<TSuggestion>.GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource)
     {
         yield return this;
     }
 
+    public void BuildJson(JsonBuilder jb) => throw new NotImplementedException();
 
     public static bool operator ==(JtSuggestionSourceInstance<TSuggestion>? left, JtSuggestionSourceInstance<TSuggestion>? right) => EqualityComparer<JtSuggestionSourceInstance<TSuggestion>>.Default.Equals(left, right);
     public static bool operator !=(JtSuggestionSourceInstance<TSuggestion>? left, JtSuggestionSourceInstance<TSuggestion>? right) => !(left == right);

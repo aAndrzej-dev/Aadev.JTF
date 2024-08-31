@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel;
-using System.Text;
 using Aadev.JTF.CustomSources;
 using Aadev.JTF.CustomSources.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
-namespace Aadev.JTF.Types;
+namespace Aadev.JTF.Nodes;
 
 public sealed class JtArrayNode : JtContainerNode
 {
@@ -51,38 +51,35 @@ public sealed class JtArrayNode : JtContainerNode
         singleType = (bool?)@override["singleType"];
         maxSize = (int?)@override["maxSize"];
     }
-
-    internal override void BuildJson(StringBuilder sb)
+    public override JtNodeSource CreateSource() => currentSource ??= new JtArrayNodeSource(this);
+    internal override void BuildJson(JsonBuilder jb)
     {
-        BuildCommonJson(sb);
+        BuildCommonJson(jb);
 
         if (Base is not null)
         {
             if (Children.IsOverridden())
             {
-                sb.Append(", \"prefabs\": ");
-                Prefabs.BuildJson(sb);
+                jb.AddProperty("prefabs", Prefabs);
             }
 
             if (MaxSize != Base.MaxSize)
-                sb.Append($", \"maxSize\": {MaxSize}");
+                jb.AddProperty("maxSize", MaxSize);
             if (SingleType != Base.SingleType)
-                sb.Append($", \"singleType\": {SingleType}");
-            sb.Append('}');
+                jb.AddProperty("singleType", SingleType);
+            jb.EndBlock();
             return;
         }
 
 
 
         if (MaxSize >= 0)
-            sb.Append($", \"maxSize\": {MaxSize}");
+            jb.AddProperty("maxSize", MaxSize);
         if (SingleType)
-            sb.Append($", \"singleType\": true");
+            jb.AddProperty("singleType", SingleType);
 
-        sb.Append(", \"prefabs\": ");
-        Prefabs.BuildJson(sb);
+        jb.AddProperty("prefabs", Prefabs);
 
-        sb.Append('}');
+        jb.EndBlock();
     }
-    public override JtNodeSource CreateSource() => currentSource ??= new JtArrayNodeSource(this);
 }

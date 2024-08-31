@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel;
-using System.Text;
 using Aadev.JTF.CustomSources;
 using Aadev.JTF.CustomSources.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
-namespace Aadev.JTF.Types;
+namespace Aadev.JTF.Nodes;
 
 public sealed class JtStringNode : JtValueNode
 {
@@ -49,19 +49,6 @@ public sealed class JtStringNode : JtValueNode
         @default = (string?)@override["default"];
     }
 
-    internal override void BuildJson(StringBuilder sb)
-    {
-        BuildCommonJson(sb);
-
-        if (MinLength != 0)
-            sb.Append($", \"minLength\": {MinLength}");
-        if (MaxLength != -1)
-            sb.Append($", \"maxLength\": {MaxLength}");
-        if (!string.IsNullOrEmpty(Default))
-            sb.Append($", \"default\": \"{Default}\"");
-
-        sb.Append('}');
-    }
     public override string? GetDisplayString(JToken? value)
     {
         if (value is null or not JValue)
@@ -72,4 +59,16 @@ public sealed class JtStringNode : JtValueNode
     public override object GetDefaultValue() => Default;
     public override JtNodeSource CreateSource() => currentSource ??= new JtStringNodeSource(this);
     public override IJtSuggestionCollection? TryGetSuggestions() => suggestions;
+    internal override void BuildJson(JsonBuilder jb)
+    {
+        BuildCommonJson(jb);
+
+        if (MinLength != 0)
+            jb.AddProperty("minLength", MinLength);
+        if (MaxLength != -1)
+            jb.AddProperty("maxLength", MaxLength);
+        if (!string.IsNullOrEmpty(Default))
+            jb.AddProperty("default", Default);
+        jb.EndBlock();
+    }
 }

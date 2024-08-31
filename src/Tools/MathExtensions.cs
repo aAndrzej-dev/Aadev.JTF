@@ -1,6 +1,6 @@
-﻿namespace Aadev.JTF;
+﻿namespace Aadev.JTF.Tools;
 
-internal static class Helpers
+internal static class MathExtensions
 {
     internal static byte Clamp(this byte value, byte min, byte max)
     {
@@ -112,20 +112,21 @@ internal static class Helpers
     }
     internal static int Min(this int a, int b) => a < b ? a : b;
 
-    internal static byte? Min(this byte? a, byte? b) => a is null || b is null ? null : (a < b ? a : b);
-    internal static short? Min(this short? a, short? b) => a is null || b is null ? null : (a < b ? a : b);
-    internal static int? Min(this int? a, int? b) => a is null || b is null ? null : (a < b ? a : b);
-    internal static long? Min(this long? a, long? b) => a is null || b is null ? null : (a < b ? a : b);
-    internal static float? Min(this float? a, float? b) => a is null || b is null ? null : (a < b ? a : b);
-    internal static double? Min(this double? a, double? b) => a is null || b is null ? null : (a < b ? a : b);
+    internal static byte? Min(this byte? a, byte? b) => a is null || b is null ? null : a < b ? a : b;
+    internal static short? Min(this short? a, short? b) => a is null || b is null ? null : a < b ? a : b;
+    internal static int? Min(this int? a, int? b) => a is null || b is null ? null : a < b ? a : b;
+    internal static long? Min(this long? a, long? b) => a is null || b is null ? null : a < b ? a : b;
+    internal static float? Min(this float? a, float? b) => a is null || b is null ? null : a < b ? a : b;
+    internal static double? Min(this double? a, double? b) => a is null || b is null ? null : a < b ? a : b;
 
 
     internal static int Max(this int a, int b) => a > b ? a : b;
 
-    internal static byte? Max(this byte? a, byte? b) => a is null || b is null ? null : (a > b ? a : b);
-    internal static short? Max(this short? a, short? b) => a is null || b is null ? null : (a > b ? a : b);
-    internal static int? Max(this int? a, int? b) => a is null || b is null ? null : (a > b ? a : b);
-    internal static long? Max(this long? a, long? b) => a is null || b is null ? null : (a > b ? a : b);
-    internal static float? Max(this float? a, float? b) => a is null || b is null ? null : (a > b ? a : b);
-    internal static double? Max(this double? a, double? b) => a is null || b is null ? null : (a > b ? a : b);
+    internal static byte? Max(this byte? a, byte? b) => a is null || b is null ? null : a > b ? a : b;
+    internal static short? Max(this short? a, short? b) => a is null || b is null ? null : a > b ? a : b;
+    internal static int? Max(this int? a, int? b) => a is null || b is null ? null : a > b ? a : b;
+    internal static long? Max(this long? a, long? b) => a is null || b is null ? null : a > b ? a : b;
+    internal static float? Max(this float? a, float? b) => a is null || b is null ? null : a > b ? a : b;
+    internal static double? Max(this double? a, double? b) => a is null || b is null ? null : a > b ? a : b;
+
 }

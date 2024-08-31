@@ -5,8 +5,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Text;
 using Aadev.JTF.Common;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -191,37 +191,21 @@ public sealed class CustomSourceDeclaration : IJtCustomSourceDeclaration, IJtFil
     }
     public string GetJson()
     {
-        StringBuilder sb = new StringBuilder();
+        JsonBuilder jb = new JsonBuilder();
 
-        sb.Append('{');
-        sb.Append("\"type\": \"CustomSource\"");
-        sb.Append(
-#if NET6_0_OR_GREATER
-            System.Globalization.CultureInfo.InvariantCulture,
-#endif
-            $", \"version\": {JTemplate.JTF_VERSION}");
+        jb.StartBlock();
+        jb.AddProperty("type", "CustomSource");
+        jb.AddProperty("version", JTemplate.JTF_VERSION);
         if (IsGlobal)
-            sb.Append(
-#if NET6_0_OR_GREATER
-            System.Globalization.CultureInfo.InvariantCulture,
-#endif
-                $", \"globalId\": \"{GlobalGuid}\"");
-        sb.Append(
-#if NET6_0_OR_GREATER
-            System.Globalization.CultureInfo.InvariantCulture,
-#endif
-            $", \"id\": \"{Id}\"");
-        sb.Append(
-#if NET6_0_OR_GREATER
-            System.Globalization.CultureInfo.InvariantCulture,
-#endif
-            $", \"valueType\": \"{Type}\"");
+            jb.AddProperty("globalId", GlobalGuid.ToString());
+        jb.AddProperty("id", Id);
+        jb.AddProperty("valueType", Type.ToString()); //TODO: Change to fast enum ToString
         if (Type is CustomSourceType.SuggestionCollection)
         {
             if (Value is not IJtSuggestionCollectionSource suggestionCollection)
                 throw new UnreachableException();
 
-            ReadOnlySpan<char> suggestionType;
+            string suggestionType;
             Type element = suggestionCollection.SuggestionType;
             if (element == typeof(byte))
                 suggestionType = "byte";
@@ -240,27 +224,16 @@ public sealed class CustomSourceDeclaration : IJtCustomSourceDeclaration, IJtFil
             else
                 throw new UnreachableException();
 
-
-#if NET6_0_OR_GREATER
-            sb.Append(System.Globalization.CultureInfo.InvariantCulture, $", \"suggestionType\": \"{suggestionType}\"");
-#else
-            sb.Append($", \"suggestionType\": \"{suggestionType.ToString()}\"");
-#endif
-
-
+            jb.AddProperty("suggestionType", suggestionType);
         }
 
-        sb.Append($", \"content\": ");
-        Value.BuildJsonDeclaration(sb);
-        sb.Append('}');
-        return sb.ToString();
+        jb.AddProperty("content");
+        Value.BuildJsonDeclaration(jb);
+        jb.EndBlock();
+        return jb.ToString();
     }
 
     internal static void ClearGlobalCache() => globalDeclarations.Clear();
-    void IJtJsonBuildable.BuildJson(StringBuilder sb)
-    {
-        sb.Append($"\"{Name}\"");
-    }
 
     public override string ToString() => Name;
     IEnumerable<IJtCommonContentElement> IJtCommonParent.EnumerateChildrenElements()
@@ -272,4 +245,5 @@ public sealed class CustomSourceDeclaration : IJtCustomSourceDeclaration, IJtFil
     IJtCommonNodeCollection IJtCommonParent.GetChildrenElementsCollection() => throw new NotSupportedException();
     IJtCommonNode IJtCommonRoot.CreateNodeElement(IJtCommonParent parent, JtNodeType type) => type.CreateEmptySource((IJtNodeSourceParent)parent);
     IJtCommonNodeCollection IJtCommonRoot.CreateCollectionElement(IJtCommonParent parent) => JtNodeCollectionSource.Create((IJtNodeSourceParent)parent);
+    void IJsonBuildable.BuildJson(JsonBuilder jb) => jb.AddValue(Name);
 }

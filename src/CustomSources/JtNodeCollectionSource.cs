@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using Aadev.JTF.CollectionBuilders;
 using Aadev.JTF.Common;
 using Aadev.JTF.CustomSources.Declarations;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources;
@@ -54,7 +54,7 @@ public sealed class JtNodeCollectionSource : CustomSource, IJtSourceStructureEle
     bool ICollection<IJtSourceStructureElement>.IsReadOnly => false;
 
 
-    IJtCommonParent IJtCommonContentElement.Parent => (IJtCommonParent)Parent;
+    IJtCommonParent? IJtCommonContentElement.Parent => (IJtCommonParent?)Parent;
 
     IJtCommonRoot IJtCommonContentElement.Root => Declaration;
     bool IJtCommonContentElement.IsRootChild => IsDeclared;
@@ -82,7 +82,7 @@ public sealed class JtNodeCollectionSource : CustomSource, IJtSourceStructureEle
         childrenBuilder = JtCollectionBuilder.CreateJtNodeSourceCollection(jArray);
     }
 
-    internal override void BuildJsonDeclaration(StringBuilder sb)
+    internal override void BuildJsonDeclaration(JsonBuilder jb)
     {
         if (@base is not null)
         {
@@ -94,80 +94,65 @@ public sealed class JtNodeCollectionSource : CustomSource, IJtSourceStructureEle
 
             if (!isAnyChildOverridden)
             {
-                @base.BuildJson(sb);
+                jb.AddValue(@base);
                 return;
             }
 
 
-            sb.Append('{');
+            jb.StartBlock();
             if (@base.IsDeclared)
             {
-                sb.Append("\"base\": ");
-                @base.BuildJson(sb);
+                jb.AddProperty("base", @base);
             }
 
             if (isAnyChildOverridden)
             {
-                sb.Append(", \"_\": [");
+                jb.AddProperty("_");
+                jb.StartArray();
 #if NET5_0_OR_GREATER
                 Span<IJtSourceStructureElement> listSpan = CollectionsMarshal.AsSpan(Children);
                 for (int i = 0; i < listSpan.Length; i++)
                 {
-                    if (i > 0)
-                        sb.Append(',');
                     IJtSourceStructureElement item = listSpan[i];
                     if (item.IsOverridden())
-                        item.BuildJson(sb);
+                        jb.AddValue(item);
                     else
-                    {
-                        sb.Append("{}");
-                    }
+                        jb.AddValue("{}");
                 }
 #else
                 for (int i = 0; i < Children.Count; i++)
                 {
-                    if (i > 0)
-                        sb.Append(',');
                     IJtSourceStructureElement item = Children[i];
                     if (item.IsOverridden())
-                        item.BuildJson(sb);
+                        jb.AddValue(item);
                     else
                     {
-                        sb.Append("{}");
+                        jb.AddValue("{}");
                     }
                 }
 #endif
-                sb.Append(']');
+                jb.EndArray();
             }
 
-            sb.Append('}');
+            jb.EndBlock();
         }
         else
         {
-            sb.Append('[');
-            bool isFirst = true;
+            jb.StartArray();
 
 #if NET5_0_OR_GREATER
             Span<IJtSourceStructureElement> listSpan = CollectionsMarshal.AsSpan(Children);
             for (int i = 0; i < listSpan.Length; i++)
             {
-                if (!isFirst)
-                    sb.Append(',');
-                else
-                    isFirst = false;
-                listSpan[i].BuildJson(sb);
+                jb.AddValue(listSpan[i]);
             }
 #else
             for (int i = 0; i < Children.Count; i++)
             {
-                if (!isFirst)
-                    sb.Append(',');
-                else
-                    isFirst = false;
-                Children[i].BuildJson(sb);
+                jb.AddValue(Children[i]);
             }
 #endif
-            sb.Append(']');
+            jb.EndArray();
         }
     }
     internal static JtNodeCollectionSource Create(IJtNodeSourceParent parent) => new JtNodeCollectionSource(parent);
@@ -187,7 +172,6 @@ public sealed class JtNodeCollectionSource : CustomSource, IJtSourceStructureEle
     IJtInstanceStructureElement IJtSourceStructureElement.CreateInstance(IJtNodeParent parent, JToken? @override) => CreateInstance(parent, @override);
     public JtNodeCollection CreateInstance(IJtNodeParent parent, JToken? @override) => new JtNodeCollection(parent, this, @override as JArray);
     IJtSourceStructureElement IJtSourceStructureElement.CreateOverride(IJtNodeSourceParent parent, JToken? @override) => CreateOverride(parent, (JArray?)@override);
-    void IJtJsonBuildable.BuildJson(StringBuilder sb) => BuildJson(sb);
 
     public int IndexOf(IJtSourceStructureElement item) => Children.IndexOf(item);
     public void Insert(int index, IJtSourceStructureElement item) => Children.Insert(index, item);
@@ -208,67 +192,53 @@ public sealed class JtNodeCollectionSource : CustomSource, IJtSourceStructureEle
     {
         get => this[index]; set
         {
-            if (value is IJtSourceStructureElement element)
-            {
-                this[index] = element;
-            }
-            else
-                throw new Exception();
+            if (value is not IJtSourceStructureElement element)
+                throw new InvalidCastException($"Cannot cast '{nameof(value)}' from '{value?.GetType()?.ToString() ?? "null"}' to {typeof(IJtSourceStructureElement)}");
+
+            this[index] = element;
         }
     }
     int IList<IJtCommonContentElement>.IndexOf(IJtCommonContentElement item)
     {
-        if (item is IJtSourceStructureElement element)
-        {
-            return IndexOf(element);
-        }
-        else
-            throw new Exception();
+        if (item is not IJtSourceStructureElement element)
+            throw new InvalidCastException($"Cannot cast '{nameof(item)}' from '{item?.GetType()?.ToString() ?? "null"}' to {typeof(IJtSourceStructureElement)}");
+
+        return IndexOf(element);
     }
     void IList<IJtCommonContentElement>.Insert(int index, IJtCommonContentElement item)
     {
-        if (item is IJtSourceStructureElement element)
-        {
-            Insert(index, element);
-        }
-        else
-            throw new Exception();
+        if (item is not IJtSourceStructureElement element)
+            throw new InvalidCastException($"Cannot cast '{nameof(item)}' from '{item?.GetType()?.ToString() ?? "null"}' to {typeof(IJtSourceStructureElement)}");
+
+        Insert(index, element);
     }
     void ICollection<IJtCommonContentElement>.Add(IJtCommonContentElement item)
     {
-        if (item is IJtSourceStructureElement element)
-        {
-            Add(element);
-        }
-        else
-            throw new Exception();
+        if (item is not IJtSourceStructureElement element)
+            throw new InvalidCastException($"Cannot cast '{nameof(item)}' from '{item?.GetType()?.ToString() ?? "null"}' to {typeof(IJtSourceStructureElement)}");
+
+        Add(element);
     }
     bool ICollection<IJtCommonContentElement>.Contains(IJtCommonContentElement item)
     {
-        if (item is IJtSourceStructureElement element)
-        {
-            return Contains(element);
-        }
-        else
-            throw new Exception();
+        if (item is not IJtSourceStructureElement element)
+            throw new InvalidCastException($"Cannot cast '{nameof(item)}' from '{item?.GetType()?.ToString() ?? "null"}' to {typeof(IJtSourceStructureElement)}");
+
+        return Contains(element);
     }
     void ICollection<IJtCommonContentElement>.CopyTo(IJtCommonContentElement[] array, int arrayIndex)
     {
-        if (array is IJtSourceStructureElement[] element)
-        {
-            CopyTo(element, arrayIndex);
-        }
-        else
-            throw new Exception();
+        if (array is not IJtSourceStructureElement[] element)
+            throw new InvalidCastException($"Cannot cast '{nameof(array)}' from '{array?.GetType()?.ToString() ?? "null"}' to {typeof(IJtSourceStructureElement[])}");
+
+        CopyTo(element, arrayIndex);
     }
     bool ICollection<IJtCommonContentElement>.Remove(IJtCommonContentElement item)
     {
-        if (item is IJtSourceStructureElement element)
-        {
-            return Remove(element);
-        }
-        else
-            throw new Exception();
+        if (item is not IJtSourceStructureElement element)
+            throw new InvalidCastException($"Cannot cast '{nameof(item)}' from '{item?.GetType()?.ToString() ?? "null"}' to {typeof(IJtSourceStructureElement)}");
+
+        return Remove(element);
     }
     IEnumerator<IJtCommonContentElement> IEnumerable<IJtCommonContentElement>.GetEnumerator() => Children.GetEnumerator();
 }

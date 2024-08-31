@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Globalization;
-using System.Text;
 using Aadev.JTF.Common;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources;
@@ -42,36 +42,20 @@ public sealed class JtSuggestionSource<TSuggestion> : IJtSuggestionSource<TSugge
 
     public override string? ToString() => DisplayName ?? StringValue;
     public IJtSuggestion<TSuggestion> CreateInstance() => instance ??= new JtSuggestionSourceInstance<TSuggestion>(this);
-    internal void BuildJson(StringBuilder sb)
-    {
-        sb.Append('{');
-        if (Value is string str)
-            sb.Append($"\"value\": \"{str}\"");
-        else if (Value is byte or short or int or long or float or double)
-#if NET6_0_OR_GREATER
-            sb.Append(CultureInfo.InvariantCulture, $"\"value\": {Value}");
-#else
-            sb.Append($"\"value\": {Value}");
-#endif
-        else if (Value is bool b)
-            sb.Append($"\"value\": {(b ? "true" : "false")}");
-        if (DisplayName?.Equals(Value?.ToString(), StringComparison.Ordinal) is false)
-            sb.Append($", \"displayName\": \"{DisplayName}\"");
-        sb.Append('}');
-    }
 
     IJtSuggestionCollectionChild<TSuggestion> IJtSuggestionCollectionSourceChild<TSuggestion>.CreateInstance(JtValueNode owenr) => CreateInstance();
     T IJtCommonSuggestion.GetValue<T>()
     {
         if (Value is T v)
             return v;
-        throw new InvalidCastException($"Cannot convert {typeof(T)} to {typeof(TSuggestion)}");
+
+        throw new InvalidCastException($"Cannot cast from '{typeof(T)}' to {typeof(TSuggestion)}");
     }
     void IJtCommonSuggestion.SetValue<T>(T value)
     {
         if (value is TSuggestion v)
             Value = v;
-        throw new InvalidCastException($"Cannot convert {typeof(T)} to {typeof(TSuggestion)}");
+        throw new InvalidCastException($"Cannot cast '{nameof(value)}' from '{typeof(T)}' to {typeof(TSuggestion)}");
     }
 
     object? IJtCommonSuggestion.GetValue() => Value;
@@ -79,8 +63,15 @@ public sealed class JtSuggestionSource<TSuggestion> : IJtSuggestionSource<TSugge
     {
         if (value is TSuggestion v)
             Value = v;
-        throw new InvalidCastException($"Cannot convert {value?.GetType()} to {typeof(TSuggestion)}");
+        throw new InvalidCastException($"Cannot cast '{nameof(value)}' from '{value?.GetType()?.ToString() ?? "null"}' to {typeof(TSuggestion)}");
     }
 
-    void IJtJsonBuildable.BuildJson(StringBuilder sb) => BuildJson(sb);
+    void IJsonBuildable.BuildJson(JsonBuilder jb)
+    {
+        jb.StartBlock();
+        jb.AddTProperty("value", Value);
+        if (DisplayName?.Equals(Value?.ToString(), StringComparison.Ordinal) is false)
+            jb.AddProperty("displayName", DisplayName);
+        jb.EndBlock();
+    }
 }

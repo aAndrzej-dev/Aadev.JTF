@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using Aadev.JTF.Common;
+using Aadev.JTF.Tools;
 
 namespace Aadev.JTF.CustomSources.Declarations;
 
@@ -24,11 +24,6 @@ public sealed class CustomSourceFormInstanceDeclaration : IJtCustomSourceDeclara
     public string Name => $"#{Instance.Id}";
     IJtCustomSourceDeclaration IJtCustomSourceParent.Declaration => this;
 
-
-    void IJtJsonBuildable.BuildJson(StringBuilder sb)
-    {
-        sb.Append($"\"{Name}\"");
-    }
     public override string ToString() => Name;
     IEnumerable<IJtCommonContentElement> IJtCommonParent.EnumerateChildrenElements()
     {
@@ -50,4 +45,5 @@ public sealed class CustomSourceFormInstanceDeclaration : IJtCustomSourceDeclara
 
     IJtCommonNode IJtCommonRoot.CreateNodeElement(IJtCommonParent parent, JtNodeType type) => type.CreateEmptySource((IJtNodeSourceParent)parent);
     IJtCommonNodeCollection IJtCommonRoot.CreateCollectionElement(IJtCommonParent parent) => JtNodeCollectionSource.Create((IJtNodeSourceParent)parent);
+    void IJsonBuildable.BuildJson(JsonBuilder jb) => jb.AddValue(Name);
 }

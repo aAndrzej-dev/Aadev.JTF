@@ -5,23 +5,23 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
 using Aadev.JTF.CustomSources.Declarations;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources;
 
-public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>, ICustomSourceProvider, IJtFile
+public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>, ICustomSourceProvider, IJtFile, IJsonBuildable
 {
     private static readonly ConcurrentDictionary<Guid, CustomSourceDeclarationCollection> globalDeclarations = new ConcurrentDictionary<Guid, CustomSourceDeclarationCollection>();
-    private readonly List<CustomSourceDeclaration> list;
+    private List<CustomSourceDeclaration>? list;
     private readonly JTemplate template;
     private int version;
 
-    public CustomSourceDeclaration this[int index] { get => list[index]; set => list[index] = value; }
+    public CustomSourceDeclaration this[int index] { get => List[index]; set => List[index] = value; }
 
-    public int Count => list.Count;
+    public int Count => List.Count;
 
     public bool IsReadOnly => false;
 
@@ -33,10 +33,12 @@ public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>,
     public Guid GlobalGuid { get; set; }
     [Browsable(false)] public bool IsGlobal { get; }
 
+    private List<CustomSourceDeclaration> List => list ??= new List<CustomSourceDeclaration>();
+
     private CustomSourceDeclarationCollection(JTemplate template, string filename, string? workingDirectory, bool readOnly)
     {
         if (string.IsNullOrEmpty(filename))
-            throw new ArgumentException($"'{nameof(filename)}' cannot be null or empty.", nameof(filename));
+            throw new ArgumentNullException(nameof(filename), $"'{nameof(filename)}' cannot be null or empty.");
         this.template = template ?? throw new ArgumentNullException(nameof(template));
         Filename = filename;
 
@@ -99,33 +101,33 @@ public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>,
     }
     private CustomSourceDeclarationCollection(JTemplate template)
     {
-        list = new List<CustomSourceDeclaration>();
         this.template = template;
         Filename = template.Filename;
     }
 
-    internal void BuildJson(StringBuilder sb)
+    internal void BuildJson(JsonBuilder jb)
     {
         if (Filename is not null)
         {
-            sb.Append($"\"{Path.GetRelativePath(Path.GetDirectoryName(template.Filename)!, Filename).Replace("\\", "/", StringComparison.Ordinal)}\"");
+            jb.AddValue(Path.GetRelativePath(Path.GetDirectoryName(template.Filename)!, Filename).Replace("\\", "/", StringComparison.Ordinal));
         }
         else
         {
-            sb.Append('[');
+            jb.StartArray();
 #if NET5_0_OR_GREATER
-            Span<CustomSourceDeclaration> listSpan = CollectionsMarshal.AsSpan(list);
+            Span<CustomSourceDeclaration> listSpan = CollectionsMarshal.AsSpan(List);
             for (int i = 0; i < listSpan.Length; i++)
             {
-                ((IJtCustomSourceDeclaration)listSpan[i]).BuildJson(sb);
+                jb.AddValue(listSpan[i]);
+
             }
 #else
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < List.Count; i++)
             {
-                ((IJtCustomSourceDeclaration)list[i]).BuildJson(sb);
+                jb.AddValue(List[i]);
             }
 #endif
-            sb.Append(']');
+            jb.EndArray();
         }
     }
 
@@ -169,22 +171,22 @@ public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>,
         return new CustomSourceDeclarationCollection(template, filename, workingDirectory, readOnly);
     }
 
-    public void Add(CustomSourceDeclaration item) => list.Add(item);
-    public void Clear() => list.Clear();
-    public bool Contains(CustomSourceDeclaration item) => list.Contains(item);
-    public void CopyTo(CustomSourceDeclaration[] array, int arrayIndex) => list.CopyTo(array, arrayIndex);
-    public IEnumerator<CustomSourceDeclaration> GetEnumerator() => list.GetEnumerator();
-    public int IndexOf(CustomSourceDeclaration item) => list.IndexOf(item);
-    public void Insert(int index, CustomSourceDeclaration item) => list.Insert(index, item);
-    public bool Remove(CustomSourceDeclaration item) => list.Remove(item);
-    public void RemoveAt(int index) => list.RemoveAt(index);
-    IEnumerator IEnumerable.GetEnumerator() => list.GetEnumerator();
+    public void Add(CustomSourceDeclaration item) => List.Add(item);
+    public void Clear() => List.Clear();
+    public bool Contains(CustomSourceDeclaration item) => List.Contains(item);
+    public void CopyTo(CustomSourceDeclaration[] array, int arrayIndex) => List.CopyTo(array, arrayIndex);
+    public IEnumerator<CustomSourceDeclaration> GetEnumerator() => List.GetEnumerator();
+    public int IndexOf(CustomSourceDeclaration item) => List.IndexOf(item);
+    public void Insert(int index, CustomSourceDeclaration item) => List.Insert(index, item);
+    public bool Remove(CustomSourceDeclaration item) => List.Remove(item);
+    public void RemoveAt(int index) => List.RemoveAt(index);
+    IEnumerator IEnumerable.GetEnumerator() => List.GetEnumerator();
     public T? GetCustomSource<T>(JtSourceReference identifier) where T : CustomSource
     {
         if (identifier.Type is JtSourceReferenceType.External)
         {
 #if NET5_0_OR_GREATER
-            Span<CustomSourceDeclaration> listSpan = CollectionsMarshal.AsSpan(list);
+            Span<CustomSourceDeclaration> listSpan = CollectionsMarshal.AsSpan(List);
             for (int i = 0; i < listSpan.Length; i++)
             {
                 CustomSourceDeclaration item = listSpan[i];
@@ -193,9 +195,9 @@ public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>,
 
             }
 #else
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < List.Count; i++)
             {
-                CustomSourceDeclaration item = list[i];
+                CustomSourceDeclaration item = List[i];
                     if (item.Id == identifier.Identifier)
                         return (T?)item.Value;
              }
@@ -210,7 +212,7 @@ public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>,
         if (identifier.Type is JtSourceReferenceType.External)
         {
 #if NET5_0_OR_GREATER
-            Span<CustomSourceDeclaration> listSpan = CollectionsMarshal.AsSpan(list);
+            Span<CustomSourceDeclaration> listSpan = CollectionsMarshal.AsSpan(List);
             for (int i = 0; i < listSpan.Length; i++)
             {
                 CustomSourceDeclaration item = listSpan[i];
@@ -221,9 +223,9 @@ public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>,
 
             }
 #else
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < List.Count; i++)
             {
-                 CustomSourceDeclaration item = list[i];
+                 CustomSourceDeclaration item = List[i];
 
 
                     if (item.Id == identifier.Identifier)
@@ -237,5 +239,6 @@ public class CustomSourceDeclarationCollection : IList<CustomSourceDeclaration>,
 
     internal static CustomSourceDeclarationCollection CreateEmpty(JTemplate template) => new CustomSourceDeclarationCollection(template);
     internal static void ClearGlobalCache() => globalDeclarations.Clear();
-    public IEnumerable<IJtCustomSourceDeclaration> EnumerateCustomSources() => list;
+    public IEnumerable<IJtCustomSourceDeclaration> EnumerateCustomSources() => List;
+    void IJsonBuildable.BuildJson(JsonBuilder jb) => BuildJson(jb);
 }

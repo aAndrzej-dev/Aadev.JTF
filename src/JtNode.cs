@@ -4,16 +4,17 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
+using System.Runtime.CompilerServices;
 using Aadev.JTF.Common;
 using Aadev.JTF.CustomSources;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF;
 
 [DebuggerDisplay("JtNode {Name}:{Type.Name} ({Id.ToString()})")]
-public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElement, IJtCommonNode
+public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElement, IJtCommonNode, IJsonBuildable
 {
     private IJtNodeParent parent;
     private JTemplate template;
@@ -95,7 +96,7 @@ public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElemen
             if (value.IsEmpty)
                 return;
             id = value;
-            if (JTemplate.identifierRegex.IsMatch(value.Value))
+            if (RegularExpressions.identifierRegex.IsMatch(value.Value))
             {
                 IdentifiersManager.RegisterNode(value, this);
             }
@@ -114,17 +115,14 @@ public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElemen
     [Browsable(false)] public bool IsDynamicName => Parent.Owner is { ContainerDisplayType: JtContainerType.Array, ContainerJsonType: JtContainerType.Block };
     [Browsable(false)] public bool IsRootChild => Parent.OwnersMainCollection == Template.Roots;
 
-
     [MemberNotNullWhen(true, nameof(Base))]
     [Browsable(false)] public bool IsExternal => Base?.IsDeclared ?? false;
 
     IJtCommonParent IJtCommonContentElement.Parent => Parent;
-
     IJtCommonRoot IJtCommonContentElement.Root => Template;
-
     IJtCustomSourceDeclaration? IJtCommonContentElement.BaseDeclaration => IsExternal ? Base.Declaration : null;
-
     ICustomSourceProvider IHaveCustomSourceProvider.SourceProvider => this;
+
 
     private protected JtNode(IJtNodeParent parent)
     {
@@ -152,11 +150,11 @@ public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElemen
             return;
         if (source["if"] is JArray conditions)
         {
-            Condition = ConvertLegacyCondition(conditions);
+            Condition = LegacyExtensions.ConvertLegacyCondition(conditions);
         }
         else if (source["conditions"] is JArray conditions2)
         {
-            Condition = ConvertLegacyCondition(conditions2);
+            Condition = LegacyExtensions.ConvertLegacyCondition(conditions2);
         }
     }
 
@@ -196,97 +194,72 @@ public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElemen
         else if (Parent.Owner is null or JtArrayNode)
             return new JtNode[] { this };
         else
-            return Parent.Owner.Children.Nodes!.Where(x => x.Name == Name && x.Condition == Condition).ToArray();
+            return Parent.Owner.Children.Nodes!.Where(x => x.Name == Name).ToArray();
     }
     public IEnumerable<JtNode> EnumerateTwinFamily()
     {
         if (IsRootChild)
             return Template.Roots.Nodes!;
         else if (Parent.Owner is null or JtArrayNode)
-            return new JtNode[] { this };
+            return YieldCurrent();
         else
-            return Parent.Owner.Children.Nodes!.Where(x => x.Name == Name && x.Condition == Condition);
+            return Parent.Owner.Children.Nodes!.Where(x => x.Name == Name);
+
+        IEnumerable<JtNode> YieldCurrent()
+        {
+            yield return this;
+        }
     }
-    internal abstract void BuildJson(StringBuilder sb);
-    private protected virtual void BuildCommonJson(StringBuilder sb)
+    internal abstract void BuildJson(JsonBuilder jb);
+    private protected virtual void BuildCommonJson(JsonBuilder jb)
     {
-        sb.Append('{');
+        jb.StartBlock();
         if (Base is not null)
         {
-            bool needComma = false;
             if (Base.IsDeclared)
-            {
-                sb.Append($"\"base\": ");
-                Base.BuildJson(sb);
-                needComma = true;
-            }
+                jb.AddProperty("base", Base);
 
             if (Name != Base.Name)
-            {
-                if (needComma)
-                    sb.Append(',');
-                sb.Append($"\"name\": \"{Name}\"");
-                needComma = true;
-            }
+                jb.AddProperty("name", Name);
 
             if (Description != Base.Description)
-            {
-                if (needComma)
-                    sb.Append(',');
-                sb.Append($"\"description\": \"{Description}\"");
-                needComma = true;
-            }
+                jb.AddProperty("description", Description);
 
             if (DisplayName != Base.DisplayName && DisplayName != Name)
-            {
-                if (needComma)
-                    sb.Append(',');
-                sb.Append($"\"displayName\": \"{DisplayName}\"");
-                needComma = true;
-            }
+                jb.AddProperty("displayName", DisplayName);
 
             if (Id != Base.Id)
-            {
-                if (needComma)
-                    sb.Append(',');
-                sb.Append($"\"id\": \"{Id}\"");
-                needComma = true;
-            }
+                jb.AddProperty("id", Id);
 
             if (Required != Base.Required)
-            {
-                if (needComma)
-                    sb.Append(',');
-                sb.Append($"\"required\": {Required}");
-                needComma = true;
-            }
+                jb.AddProperty("required", Required);
 
             if (Condition != Base.Condition)
-            {
-                if (needComma)
-                    sb.Append(',');
-                sb.Append($"\"condition\": \"{Condition}\"");
-            }
+                jb.AddProperty("condition", Condition);
 
             return;
         }
 
         if (!IsRootChild && (!IsArrayPrefab || !string.IsNullOrEmpty(Name)))
-            sb.Append($"\"name\": \"{Name}\",");
-        sb.Append($"\"type\": \"{Type.Name}\"");
+            jb.AddProperty("name", Name);
+
+        jb.AddProperty("type", Type.Name);
+
         if (!string.IsNullOrWhiteSpace(Description))
-            sb.Append($", \"description\": \"{Description}\"");
+            jb.AddProperty("description", Description);
+
         if (DisplayName != Name)
-            sb.Append($", \"displayName\": \"{DisplayName}\"");
+            jb.AddProperty("displayName", DisplayName);
+
         if (!id.IsEmpty)
-            sb.Append($", \"id\": \"{Id}\"");
+            jb.AddProperty("id", Id);
+
         if (Required)
-            sb.Append(", \"required\": true");
+            jb.AddProperty("required", Required);
+
         if (!string.IsNullOrEmpty(Condition))
-            sb.Append($", \"condition\": \"{Condition}\"");
-
+            jb.AddProperty("condition", Condition);
     }
-
     public virtual bool IsOverridden()
     {
         if (Base is null)
@@ -302,9 +275,9 @@ public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElemen
 
     public string GetJson()
     {
-        StringBuilder sb = new StringBuilder();
-        BuildJson(sb);
-        return sb.ToString();
+        JsonBuilder jb = new JsonBuilder();
+        BuildJson(jb);
+        return jb.ToString();
     }
     public static JtNode Create(IJtNodeParent parent, JToken source)
     {
@@ -373,38 +346,6 @@ public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElemen
     public abstract JToken CreateDefaultValue();
     public abstract JtNodeSource CreateSource();
 
-    internal static string ConvertLegacyCondition(JArray legacyCondition)
-    {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < legacyCondition.Count; i++)
-        {
-            if (i != 0)
-                sb.Append("||");
-            JObject item = (JObject)legacyCondition[i];
-            sb.Append($"'$({(string?)item["id"]})'");
-            switch (((string?)item["type"])?.ToLowerInvariant())
-            {
-                case "equal":
-                    sb.Append("==");
-                    break;
-                case "notEqual":
-                    sb.Append("!=");
-                    break;
-                case "less":
-                    sb.Append('<');
-                    break;
-                case "bigger":
-                    sb.Append('>');
-                    break;
-                default:
-                    throw new JtfException($"Invalid condition type `{item["type"]}`");
-            }
-
-            sb.Append($"'{(string?)item["value"]}'");
-        }
-
-        return sb.ToString();
-    }
 
     public T? GetCustomSource<T>(JtSourceReference identifier) where T : CustomSource
     {
@@ -423,10 +364,11 @@ public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElemen
         yield return this;
     }
 
-    void IJtJsonBuildable.BuildJson(StringBuilder sb) => BuildJson(sb);
     IJtSourceStructureElement IJtInstanceStructureElement.CreateSource() => CreateSource();
     public IEnumerable<IJtCustomSourceDeclaration> EnumerateCustomSources()
     {
         return Enumerable.Concat(Template.EnumerateCustomSources(), IdentifiersManager.EnumerateRegisteredNodes().Select(x => x.CreateSource().Declaration));
     }
+
+    void IJsonBuildable.BuildJson(JsonBuilder jb) => BuildJson(jb);
 }

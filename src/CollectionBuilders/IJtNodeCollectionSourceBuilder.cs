@@ -6,5 +6,4 @@ namespace Aadev.JTF.CollectionBuilders;
 internal interface IJtNodeCollectionSourceBuilder
 {
     List<IJtSourceStructureElement> Build(JtNodeCollectionSource @this);
-
 }

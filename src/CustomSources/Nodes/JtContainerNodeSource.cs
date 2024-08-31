@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Text;
 using Aadev.JTF.Common;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources.Nodes;
@@ -63,13 +63,13 @@ public abstract class JtContainerNodeSource : JtNodeSource, IJtNodeSourceParent,
             ContainerJsonType = @base.ContainerJsonType;
         DisableCollapse = (bool)(@override?["disableCollapse"] ?? @base.DisableCollapse);
     }
-    private protected override void BuildCommonJson(StringBuilder sb)
+    private protected override void BuildCommonJson(JsonBuilder jb)
     {
-        base.BuildCommonJson(sb);
+        base.BuildCommonJson(jb);
         if (ContainerJsonType != ContainerDisplayType)
-            sb.Append($", \"jsonType\": \"{ContainerJsonType.ToLowerString()}\"");
+            jb.AddProperty("jsonType", ContainerJsonType.ToLowerString());
         if (DisableCollapse)
-            sb.Append(", \"disableCollapse\": true");
+            jb.AddProperty("disableCollapse", true);
     }
     public override JToken CreateDefaultValue()
     {

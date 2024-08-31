@@ -1,10 +1,10 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Text;
 using Aadev.JTF.CustomSources.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
-namespace Aadev.JTF.Types;
+namespace Aadev.JTF.Nodes;
 
 public abstract class JtValueNode : JtNode
 {
@@ -54,30 +54,27 @@ public abstract class JtValueNode : JtNode
         }
     }
 
-    private protected override void BuildCommonJson(StringBuilder sb)
+    private protected override void BuildCommonJson(JsonBuilder jb)
     {
-        base.BuildCommonJson(sb);
+        base.BuildCommonJson(jb);
 
         if (!Suggestions.IsEmpty)
         {
-            sb.Append($", \"suggestions\": ");
-            Suggestions.BuildJson(sb);
+            jb.AddProperty("suggestions", Suggestions);
 
             if (ForceUsingSuggestions)
-                sb.Append(", \"forceSuggestions\": true");
+                jb.AddProperty("forceSuggestions", true);
             if (SuggestionsDisplayType is JtSuggestionsDisplayType.DropDown)
-                sb.Append(", \"suggestionsDisplayType\": \"dropdown\"");
+                jb.AddProperty("suggestionsDisplayType", "dropdown");
             else if (SuggestionsDisplayType is JtSuggestionsDisplayType.Window)
-                sb.Append(", \"suggestionsDisplayType\": \"window\"");
+                jb.AddProperty("suggestionsDisplayType", "window");
 
         }
 
         if (Constant)
-            sb.Append(", \"constant\": true");
+            jb.AddProperty("constant", true);
     }
     public abstract object GetDefaultValue();
-
     public abstract string? GetDisplayString(JToken? value);
-
     public abstract IJtSuggestionCollection? TryGetSuggestions();
 }

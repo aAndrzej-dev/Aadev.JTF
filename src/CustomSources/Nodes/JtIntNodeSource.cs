@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
-using System.Text;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 using ValueType = System.Int32;
 
@@ -48,22 +48,19 @@ public sealed class JtIntNodeSource : JtValueNodeSource
     }
 
 
-    internal override void BuildJsonDeclaration(StringBuilder sb)
+    internal override void BuildJsonDeclaration(JsonBuilder jb)
     {
-        BuildCommonJson(sb);
+        BuildCommonJson(jb);
         if (Max != ValueType.MaxValue)
-            sb.Append($", \"max\": {Max}");
+            jb.AddProperty("max", Max);
         if (Min != ValueType.MinValue)
-            sb.Append($", \"min\": {Min}");
+            jb.AddProperty("min", Min);
         if (Default != 0)
-            sb.Append($", \"default\": {Default}");
+            jb.AddProperty("default", Default);
         if (!Suggestions.IsEmpty)
-        {
-            sb.Append(", \"suggestions\": ");
-            Suggestions.BuildJson(sb);
-        }
+            jb.AddProperty("suggestions", Suggestions);
 
-        sb.Append('}');
+        jb.EndBlock();
     }
     public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtIntNode(parent, this, @override);
     public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtIntNodeSource(parent, this, @override);

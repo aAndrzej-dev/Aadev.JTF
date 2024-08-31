@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
-using System.Globalization;
-using System.Text;
 using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 using ValueType = System.Single;
 
@@ -48,22 +47,19 @@ public sealed class JtFloatNodeSource : JtValueNodeSource
         Default = (ValueType)(@override?["default"] ?? @base.Default);
         suggestions = @base.Suggestions;
     }
-    internal override void BuildJsonDeclaration(StringBuilder sb)
+    internal override void BuildJsonDeclaration(JsonBuilder jb)
     {
-        BuildCommonJson(sb);
+        BuildCommonJson(jb);
         if (Max != ValueType.MaxValue)
-            sb.Append($", \"max\": {Max.ToString(CultureInfo.InvariantCulture)}");
+            jb.AddProperty("max", Max);
         if (Min != ValueType.MinValue)
-            sb.Append($", \"min\": {Min.ToString(CultureInfo.InvariantCulture)}");
+            jb.AddProperty("min", Min);
         if (Default != 0)
-            sb.Append($", \"default\": {Default.ToString(CultureInfo.InvariantCulture)}");
+            jb.AddProperty("default", Default);
         if (!Suggestions.IsEmpty)
-        {
-            sb.Append(", \"suggestions\": ");
-            Suggestions.BuildJson(sb);
-        }
+            jb.AddProperty("suggestions", Suggestions);
 
-        sb.Append('}');
+        jb.EndBlock();
     }
     public override JtNode CreateInstance(IJtNodeParent parent, JToken? @override) => new JtFloatNode(parent, this, @override);
     public override JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override) => new JtFloatNodeSource(parent, this, @override);

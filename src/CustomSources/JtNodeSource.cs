@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel;
-using System.Text;
 using Aadev.JTF.Common;
 using Aadev.JTF.CustomSources.Declarations;
 using Aadev.JTF.CustomSources.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources;
@@ -38,7 +38,7 @@ public abstract class JtNodeSource : CustomSource, IJtSourceStructureElement, IJ
     [Browsable(false)]
     public bool IsArrayPrefab => Parent?.Owner is JtArrayNodeSource;
     [Browsable(false)]
-    public bool IsDynamicName => Parent?.Owner is JtArrayNodeSource { ContainerJsonType: Types.JtContainerType.Block };
+    public bool IsDynamicName => Parent?.Owner is JtArrayNodeSource { ContainerJsonType: JtContainerType.Block };
     [Browsable(false)]
     public abstract JTokenType JsonType { get; }
     public override IJtCustomSourceDeclaration? BaseDeclaration => base.BaseDeclaration ?? @base?.Declaration;
@@ -46,7 +46,7 @@ public abstract class JtNodeSource : CustomSource, IJtSourceStructureElement, IJ
 
     [Browsable(false)] public new IJtNodeSourceParent? Parent => (IJtNodeSourceParent?)base.Parent;
 
-    IJtCommonParent IJtCommonContentElement.Parent => (IJtCommonParent)Parent;
+    IJtCommonParent? IJtCommonContentElement.Parent => Parent;
 
     IJtCommonRoot IJtCommonContentElement.Root => Declaration;
 
@@ -85,22 +85,22 @@ public abstract class JtNodeSource : CustomSource, IJtSourceStructureElement, IJ
         this.@base = @base;
     }
 
-    private protected virtual void BuildCommonJson(StringBuilder sb)
+    private protected virtual void BuildCommonJson(JsonBuilder jb)
     {
-        sb.Append('{');
+        jb.StartBlock();
         if (!IsArrayPrefab || !string.IsNullOrEmpty(Name))
-            sb.Append($"\"name\": \"{Name}\",");
-        sb.Append($"\"type\": \"{Type.Name}\"");
+            jb.AddProperty("name", Name);
+        jb.AddProperty("type", Type.Name);
         if (!string.IsNullOrWhiteSpace(Description))
-            sb.Append($", \"description\": \"{Description}\"");
+            jb.AddProperty("description", Description);
         if (DisplayName != Name)
-            sb.Append($", \"displayName\": \"{DisplayName}\"");
+            jb.AddProperty("displayName", DisplayName);
         if (!string.IsNullOrEmpty(Id.Value))
-            sb.Append($", \"id\": \"{Id.Value}\"");
+            jb.AddProperty("id", Id.Value);
         if (Required)
-            sb.Append(", \"required\": true");
+            jb.AddProperty("required", true);
         if (!string.IsNullOrEmpty(Condition))
-            sb.Append($", \"condition\": \"{Condition}\"");
+            jb.AddProperty("condition", Condition);
     }
     public abstract JtNodeSource CreateOverride(IJtNodeSourceParent parent, JObject? @override);
     public abstract JtNode CreateInstance(IJtNodeParent parent, JToken? @override);
@@ -134,8 +134,8 @@ public abstract class JtNodeSource : CustomSource, IJtSourceStructureElement, IJ
 
     public string GetJson()
     {
-        StringBuilder sb = new StringBuilder();
-        BuildJsonDeclaration(sb);
-        return sb.ToString();
+        JsonBuilder jb = new JsonBuilder();
+        BuildJsonDeclaration(jb);
+        return jb.ToString();
     }
 }

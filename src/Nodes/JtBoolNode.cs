@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel;
-using System.Text;
 using Aadev.JTF.CustomSources;
 using Aadev.JTF.CustomSources.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
-namespace Aadev.JTF.Types;
+namespace Aadev.JTF.Nodes;
 
 public sealed class JtBoolNode : JtNode
 {
@@ -34,17 +34,16 @@ public sealed class JtBoolNode : JtNode
         @default = (bool?)@override["default"];
         constant = (bool?)@override["constant"];
     }
-
-    internal override void BuildJson(StringBuilder sb)
-    {
-        BuildCommonJson(sb);
-
-        if (Default)
-            sb.Append($", \"default\": true");
-        if (Constant)
-            sb.Append(", \"constant\": true");
-        sb.Append('}');
-    }
     public override JToken CreateDefaultValue() => new JValue(Default);
     public override JtNodeSource CreateSource() => currentSource ??= new JtBoolNodeSource(this);
+    internal override void BuildJson(JsonBuilder jb)
+    {
+        BuildCommonJson(jb);
+
+        if (Default)
+            jb.AddProperty("default", true);
+        if (Constant)
+            jb.AddProperty("constant", true);
+        jb.EndBlock();
+    }
 }

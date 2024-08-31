@@ -1,9 +1,9 @@
-﻿using System.Text;
-using Aadev.JTF.CustomSources;
+﻿using Aadev.JTF.CustomSources;
 using Aadev.JTF.CustomSources.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
-namespace Aadev.JTF.Types;
+namespace Aadev.JTF.Nodes;
 
 public sealed class JtUnknownNode : JtNode
 {
@@ -26,11 +26,12 @@ public sealed class JtUnknownNode : JtNode
 
     }
 
-    internal override void BuildJson(StringBuilder sb)
-    {
-        BuildCommonJson(sb);
-        sb.Append('}');
-    }
+
     public override JToken CreateDefaultValue() => JValue.CreateUndefined();
     public override JtNodeSource CreateSource() => currentSource ??= new JtUnknownNodeSource(this);
+    internal override void BuildJson(JsonBuilder jb)
+    {
+        BuildCommonJson(jb);
+        jb.EndBlock();
+    }
 }

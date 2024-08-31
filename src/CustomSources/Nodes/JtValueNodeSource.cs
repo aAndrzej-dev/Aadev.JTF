@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Text;
-using Aadev.JTF.Types;
+using Aadev.JTF.Nodes;
+using Aadev.JTF.Tools;
 using Newtonsoft.Json.Linq;
 
 namespace Aadev.JTF.CustomSources.Nodes;
@@ -54,13 +54,13 @@ public abstract class JtValueNodeSource : JtNodeSource
     }
 
 
-    private protected override void BuildCommonJson(StringBuilder sb)
+    private protected override void BuildCommonJson(JsonBuilder jb)
     {
-        base.BuildCommonJson(sb);
+        base.BuildCommonJson(jb);
         if (ForceUsingSuggestions)
-            sb.Append($", \"forceSuggestions\": true");
+            jb.AddProperty("forceSuggestions", true);
         if (Constant)
-            sb.Append($", \"constant\": true");
+            jb.AddProperty("constant", true);
     }
     internal abstract IJtSuggestionCollectionSource? TryGetSuggestions();
 }

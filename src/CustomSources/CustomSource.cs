@@ -1,11 +1,11 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
+using Aadev.JTF.Tools;
 
 namespace Aadev.JTF.CustomSources;
 
-public abstract class CustomSource : IJtCustomSourceParent, IJtJsonBuildable, ICustomSource
+public abstract class CustomSource : IJtCustomSourceParent, IJsonBuildable, ICustomSource
 {
     private readonly IJtCustomSourceDeclaration? declaration;
     private IdentifiersManager? identifiersManager;
@@ -38,13 +38,13 @@ public abstract class CustomSource : IJtCustomSourceParent, IJtJsonBuildable, IC
     public IdentifiersManager IdentifiersManager => identifiersManager ??= new IdentifiersManager(null);
 
 
-    internal virtual void BuildJson(StringBuilder sb)
+    internal virtual void BuildJson(JsonBuilder jb)
     {
         if (IsDeclared)
-            Declaration.BuildJson(sb);
+            Declaration.BuildJson(jb);
         else
-            BuildJsonDeclaration(sb);
+            BuildJsonDeclaration(jb);
     }
-    internal abstract void BuildJsonDeclaration(StringBuilder sb);
-    void IJtJsonBuildable.BuildJson(StringBuilder sb) => BuildJson(sb);
+    internal abstract void BuildJsonDeclaration(JsonBuilder jb);
+    void IJsonBuildable.BuildJson(JsonBuilder jb) => BuildJson(jb);
 }
