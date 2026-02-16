@@ -14,7 +14,7 @@ using Newtonsoft.Json.Linq;
 namespace Aadev.JTF;
 
 [DebuggerDisplay("JtNode {Name}:{Type.Name} ({Id.ToString()})")]
-public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElement, IJtCommonNode, IJsonBuildable
+public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElement, IJtCommonNode
 {
     private IJtNodeParent parent;
     private JTemplate template;
@@ -190,20 +190,20 @@ public abstract class JtNode : ICustomSourceProvider, IJtInstanceStructureElemen
     public JtNode[] GetTwinFamily()
     {
         if (IsRootChild)
-            return Template.Roots.Nodes!.ToArray();
+            return Template.Roots.Nodes.ToArray();
         else if (Parent.Owner is null or JtArrayNode)
             return new JtNode[] { this };
         else
-            return Parent.Owner.Children.Nodes!.Where(x => x.Name == Name).ToArray();
+            return Parent.Owner.Children.Nodes.Where(x => x.Name == Name).ToArray();
     }
     public IEnumerable<JtNode> EnumerateTwinFamily()
     {
         if (IsRootChild)
-            return Template.Roots.Nodes!;
+            return Template.Roots.Nodes;
         else if (Parent.Owner is null or JtArrayNode)
             return YieldCurrent();
         else
-            return Parent.Owner.Children.Nodes!.Where(x => x.Name == Name);
+            return Parent.Owner.Children.Nodes.Where(x => x.Name == Name);
 
         IEnumerable<JtNode> YieldCurrent()
         {

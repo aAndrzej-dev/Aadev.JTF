@@ -44,6 +44,6 @@ public sealed class JtSuggestionSourceInstance<TSuggestion> : IJtSuggestion<TSug
 
     public void BuildJson(JsonBuilder jb) => throw new NotImplementedException();
 
-    public static bool operator ==(JtSuggestionSourceInstance<TSuggestion>? left, JtSuggestionSourceInstance<TSuggestion>? right) => EqualityComparer<JtSuggestionSourceInstance<TSuggestion>>.Default.Equals(left, right);
+    public static bool operator ==(JtSuggestionSourceInstance<TSuggestion>? left, JtSuggestionSourceInstance<TSuggestion>? right) => EqualityComparer<JtSuggestionSourceInstance<TSuggestion>?>.Default.Equals(left, right);
     public static bool operator !=(JtSuggestionSourceInstance<TSuggestion>? left, JtSuggestionSourceInstance<TSuggestion>? right) => !(left == right);
 }

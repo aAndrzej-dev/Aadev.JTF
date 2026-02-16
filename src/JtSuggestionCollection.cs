@@ -90,10 +90,10 @@ public sealed class JtSuggestionCollection<TSuggestion> : IJtSuggestionCollectio
         }
     }
 
-    private IJtSuggestionCollectionChild<TSuggestion> CreateSuggestionItem(JToken source)
+    private IJtSuggestionCollectionChild<TSuggestion> CreateSuggestionItem(JToken? source)
     {
-        if (source?.Type is JTokenType.Array || source?.Type is JTokenType.String)
-            return JtSuggestionCollection<TSuggestion>.Create(Owner, source);
+        if (source?.Type is JTokenType.Array or JTokenType.String)
+            return Create(Owner, source);
         if (source?.Type is JTokenType.Object)
             return new JtSuggestion<TSuggestion>((JObject)source);
         return new JtSuggestion<TSuggestion>(default!, "Unknown");
@@ -178,10 +178,12 @@ public sealed class JtSuggestionCollection<TSuggestion> : IJtSuggestionCollectio
     internal static JtSuggestionCollection<TSuggestion> Create(JtValueNode owner, JtSourceReference id) => new JtSuggestionCollection<TSuggestion>(owner, id);
 
 
-    public IEnumerable<IJtSuggestion> GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>> dynamicSuggestionsSource)
+    public IEnumerable<IJtSuggestion> GetSuggestions(Func<JtIdentifier, IEnumerable<IJtSuggestion>>? dynamicSuggestionsSource)
     {
+        if(dynamicSuggestionsSource is null)
+            return Enumerable.Empty<IJtSuggestion>();
         if (!DynamicSourceId.IsEmpty)
-            return dynamicSuggestionsSource?.Invoke(DynamicSourceId.Identifier)?.Where(x => x.SuggestionType == SuggestionType) ?? Enumerable.Empty<IJtSuggestion>();
+            return dynamicSuggestionsSource.Invoke(DynamicSourceId.Identifier)?.Where(x => x.SuggestionType == SuggestionType) ?? Enumerable.Empty<IJtSuggestion>();
 
         return Suggestions.SelectMany(x => x.GetSuggestions(dynamicSuggestionsSource)).Distinct();
     }
@@ -213,7 +215,7 @@ public sealed class JtSuggestionCollection<TSuggestion> : IJtSuggestionCollectio
             jb.AddValue(DynamicSourceId.ToString());
         }
     }
-    internal JtSuggestionCollectionSource<TSuggestion> CreateSource(IJtCustomSourceParent parent) => Base is null ? JtSuggestionCollectionSource<TSuggestion>.Create(parent, this) : Base;
+    internal JtSuggestionCollectionSource<TSuggestion> CreateSource(IJtCustomSourceParent parent) => Base ?? JtSuggestionCollectionSource<TSuggestion>.Create(parent, this);
     IJtSuggestionCollectionSourceChild<TSuggestion> IJtSuggestionCollectionChild<TSuggestion>.CreateSource(IJtCustomSourceParent parent) => CreateSource(parent);
     IJtSuggestionCollectionSource IJtSuggestionCollection.CreateSource(IJtCustomSourceParent parent) => CreateSource(parent);
 
@@ -256,20 +258,23 @@ public sealed class JtSuggestionCollection<TSuggestion> : IJtSuggestionCollectio
     private void ThrowIfReadOnly()
     {
         if (IsReadOnly)
+        {
             throw new ReadOnlyException("Suggestion collection based on suggestion collection source can not be edited.");
+        }
     }
 
     public IJtCommonSuggestion AddNewSuggestion(object? value, string? displayName = null)
     {
         ThrowIfReadOnly();
-        if (value is TSuggestion tValue)
+        if (value is not TSuggestion tValue)
         {
-            JtSuggestion<TSuggestion> suggestion = new JtSuggestion<TSuggestion>(tValue, displayName);
-            Add(suggestion);
-            return suggestion;
+            throw new InvalidCastException($"Cannot cast '{nameof(value)}' from '{value?.GetType()?.ToString() ?? "null"}' to {typeof(TSuggestion)}");
         }
 
-        throw new InvalidCastException($"Cannot cast '{nameof(value)}' from '{value?.GetType()?.ToString() ?? "null"}' to {typeof(TSuggestion)}");
+        JtSuggestion<TSuggestion> suggestion = new JtSuggestion<TSuggestion>(tValue, displayName);
+        Add(suggestion);
+        return suggestion;
+
     }
     public IJtCommonSuggestionCollection AddNewSuggestionCollection()
     {

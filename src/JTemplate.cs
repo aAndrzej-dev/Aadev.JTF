@@ -145,7 +145,6 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
     /// <exception cref="Exception"></exception>
     public static JTemplate Load(string filename, string? workingDirectory = null, bool readOnly = true) => new JTemplate(filename, workingDirectory, readOnly);
 
-
     private JTemplate(string filename, string? workingDirectory = null, bool readOnly = true)
     {
         Filename = filename ?? throw new ArgumentNullException(nameof(filename));
@@ -199,7 +198,10 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
             string? absoluteTypeFilename = Path.GetFullPath(customSourcesDictionaryFile, Path.GetDirectoryName(Filename)!);
             CustomSources = CustomSourceDeclarationCollection.LoadFormFile(this, absoluteTypeFilename, workingDirectory, true);
         }
-
+        //else
+        //{
+        //    //CustomSources = CustomSourceDeclarationCollection.CreateEmpty(this);
+        //}
 
 
         if (root["root"] is JToken rootToken)
@@ -216,6 +218,7 @@ public sealed class JTemplate : IJtFile, IJtNodeParent, IJtCommonRoot, ICustomSo
             Roots = JtNodeCollection.Create(this);
         }
     }
+
 
     public T? GetCustomSource<T>(JtSourceReference identifier) where T : CustomSource
     {
